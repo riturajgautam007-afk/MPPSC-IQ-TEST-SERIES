@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#263b35">
+<title>MPPSC IQ | PRE 2027 Quiz</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--deep:#263b35;--green:#5e7669;--sage:#9eafa4;--pale:#eaf1e7;--paper:#fffefa;--line:#d5dfd3;--text:#263a31;--muted:#718579;--tg-bg:var(--tg-theme-bg-color,#f4f6f3);--tg-text:var(--tg-theme-text-color,#263a31)}
+*{box-sizing:border-box}body{margin:0;background:var(--tg-bg);color:var(--tg-text);font-family:system-ui,-apple-system,"Noto Sans Devanagari",sans-serif}
+.app{max-width:760px;margin:auto;padding:14px 13px 30px}.top{background:linear-gradient(135deg,#263b35,#6e8979);color:#fff;border-radius:18px;padding:18px 17px;margin-bottom:14px;box-shadow:0 5px 16px #263b3522}
+.brand{font-weight:900;font-size:25px;letter-spacing:.8px}.program{font-size:12px;letter-spacing:1.3px;opacity:.9;margin-top:3px}.topline{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:17px;font-size:12px}
+.pill{background:#ffffff22;border:1px solid #ffffff55;border-radius:30px;padding:6px 10px}
+.progress-wrap{height:6px;background:#ffffff35;border-radius:20px;margin-top:10px;overflow:hidden}.progress{height:100%;width:0;background:#fff;border-radius:20px;transition:width .2s}
+.card{background:var(--tg-theme-secondary-bg-color,var(--paper));border:1px solid var(--line);border-radius:18px;padding:17px;margin:12px 0;box-shadow:0 3px 12px #263b350a}
+.qmeta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;margin-bottom:12px}.qnumber{background:var(--green);color:#fff;border-radius:30px;padding:5px 10px;font-weight:700}
+.question{font-size:17px;line-height:1.7;font-weight:750;color:var(--tg-text);margin:0 0 16px}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:9px}.option{border:1.4px solid #c6d9c6;background:var(--pale);color:#263a31;border-radius:12px;padding:11px 10px;text-align:left;font:600 14px/1.5 inherit;min-height:52px;display:flex;align-items:flex-start;gap:9px;cursor:pointer}
+.option .letter{flex:0 0 24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#d7e5d4;color:#405b46;font-size:11px;font-weight:900}
+.option.selected{border:2px solid #557563;background:#dcebd9}.option.correct{border:2px solid #27834c;background:#e1f4e7}.option.wrong{border:2px solid #c34b4b;background:#fae7e5}.option:disabled{cursor:default;opacity:1}
+.actions{display:flex;gap:9px;margin-top:16px}.btn{border:0;border-radius:12px;padding:12px 15px;font-weight:750;font-size:14px;cursor:pointer;flex:1}.primary{background:var(--deep);color:#fff}.secondary{background:#e8eee8;color:#344f40}.btn:disabled{opacity:.4}
+.feedback{margin-top:14px;border:1px solid var(--line);background:#f4f7f1;border-radius:12px;padding:13px;color:#34443d;font-size:13px;line-height:1.7;display:none}.feedback.show{display:block}.facts{margin-top:9px;white-space:pre-line}
+.bottomnav{display:flex;gap:9px;position:sticky;bottom:8px;padding:8px;background:var(--tg-bg);border-radius:14px}
+.result{text-align:center;padding:24px 16px}.score{font-size:44px;font-weight:900;color:var(--green);margin:10px}.result h2{margin:0;color:var(--deep)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.stat{background:#edf3eb;border-radius:12px;padding:12px 5px;color:#34443d}.stat b{display:block;font-size:22px}.stat span{font-size:11px}
+.hidden{display:none!important}.note{font-size:11px;color:var(--muted);text-align:center;margin:12px 0}
+@media(max-width:390px){.options{grid-template-columns:1fr}.app{padding:10px}.question{font-size:16px}.card{padding:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+ <div class="brand">MPPSC IQ</div><div class="program">PRE 2027 · PRACTICE QUIZ</div>
+ <div class="topline"><span id="counter">प्रश्न 1 / 7</span><span class="pill" id="answered">हल किए: 0</span></div>
+ <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+</header>
+<main id="quizArea">
+ <section class="card" id="questionCard">
+  <div class="qmeta"><span class="qnumber" id="qnumber">प्रश्न 1</span><span>एक सही विकल्प चुनें</span></div>
+  <h1 class="question" id="question"></h1>
+  <div class="options" id="options"></div>
+  <div class="feedback" id="feedback"></div>
+  <div class="actions"><button class="btn secondary" id="prevBtn">← पिछला</button><button class="btn primary" id="checkBtn" disabled>उत्तर जाँचें</button><button class="btn primary hidden" id="nextBtn">अगला →</button></div>
+ </section>
+ <div class="note">MPPSC IQ · PRE 2027 PROGRAM</div>
+</main>
+<section class="card result hidden" id="result">
+ <h2>क्विज़ पूरा हुआ!</h2><div class="score" id="score">0 / 7</div><div>आपका सही उत्तर प्रतिशत</div>
+ <div class="stats"><div class="stat"><b id="right">0</b><span>सही</span></div><div class="stat"><b id="wrong">0</b><span>गलत</span></div><div class="stat"><b id="pending">0</b><span>छोड़े</span></div></div>
+ <button class="btn primary" onclick="restart()">दोबारा टेस्ट दें</button>
+</section>
+</div>
+<script>
+const questions = [
+ {q:"राष्ट्रीय दलहन आत्मनिर्भरता मिशन के तहत वर्ष 2030–31 तक भारत का कुल दलहन उत्पादन लक्ष्य कितना निर्धारित किया गया है?",o:["290 लाख टन","300 लाख टन","400 लाख टन","350 लाख टन"],a:3,ex:"राष्ट्रीय दलहन आत्मनिर्भरता मिशन\\nशुरुआत: 11 अक्टूबर 2025\\nअवधि: 2025–26 से 2030–31 (6 वर्ष)\\nपरिव्यय: ₹11,440 करोड़\\nउत्पादन लक्ष्य: 350 लाख टन\\nक्षेत्रफल विस्तार लक्ष्य: 310 लाख हे.\\nसर्वाधिक दलहन उत्पादक राज्य: मध्य प्रदेश\\nदलहन उत्पादन योगदान: चना > तुअर > उड़द"},
+ {q:"मध्यप्रदेश स्टार्टअप समिट 2026 का आयोजन कब किया गया?",o:["5–6 जनवरी","8–9 जनवरी","11–12 जनवरी","15–16 जनवरी"],a:2,ex:"मध्यप्रदेश स्टार्टअप समिट 2026\\nमप्र स्टार्टअप नीति: 2022\\nमहिला समर्थित स्टार्टअप्स: 47%\\nलक्ष्य: 2035 तक राष्ट्रीय लक्ष्य में 5% योगदान\\nस्टार्टअप कैपिटल फंड: ₹100 करोड़\\nस्टार्टअप सीड अनुदान: ₹30 लाख तक\\nसामान्य सहायता: 15% (₹15 लाख तक)\\nमहिला स्टार्टअप सहायता: 18% (₹18 लाख)"},
+ {q:"टाइप-2 डायबिटीज एवं मोटापे के उपचार हेतु भारत में किस दवा को मंजूरी प्रदान की गई है?",o:["नेस्ककार-19","ओजेम्पिक","लेनाकापविर","सिटाग्लिप्टिन"],a:1,ex:"महत्वपूर्ण दवाएँ एवं चिकित्सा नवाचार\\nअंकोमार्क AI टूल: कैंसर निदान\\nनेस्ककार-19: पहली घरेलू CAR-T सेल थेरेपी\\nबिरसा-101: पहली स्वदेशी CRISPR जीन थेरेपी\\nलेनाकापविर: HIV/AIDS उपचार हेतु\\nएडफाल्सीवैक्स: भारत का पहला मलेरिया टीका\\nओजेम्पिक: टाइप-2 डायबिटीज एवं मोटापे के उपचार में उपयोग"},
+ {q:"पचमढ़ी अभयारण्य का नाम किस स्वतंत्रता सेनानी के नाम पर रखा गया है?",o:["रानी दुर्गावती","राजा शंकर शाह","राजा भभूत सिंह","भीमा नायक"],a:2,ex:"राजा भभूत सिंह\\nपरिचय: ह्रर्रा कोट (पचमढ़ी) के जमींदार\\nउपनाम: नर्मदांचल के शिवाजी\\nनेतृत्व: 1857 की क्रांति\\nतात्या टोपे से संपर्क: सांडिया (महुआखेड़ा)\\nदेनवा घाटी युद्ध: मद्रास इन्फेंट्री को हराया\\nउल्लेख: एलियट सेटलमेंट रिपोर्ट, 1865\\nगिरफ्तारी: 1860"},
+ {q:"स्वच्छ सर्वेक्षण 2025–26 के तहत किस शहर की जोड़ी ने 'स्वच्छ शहर जोड़ी' श्रेणी में पहला स्थान हासिल किया?",o:["इंदौर–देपालपुर","तिरुपति–कुप्पम","अहमदाबाद–साणंद","सूरत–नवी मुंबई"],a:2,ex:"स्वच्छ सर्वेक्षण 2025–26\\nस्वच्छ शहर जोड़ी: अहमदाबाद–साणंद (गुजरात)\\nम.प्र. की स्थिति: इंदौर–देपालपुर – द्वितीय\\n10 लाख से अधिक आबादी: विशाखापट्टनम; म.प्र. में जबलपुर – द्वितीय\\n3 से 10 लाख आबादी: उज्जैन (म.प्र.) – प्रथम\\n50 हजार से 3 लाख आबादी: देवास (म.प्र.) – प्रथम, सागर – तृतीय\\nस्वच्छ रिवर फ्रंट टाउन: रीवा (म.प्र.) – प्रथम"},
+ {q:"जैव विविधता पर सम्मेलन के 17वें पक्षकार सम्मेलन (COP-17) का आयोजन कहाँ किया गया?",o:["ब्राज़ील","अर्मेनिया","मिस्र","जापान"],a:1,ex:"जैव विविधता : महत्वपूर्ण तथ्य\\nIUCN रेड लिस्ट: संकटग्रस्त प्रजातियाँ\\nराष्ट्रीय जैव विविधता प्राधिकरण: चेन्नई\\nजैव विविधता अधिनियम: 2002\\nविश्व जैव विविधता दिवस: 22 मई\\nकार्टाजेना प्रोटोकॉल: जैव सुरक्षा\\nनागोया प्रोटोकॉल: जैव संसाधन साझाकरण\\nपहला जैव विविधता विरासत स्थल: नल्लूर"},
+ {q:"वैश्विक जलवायु परिवर्तन प्रदर्शन सूचकांक (CCPI) 2026 में भारत को कौन-सा स्थान प्राप्त हुआ है?",o:["10वाँ स्थान","15वाँ स्थान","23वाँ स्थान","28वाँ स्थान"],a:3,ex:"प्रमुख सूचकांक 2026: भारत का स्थान व शीर्ष देश\\nग्लोबल जेंडर गैप सूचकांक: 131वाँ (आइसलैंड)\\nपर्यावरण प्रदर्शन सूचकांक: 176वाँ (एस्टोनिया)\\nवैश्विक शांति सूचकांक: 127वाँ (आइसलैंड)\\nवैश्विक ऊर्जा संक्रमण सूचकांक: 70वाँ (स्वीडन)\\nविश्व प्रेस स्वतंत्रता सूचकांक 2025: 157वाँ (नॉर्वे)\\nभ्रष्टाचार धारणा सूचकांक 2025: 91वाँ (डेनमार्क)\\nCCPI 2026: 28वाँ (डेनमार्क)"}
+];
+let index=0, picks=Array(questions.length).fill(null), checked=Array(questions.length).fill(false);
+const $=id=>document.getElementById(id);
+function draw(){
+ const q=questions[index];$('counter').textContent=`प्रश्न ${index+1} / ${questions.length}`;$('qnumber').textContent=`प्रश्न ${index+1}`;$('question').textContent=q.q;
+ $('answered').textContent=`हल किए: ${picks.filter(x=>x!==null).length}`;$('progress').style.width=`${(index/questions.length)*100}%`;
+ $('options').innerHTML='';q.o.forEach((v,i)=>{const b=document.createElement('button');b.className='option';b.innerHTML=`<span class="letter">${'ABCD'[i]}</span><span></span>`;b.querySelector('span:last-child').textContent=v;b.disabled=checked[index];if(picks[index]===i)b.classList.add('selected');if(checked[index]&&i===q.a)b.classList.add('correct');if(checked[index]&&picks[index]===i&&i!==q.a)b.classList.add('wrong');b.onclick=()=>{if(checked[index])return;picks[index]=i;draw()};$('options').appendChild(b)});
+ $('feedback').className='feedback'+(checked[index]?' show':'');$('feedback').innerHTML=checked[index]?`<b>${picks[index]===q.a?'✓ सही उत्तर':'✕ सही उत्तर: '+q.o[q.a]}</b><div class="facts"></div>`:'';if(checked[index])$('feedback').querySelector('.facts').textContent=q.ex;
+ $('prevBtn').disabled=index===0;$('checkBtn').classList.toggle('hidden',checked[index]);$('checkBtn').disabled=picks[index]===null;$('nextBtn').classList.toggle('hidden',!checked[index]);$('nextBtn').textContent=index===questions.length-1?'परिणाम देखें':'अगला →';
+}
+$('prevBtn').onclick=()=>{if(index>0){index--;draw()}};
+$('checkBtn').onclick=()=>{checked[index]=true;draw()};
+$('nextBtn').onclick=()=>{if(index<questions.length-1){index++;draw()}else finish()};
+function finish(){const right=picks.filter((p,i)=>p===questions[i].a).length;const wrong=picks.filter((p,i)=>p!==null&&p!==questions[i].a).length;const pending=picks.filter(p=>p===null).length;$('quizArea').classList.add('hidden');$('result').classList.remove('hidden');$('score').textContent=`${right} / ${questions.length}`;$('right').textContent=right;$('wrong').textContent=wrong;$('pending').textContent=pending;$('progress').style.width='100%';}
+function restart(){index=0;picks=Array(questions.length).fill(null);checked=Array(questions.length).fill(false);$('result').classList.add('hidden');$('quizArea').classList.remove('hidden');draw()}
+const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#263b35');tg.setBackgroundColor(getComputedStyle(document.body).backgroundColor)}catch(e){}}
+draw();
+</script>
+</body>
+</html>
