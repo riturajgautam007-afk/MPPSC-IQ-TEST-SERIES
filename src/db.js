@@ -1,11 +1,6 @@
-const Database=require("better-sqlite3"),fs=require("node:fs"),path=require("node:path");
-const file=path.resolve(process.env.DB_PATH||"data/mppsc-iq.sqlite");fs.mkdirSync(path.dirname(file),{recursive:true});
-const db=new Database(file);db.pragma("journal_mode=WAL");db.pragma("foreign_keys=ON");
-db.exec(`
-CREATE TABLE IF NOT EXISTS students(id INTEGER PRIMARY KEY,telegram_id TEXT UNIQUE,name TEXT,username TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS tests(id INTEGER PRIMARY KEY,title TEXT NOT NULL,unit TEXT DEFAULT '',duration_minutes INTEGER DEFAULT 60,published INTEGER DEFAULT 0,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS questions(id INTEGER PRIMARY KEY,test_id INTEGER REFERENCES tests(id) ON DELETE CASCADE,question_hi TEXT NOT NULL,question_en TEXT DEFAULT '',options_json TEXT NOT NULL,correct_index INTEGER NOT NULL,explanation TEXT DEFAULT '',sort_order INTEGER DEFAULT 0);
-CREATE TABLE IF NOT EXISTS attempts(id INTEGER PRIMARY KEY,student_id INTEGER REFERENCES students(id),test_id INTEGER REFERENCES tests(id),score INTEGER,total INTEGER,answers_json TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS wrong_questions(id INTEGER PRIMARY KEY,student_id INTEGER REFERENCES students(id),test_id INTEGER REFERENCES tests(id),question_id INTEGER REFERENCES questions(id),last_answer INTEGER,UNIQUE(student_id,question_id));
-CREATE TABLE IF NOT EXISTS resources(id INTEGER PRIMARY KEY,title TEXT,unit TEXT DEFAULT '',file_path TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-`);module.exports=db;
+const {Pool}=require("pg");
+const pool=new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:5,idleTimeoutMillis:30000,connectionTimeoutMillis:10000});
+async function init(){
+await pool.query("CREATE TABLE IF NOT EXISTS students(id BIGSERIAL PRIMARY KEY,telegram_id TEXT UNIQUE NOT NULL,name TEXT,username TEXT,created_at TIMESTAMPTZ DEFAULT NOW()); CREATE TABLE IF NOT EXISTS tests(id BIGSERIAL PRIMARY KEY,title TEXT NOT NULL,unit TEXT DEFAULT '',duration_minutes INTEGER DEFAULT 60,published BOOLEAN DEFAULT FALSE,created_at TIMESTAMPTZ DEFAULT NOW()); CREATE TABLE IF NOT EXISTS questions(id BIGSERIAL PRIMARY KEY,test_id BIGINT REFERENCES tests(id) ON DELETE CASCADE,question_hi TEXT NOT NULL,question_en TEXT DEFAULT '',options_json JSONB NOT NULL,correct_index INTEGER NOT NULL,explanation TEXT DEFAULT '',sort_order INTEGER DEFAULT 0); CREATE TABLE IF NOT EXISTS attempts(id BIGSERIAL PRIMARY KEY,student_id BIGINT REFERENCES students(id),test_id BIGINT REFERENCES tests(id),score INTEGER,total INTEGER,answers_json JSONB,created_at TIMESTAMPTZ DEFAULT NOW()); CREATE TABLE IF NOT EXISTS wrong_questions(id BIGSERIAL PRIMARY KEY,student_id BIGINT REFERENCES students(id),test_id BIGINT REFERENCES tests(id),question_id BIGINT REFERENCES questions(id),last_answer INTEGER,UNIQUE(student_id,question_id)); CREATE TABLE IF NOT EXISTS resources(id BIGSERIAL PRIMARY KEY,title TEXT,unit TEXT DEFAULT '',file_path TEXT,created_at TIMESTAMPTZ DEFAULT NOW()); CREATE INDEX IF NOT EXISTS idx_questions_test ON questions(test_id); CREATE INDEX IF NOT EXISTS idx_attempts_student ON attempts(student_id); CREATE INDEX IF NOT EXISTS idx_wrong_student ON wrong_questions(student_id)");
+}
+module.exports={query:(...args)=>pool.query(...args),init,pool};
