@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mppsc-iq-telegram-miniapp
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: ./telegram-mini-app
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
