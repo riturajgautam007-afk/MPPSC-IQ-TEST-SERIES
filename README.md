@@ -1,47 +1,37 @@
 # MPPSC IQ Telegram Mini App
 
-Telegram-first MPPSC quiz platform for **@MPPSC_IQ_Quiz_Bot**.
+Telegram-first MPPSC quiz platform for @MPPSC_IQ_Quiz_Bot.
 
-## Included
-- Telegram WebApp signed-data authentication
-- Student dashboard and published tests
-- Hindi + English question fields, four-option MCQs
-- Timed tests (test duration is configurable; default 60 minutes)
-- Server-side scoring, attempt history and wrong-question practice
-- Admin login, create/delete tests, add MCQs, import Excel
-- PDF/resource upload and resource listing
-- SQLite database on a persistent Render disk
+## Free-tier architecture
+- Render Free Web Service (may spin down when idle; first request can be slow).
+- Supabase PostgreSQL stores students, tests, questions, attempts and wrong answers.
+- Supabase Storage stores uploaded PDF/resources privately.
+- Telegram WebApp authentication, timed tests, server-side scoring, results and wrong-question practice.
+- Admin panel with test creation, MCQ entry, Excel import and PDF upload.
 
-## Deploy on Render
-1. Open https://render.com/ and sign in with GitHub.
-2. Choose **New → Blueprint** and select this repository.
-3. Render reads `render.yaml`. Wait for the service to deploy.
-4. In the Render service's Environment settings, set:
-   - `TELEGRAM_BOT_TOKEN`: private token for @MPPSC_IQ_Quiz_Bot
-   - `ADMIN_USERNAME`: your chosen admin username
-   - `ADMIN_PASSWORD_HASH`: bcrypt hash of your chosen password
-   - `APP_BASE_URL`: the exact HTTPS Render service URL
-5. Generate a bcrypt hash locally without sharing the password:
-   `node -e "require('bcryptjs').hash(process.env.ADMIN_PASSWORD,12).then(console.log)"`
-   Set `ADMIN_PASSWORD` only in your local terminal environment before running the command. Store only the resulting hash in Render.
-6. Redeploy after setting environment values.
+## Configure Supabase (Free)
+1. Create a Free project at https://supabase.com/dashboard.
+2. In Project Settings > Database, copy the connection URI and set it as DATABASE_URL in Render. Replace the password placeholder; URL-encode special characters.
+3. In Project Settings > API, copy Project URL to SUPABASE_URL and the service_role key to SUPABASE_SERVICE_ROLE_KEY. Keep the service_role key private and only in Render Environment.
+4. On first start, the app creates a private Storage bucket named mppsc-resources.
+
+## Configure Render
+1. Create a Blueprint from this repository. The Blueprint now specifies plan: free.
+2. Set DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TELEGRAM_BOT_TOKEN, ADMIN_USERNAME, ADMIN_PASSWORD_HASH and APP_BASE_URL in the service Environment page.
+3. JWT_SECRET is generated automatically by Render.
+4. ADMIN_PASSWORD_HASH must be a bcrypt hash. Generate locally with: ADMIN_PASSWORD='your-password' node -e \"require('bcryptjs').hash(process.env.ADMIN_PASSWORD,12).then(console.log)\". Do not share passwords or tokens in chat or commit them to GitHub.
+5. APP_BASE_URL must be the exact HTTPS Render service URL.
 
 ## Connect Telegram
-After deployment, run locally with Node.js 20+:
-```bash
-npm install
-TELEGRAM_BOT_TOKEN='your-private-token' APP_BASE_URL='https://your-service.onrender.com' npm run setup:telegram
-```
-This sets the bot menu button and basic commands. Never paste the bot token into a chat, GitHub file, or public issue.
+After deployment, run locally with Node.js 20+: npm install, then set TELEGRAM_BOT_TOKEN and APP_BASE_URL in your local shell and run npm run setup:telegram. This sets the bot menu button. Never paste the bot token into a chat or public repository.
 
-## URLs
-- Student Mini App: `/` (open from Telegram)
-- Admin Panel: `/admin.html`
-- Health: `/api/health`
+## App paths
+- Student Mini App: /
+- Admin Panel: /admin.html
+- Health check: /api/health
 
-## Excel format
-First worksheet headers: `question_hi`, optional `question_en`, `A`, `B`, `C`, `D`, `answer`, optional `explanation`.
-The answer can be A/B/C/D or 1/2/3/4. Create a test in Admin first, then import the workbook into it.
+## Excel import
+First worksheet headers: question_hi, optional question_en, A, B, C, D, answer, optional explanation. Answer may be A/B/C/D or 1/2/3/4. Create a test in Admin first, then import the workbook.
 
-## Important
-This is a deployable starter. It is **not live** until you deploy it, configure the private environment variables, and connect the Telegram menu button. Question data is not preloaded; import your own verified Excel question bank through Admin. Back up your persistent database and uploaded files regularly.
+## Free-tier limitations
+Render Free can spin down after inactivity. Supabase Free has quotas and may pause inactive projects; check current provider limits and back up important data. The app is not live until the Supabase and Render environment variables are configured and deployment succeeds. Question bank must be imported via Admin; it is not bundled automatically.
