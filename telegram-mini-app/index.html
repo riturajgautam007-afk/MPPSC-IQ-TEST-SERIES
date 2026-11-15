@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101a32">
+<title>MPPSC IQ | Telegram Mini App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--navy:#101a32;--navy2:#182747;--gold:#e6b95f;--ink:#172033;--muted:#718096;--bg:#f4f6fa;--line:#e5eaf1;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Devanagari",sans-serif}
+header{background:linear-gradient(135deg,var(--navy),#24395f);color:white;padding:22px 18px 26px;border-radius:0 0 24px 24px}
+.top{display:flex;justify-content:space-between;align-items:center}.brand{font-weight:850;letter-spacing:.4px;font-size:20px}.brand span{color:var(--gold)}.tag{font-size:11px;border:1px solid #ffffff55;padding:5px 9px;border-radius:20px;color:#e8edf8}
+h1{font-size:23px;margin:24px 0 6px;line-height:1.35}header p{margin:0;color:#d2dced;font-size:13px}
+.wrap{padding:16px;max-width:760px;margin:auto}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:-5px}.stat{background:white;border:1px solid var(--line);border-radius:14px;padding:13px 10px;box-shadow:0 4px 15px #14213b08}.stat b{font-size:19px;color:var(--navy)}.stat small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.section{display:flex;justify-content:space-between;align-items:center;margin:23px 2px 11px}.section h2{font-size:16px;margin:0}.section small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tile{background:white;border:1px solid var(--line);border-radius:15px;padding:15px;text-align:left;min-height:104px;cursor:pointer;color:inherit}.tile:active{transform:scale(.985)}.tile .emoji{font-size:22px}.tile b{display:block;font-size:13px;margin:8px 0 3px}.tile small{color:var(--muted);font-size:11px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.action{border:1px solid var(--line);border-radius:13px;background:#fff;padding:14px;font-weight:700;font-size:13px;text-align:left}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;margin-top:12px}.primary{background:var(--navy);color:white;border:0;border-radius:12px;padding:13px 16px;font-weight:750;width:100%;font-size:14px}.ghost{background:#eef2f8;color:var(--navy);border:0;border-radius:11px;padding:10px 13px;font-weight:700}
+#quiz{display:none}.qtop{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.qtext{font-weight:750;font-size:17px;line-height:1.55;margin:18px 0}.option{width:100%;text-align:left;padding:13px;border:1px solid var(--line);border-radius:12px;background:white;margin:6px 0;font-size:14px}.option.selected{border-color:var(--navy);background:#edf2fa}.option.correct{border-color:#16834a;background:#eaf8f0}.option.wrong{border-color:#c33;background:#fff0f0}.note{color:var(--muted);font-size:11px;line-height:1.5;margin-top:14px}footer{text-align:center;color:#8792a5;font-size:11px;padding:25px 10px}
+@media(max-width:360px){.grid{grid-template-columns:1fr}.stats{gap:6px}.stat{padding:10px 7px}}
+</style></head>
+<body>
+<header><div class="top"><div class="brand">MPPSC <span>IQ</span></div><div class="tag">PRELIMS • 2027</div></div><h1>आपकी तैयारी, अब Telegram के अंदर</h1><p>अभ्यास करें • अपनी प्रगति देखें • लक्ष्य पर बने रहें</p></header>
+<main class="wrap">
+<div id="home">
+<div class="stats"><div class="stat"><b id="statTests">0</b><small>दिए गए टेस्ट</small></div><div class="stat"><b id="statScore">—</b><small>औसत स्कोर</small></div><div class="stat"><b id="statWrong">0</b><small>गलत प्रश्न</small></div></div>
+<div class="section"><h2>अभ्यास शुरू करें</h2><small>यूनिट चुनें</small></div>
+<div class="grid">
+<button class="tile" onclick="openUnit('इतिहास')"><span class="emoji">🏛️</span><b>इतिहास</b><small>प्राचीन, मध्यकालीन, आधुनिक</small></button>
+<button class="tile" onclick="openUnit('भूगोल')"><span class="emoji">🌏</span><b>भूगोल</b><small>भारत एवं मध्य प्रदेश</small></button>
+<button class="tile" onclick="openUnit('संविधान')"><span class="emoji">⚖️</span><b>संविधान</b><small>राजव्यवस्था एवं शासन</small></button>
+<button class="tile" onclick="openUnit('अर्थव्यवस्था')"><span class="emoji">📊</span><b>अर्थव्यवस्था</b><small>भारतीय एवं MP अर्थव्यवस्था</small></button>
+<button class="tile" onclick="openUnit('विज्ञान')"><span class="emoji">🔬</span><b>विज्ञान एवं तकनीक</b><small>सामान्य विज्ञान एवं ICT</small></button>
+<button class="tile" onclick="openUnit('मध्य प्रदेश')"><span class="emoji">🌳</span><b>मध्य प्रदेश विशेष</b><small>इतिहास, संस्कृति, योजनाएँ</small></button>
+</div>
+<div class="section"><h2>त्वरित अभ्यास</h2></div>
+<div class="actions"><button class="action" onclick="showNotice('गलत प्रश्नों की सूची वास्तविक टेस्ट डेटा कनेक्ट होने पर उपलब्ध होगी।')">❌ गलत प्रश्न</button><button class="action" onclick="showNotice('PDF नोट्स सेक्शन में आपकी सामग्री जोड़ना बाकी है।')">📚 PDF नोट्स</button><button class="action" onclick="showNotice('आपकी टेस्ट रिपोर्ट बैकएंड कनेक्शन के बाद सेव होगी।')">📈 मेरी रिपोर्ट</button><button class="action" onclick="showNotice('यह सेक्शन जल्द ही उपलब्ध होगा।')">⭐ बुकमार्क</button></div>
+<div class="panel"><b>📌 आज का लक्ष्य</b><p style="font-size:12px;color:#718096;margin:6px 0 0">प्रतिदिन अभ्यास और रिवीजन करें। निरंतरता ही सफलता की कुंजी है।</p></div>
+<p class="note">यह Mini App का प्रारंभिक इंटरफेस है। लाइव प्रश्न बैंक, परिणाम सेविंग, PDF लाइब्रेरी और एडमिन मैनेजमेंट के लिए सुरक्षित सर्वर/API कनेक्शन आवश्यक है।</p>
+</div>
+<div id="quiz">
+<div class="section"><button class="ghost" onclick="goHome()">← वापस</button><small id="unitName">यूनिट टेस्ट</small></div>
+<div class="panel"><div class="qtop"><span id="qcount">प्रश्न 1/3</span><span>डेमो अभ्यास</span></div><div class="qtext" id="question"></div><div id="options"></div><p id="feedback" class="note"></p><button class="primary" id="next" onclick="nextQuestion()">अगला प्रश्न</button></div>
+</div>
+</main><footer>MPPSC IQ · निरंतर अभ्यास और रिवीजन ही सफलता की कुंजी है</footer>
+<script>
+const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();tg.setHeaderColor('#101a32');tg.setBackgroundColor('#f4f6fa')}
+const demo=[
+{q:'भारतीय संविधान सभा के स्थायी अध्यक्ष कौन थे?',o:['डॉ. राजेन्द्र प्रसाद','डॉ. भीमराव अम्बेडकर','जवाहरलाल नेहरू','सच्चिदानंद सिन्हा'],a:0},
+{q:'मध्य प्रदेश की राजधानी कौन-सी है?',o:['इंदौर','भोपाल','जबलपुर','ग्वालियर'],a:1},
+{q:'सिंधु सभ्यता का प्रसिद्ध बंदरगाह कौन-सा था?',o:['कालीबंगा','लोथल','हड़प्पा','बनावली'],a:1}
+];let questions=demo,idx=0,score=0,answered=false,unit='';
+function openUnit(u){unit=u;questions=demo;idx=0;score=0;document.getElementById('home').style.display='none';document.getElementById('quiz').style.display='block';document.getElementById('unitName').textContent=u+' · डेमो टेस्ट';render()}
+function render(){answered=false;document.getElementById('qcount').textContent='प्रश्न '+(idx+1)+'/'+questions.length;document.getElementById('question').textContent=questions[idx].q;document.getElementById('feedback').textContent='';document.getElementById('next').textContent=idx===questions.length-1?'परिणाम देखें':'अगला प्रश्न';document.getElementById('options').innerHTML=questions[idx].o.map((x,i)=>'<button class="option" onclick="choose('+i+')" id="opt'+i+'">'+String.fromCharCode(65+i)+'. '+x+'</button>').join('')}
+function choose(i){if(answered)return;answered=true;const a=questions[idx].a;document.getElementById('opt'+i).classList.add(i===a?'correct':'wrong');if(i===a){score++;document.getElementById('feedback').textContent='✓ सही उत्तर';}else{document.getElementById('opt'+a).classList.add('correct');document.getElementById('feedback').textContent='✕ सही उत्तर: '+questions[idx].o[a]} }
+function nextQuestion(){if(!answered){document.getElementById('feedback').textContent='आगे बढ़ने से पहले एक विकल्प चुनें।';return}if(idx<questions.length-1){idx++;render()}else{document.getElementById('question').textContent='आपका स्कोर: '+score+'/'+questions.length;document.getElementById('options').innerHTML='';document.getElementById('feedback').textContent='यह केवल डेमो टेस्ट है; परिणाम सर्वर पर सेव नहीं हुआ।';document.getElementById('next').textContent='होम पर जाएँ';document.getElementById('next').onclick=goHome}}
+function goHome(){document.getElementById('quiz').style.display='none';document.getElementById('home').style.display='block';document.getElementById('next').onclick=nextQuestion}
+function showNotice(m){if(tg?.showAlert)tg.showAlert(m);else alert(m)}
+</script></body></html>
