@@ -45,7 +45,7 @@ app.get("/",(q,s,n)=>{
   const file=path.join(__dirname,"..","public","index.html");
   require("node:fs").readFile(file,"utf8",(err,html)=>{
     if(err)return n(err);
-    const head='<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b203d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="MPPSC IQ"><link rel="apple-touch-icon" href="/icons/mppsc-iq.svg">';
+    const head='<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b203d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="MPPSC IQ"><link rel="apple-touch-icon" href="/icons/mppsc-iq.svg"><meta name="mobile-web-app-capable" content="yes"><script src="https://telegram.org/js/telegram-web-app.js"></script><script>try{const w=window.Telegram&&window.Telegram.WebApp;if(w){w.ready();w.expand();try{w.setHeaderColor("#0b203d");w.setBackgroundColor("#ffffff")}catch(e){}document.documentElement.classList.add("telegram-mini-app");window.MPPSC_IQ_TELEGRAM=true;window.MPPSC_IQ_TG_USER=w.initDataUnsafe&&w.initDataUnsafe.user||null;}}catch(e){console.warn("Telegram Mini App initialization:",e)}</script>';
     const boot='<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>';
     let page=html;
     if(!/rel=["']manifest["']/.test(page)) page=page.replace(/<head[^>]*>/i,m=>m+head);
