@@ -40,6 +40,19 @@ app.post("/api/tests/:id/import-xlsx",requireAuth,requireAdmin,upload.single("fi
 app.get("/api/resources",requireAuth,ar(async(_q,s)=>{const r=await db.query("SELECT id,title,unit,file_path,created_at FROM resources ORDER BY id DESC");s.json(r.rows);}));
 app.post("/api/resources",requireAuth,requireAdmin,upload.single("file"),ar(async(q,s)=>{if(!q.file)return s.status(400).json({error:"PDF/file चुनें"});const filename=Date.now()+"-"+path.basename(q.file.originalname).replace(/[^\\w.-]/g,"_"),{error}=await supabase.storage.from(bucket).upload(filename,q.file.buffer,{contentType:q.file.mimetype||"application/octet-stream",upsert:false});if(error)throw error;const r=await db.query("INSERT INTO resources(title,unit,file_path) VALUES($1,$2,$3) RETURNING id",[q.body.title||q.file.originalname,q.body.unit||"",filename]);s.json({id:r.rows[0].id});}));
 app.get("/uploads/:file",ar(async(q,s)=>{const {data,error}=await supabase.storage.from(bucket).createSignedUrl(q.params.file,300);if(error)return s.status(404).json({error:"File नहीं मिली"});s.redirect(data.signedUrl);}));
+// PWA app-shell headers: keep the existing quiz HTML and UI unchanged.
+app.get("/",(q,s,n)=>{
+  const file=path.join(__dirname,"..","public","index.html");
+  require("node:fs").readFile(file,"utf8",(err,html)=>{
+    if(err)return n(err);
+    const head='<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b203d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="MPPSC IQ"><link rel="apple-touch-icon" href="/icons/mppsc-iq.svg">';
+    const boot='<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>';
+    let page=html;
+    if(!/rel=["']manifest["']/.test(page)) page=page.replace(/<head[^>]*>/i,m=>m+head);
+    if(!page.includes('navigator.serviceWorker.register("/sw.js")')) page=page.replace(/<\/body>/i,boot+"</body>");
+    s.type("html").send(page);
+  });
+});
 app.use(express.static(path.join(__dirname,"..","public")));app.get("*",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use((e,_q,s,_n)=>{console.error(e);s.status(400).json({error:e.message||"Request failed"});});
 async function connectDatabase(){try{await db.init();dbReady=true;dbLastError="";console.log("Database connected and schema ready");const {error}=await supabase.storage.createBucket(bucket,{public:false,fileSizeLimit:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024});if(error&&!String(error.message).toLowerCase().includes("already"))console.warn("Storage bucket setup:",error.message);}catch(e){dbReady=false;dbLastError=e.message||"Database connection failed";console.error("Database unavailable; web server remains online:",dbLastError);}}
