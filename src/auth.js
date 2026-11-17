@@ -13,6 +13,6 @@ function verifyTelegramInitData(initData,token){
  const user=JSON.parse(p.get("user")||"{}");if(!user.id)throw Error("Telegram user missing");return user;
 }
 function issueToken(payload,secret){return jwt.sign(payload,secret,{expiresIn:"7d",issuer:"mppsc-iq"});}
-function requireAuth(req,res,next){try{const h=req.headers.authorization||"";req.auth=jwt.verify(h.startsWith("Bearer ")?h.slice(7):"",process.env.JWT_SECRET,{issuer:"mppsc-iq"});next();}catch{res.status(401).json({error:"Login required"});}}
+function requireAuth(req,res,next){try{const h=req.headers.authorization||"",cookies=Object.fromEntries((req.headers.cookie||"").split(";").map(x=>x.trim()).filter(Boolean).map(x=>{const i=x.indexOf("=");return [x.slice(0,i),decodeURIComponent(x.slice(i+1))]}));const bearer=h.startsWith("Bearer ")?h.slice(7):"";req.auth=jwt.verify(bearer||cookies.mppsc_iq_token||"",process.env.JWT_SECRET,{issuer:"mppsc-iq"});next();}catch{res.status(401).json({error:"Login required"});}}
 function requireAdmin(req,res,next){if(req.auth?.role!=="admin")return res.status(403).json({error:"Admin only"});next();}
 module.exports={verifyTelegramInitData,issueToken,requireAuth,requireAdmin};
