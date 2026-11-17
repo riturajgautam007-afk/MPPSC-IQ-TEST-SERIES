@@ -1,3 +1,6 @@
+const dns=require("node:dns");
+// Prefer IPv4: Render instances may not have outbound IPv6 routing to Supabase direct DB.
+dns.setDefaultResultOrder("ipv4first");
 const {Pool}=require("pg");
 const pool=new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:5,idleTimeoutMillis:30000,connectionTimeoutMillis:10000});
 async function init(){
