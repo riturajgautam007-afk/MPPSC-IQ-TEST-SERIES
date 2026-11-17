@@ -1,0 +1,21 @@
+{
+  "id": "/admin.html",
+  "name": "MPPSC IQ Admin",
+  "short_name": "MPPSC Admin",
+  "description": "MPPSC IQ Admin Panel",
+  "lang": "hi",
+  "start_url": "/admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f5f9",
+  "theme_color": "#101a32",
+  "icons": [
+    {
+      "src": "/mppsc-iq-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
