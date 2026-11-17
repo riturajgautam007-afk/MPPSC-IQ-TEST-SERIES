@@ -4,8 +4,8 @@
   "start_url": "/install/",
   "scope": "/install/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#10264f",
+  "background_color": "#0b203d",
+  "theme_color": "#0b203d",
   "description": "MPPSC Prelims और Mains की तैयारी का डिजिटल प्लेटफॉर्म",
   "icons": [
     {
