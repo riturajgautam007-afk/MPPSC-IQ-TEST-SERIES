@@ -460,4 +460,7 @@ render();</script></body></html><style>
 /* Keep the program heading on one line across screen sizes */
 .header .title{white-space:nowrap;display:block;width:100%;font-size:clamp(11px,4.1vw,20px);line-height:1.2;letter-spacing:0;text-align:center;}
 @media(min-width:700px){.header .title{font-size:20px;letter-spacing:.35px}}
+
+/* Mobile app first layout */
+html,body{width:100%;max-width:100%;min-width:320px;overflow-x:hidden}body{-webkit-text-size-adjust:100%;overscroll-behavior-x:none}.wrap{width:100%;max-width:none;margin:8px auto 104px;padding-left:8px;padding-right:8px}.header{width:100%;padding-left:10px;padding-right:10px}.langbar{width:100%;padding-left:8px;padding-right:8px}.unitbar{width:100%;grid-template-columns:repeat(5,minmax(0,1fr))!important}.unitbar button{min-width:0;min-height:42px;white-space:normal;overflow-wrap:anywhere}.meta{max-width:100%;white-space:normal;flex-wrap:wrap;overflow:visible;justify-content:space-around}.card{width:100%;max-width:100%;min-width:0}.option{min-height:44px;touch-action:manipulation}.bottom{padding-left:5px;padding-right:5px;padding-bottom:calc(8px + env(safe-area-inset-bottom));gap:4px}.bottom button,.bottom .score-chip{min-height:42px;padding:8px 3px;font-size:10.5px}@media(min-width:601px){.wrap{max-width:760px;padding-left:14px;padding-right:14px}.unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important}}@media(max-width:380px){.unitbar{grid-template-columns:repeat(4,minmax(0,1fr))!important}.bottom button,.bottom .score-chip{font-size:9px}.meta{font-size:9px}}
 </style>
