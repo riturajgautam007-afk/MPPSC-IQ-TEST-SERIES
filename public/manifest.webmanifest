@@ -11,10 +11,10 @@
   "theme_color": "#102d52",
   "icons": [
     {
-      "src": "/icons/mppsc-iq.svg",
+      "src": "/icons/mppsc-iq.svg?v=20261118",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
