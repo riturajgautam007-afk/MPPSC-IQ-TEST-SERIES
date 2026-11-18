@@ -1,12 +1,14 @@
 {
+  "id": "/",
   "name": "MPPSC IQ",
   "short_name": "MPPSC IQ",
-  "start_url": "/install/",
-  "scope": "/install/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0b203d",
-  "theme_color": "#0b203d",
-  "description": "MPPSC Prelims और Mains की तैयारी का डिजिटल प्लेटफॉर्म",
+  "orientation": "portrait",
+  "background_color": "#07172f",
+  "theme_color": "#102d52",
+  "description": "MPPSC IQ Prelims and Mains Preparation App",
   "icons": [
     {
       "src": "/install/icon.svg",
