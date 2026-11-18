@@ -1,20 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
 <defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07172f"/><stop offset=".55" stop-color="#102d52"/><stop offset="1" stop-color="#174a68"/></linearGradient>
-  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0bd"/><stop offset=".48" stop-color="#e7bd67"/><stop offset="1" stop-color="#b98535"/></linearGradient>
-  <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8ce8e7"/><stop offset="1" stop-color="#2aa6b2"/></linearGradient>
-  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#061329"/><stop offset=".52" stop-color="#102746"/><stop offset="1" stop-color="#173b5c"/></linearGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff1c7"/><stop offset=".28" stop-color="#e9c878"/><stop offset=".68" stop-color="#b98235"/><stop offset="1" stop-color="#f7dfa0"/></linearGradient>
+<filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
 </defs>
 <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-<rect x="14" y="14" width="484" height="484" rx="100" fill="none" stroke="url(#gold)" stroke-width="7"/>
-<rect x="27" y="27" width="458" height="458" rx="88" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="2"/>
-<path d="M90 112h332" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" opacity=".8"/>
-<circle cx="74" cy="112" r="5" fill="#f3d58d"/><circle cx="438" cy="112" r="5" fill="#f3d58d"/>
-<text x="256" y="167" text-anchor="middle" font-family="Arial,sans-serif" font-size="43" font-weight="800" letter-spacing="9" fill="#f4d895">MPPSC</text>
-<path d="M256 194l-17 18 17 18 17-18z" fill="url(#gold)"/>
-<text x="256" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="190" font-weight="900" letter-spacing="-12" fill="#000" opacity=".24" filter="url(#shadow)">IQ</text>
-<text x="256" y="338" text-anchor="middle" font-family="Arial,sans-serif" font-size="190" font-weight="900" letter-spacing="-12" fill="#ffffff">IQ</text>
-<path d="M142 374h228" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
-<path d="M256 396l8 15 17 2-12 12 3 17-16-8-16 8 3-17-12-12 17-2z" fill="url(#gold)"/>
-<text x="256" y="465" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="5" fill="url(#cyan)">LEARN • PRACTICE • SUCCEED</text>
+<rect x="9" y="9" width="494" height="494" rx="108" fill="none" stroke="url(#gold)" stroke-width="10"/>
+<rect x="25" y="25" width="462" height="462" rx="94" fill="none" stroke="#fff0c5" stroke-opacity=".65" stroke-width="2"/>
+<rect x="35" y="35" width="442" height="442" rx="85" fill="none" stroke="#d4a94f" stroke-opacity=".28" stroke-width="2"/>
+<path d="M90 105h332" stroke="url(#gold)" stroke-width="2" opacity=".8"/>
+<circle cx="75" cy="105" r="4" fill="#f6dfaa"/><circle cx="437" cy="105" r="4" fill="#f6dfaa"/>
+<text x="256" y="337" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="236" font-weight="900" letter-spacing="-17" fill="#e4bd6e" opacity=".24" filter="url(#glow)">IQ</text>
+<text x="256" y="330" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="236" font-weight="900" letter-spacing="-17" fill="#fff">IQ</text>
+<path d="M150 388h212" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+<path d="M256 377l7 13 15 2-11 10 3 15-14-7-14 7 3-15-11-10 15-2z" fill="url(#gold)"/>
 </svg>
