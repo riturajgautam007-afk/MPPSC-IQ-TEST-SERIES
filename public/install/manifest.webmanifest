@@ -11,10 +11,10 @@
   "description": "MPPSC IQ Prelims and Mains Preparation App",
   "icons": [
     {
-      "src": "/install/icon.svg",
+      "src": "/install/icon.svg?v=20261118",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
