@@ -126,9 +126,27 @@ async function addQuestion(){try{if(!$("test").value)throw Error("पहले �
 async function importExcel(){try{const f=$("excel").files[0];if(!f)throw Error("Excel फाइल चुनें");if(!$("importTest").value)throw Error("पहले टेस्ट बनाएँ");const fd=new FormData();fd.append("file",f);const d=await api("/tests/"+$("importTest").value+"/import-xlsx",{method:"POST",body:fd});toast("Import: "+d.imported+" | छोड़े गए: "+d.skipped);$("excel").value="";await refresh()}catch(e){toast(e.message)}}
 
 let parsedTextQuestions=[];
-function parseQuestionText(raw){const clean=raw.replace(/\\r/g,"").replace(/\\*\\*/g,"").trim();const blocks=clean.split(/(?=प्रश्न\\s*\\d+\\s*\\.)/).map(x=>x.trim()).filter(Boolean);const out=[];for(const block of blocks){const am=block.match(/उत्तर\\s*\\/\\s*Answer\\s*:\\s*\\(([A-D])\\)\\s*([^\
-]*)/i)||block.match(/उत्तर\\s*:\\s*\\(([A-D])\\)\\s*([^\
-]*)/i);if(!am)continue;const before=block.slice(0,am.index).trim();const firstOpt=before.search(/\\(A\\)\\s*/i);if(firstOpt<0)continue;const q=before.slice(0,firstOpt).replace(/^प्रश्न\\s*\\d+\\s*\\.\\s*/i,"").trim();const optText=before.slice(firstOpt);const matches=[...optText.matchAll(/\\(([A-D])\\)\\s*([\\s\\S]*?)(?=\\s+\\([A-D]\\)\\s*|$)/gi)];const opts=[];for(const m of matches)opts["ABCD".indexOf(m[1].toUpperCase())]=m[2].replace(/\\s+/g," ").trim();if(!q||opts.length!==4||opts.some(x=>!x))continue;out.push({question_hi:q,question_en:"",options:opts,correct_index:"ABCD".indexOf(am[1].toUpperCase()),explanation:""});}return out;}
+function parseQuestionText(raw) {
+  const clean = raw.replace(/\r/g, "").replace(/\*\*/g, "").trim();
+  const blocks = clean.split(/(?=प्रश्न\s*\d+\s*\.)/).filter(x => x.trim());
+  const out = [];
+  for (const block of blocks) {
+    const answer = block.match(/उत्तर\s*\/\s*Answer\s*:\s*\(([A-D])\)\s*([^\n]*)/i)
+      || block.match(/उत्तर\s*:\s*\(([A-D])\)\s*([^\n]*)/i);
+    if (!answer) continue;
+    const before = block.slice(0, answer.index).trim();
+    const firstOption = before.search(/\(A\)\s*/i);
+    if (firstOption < 0) continue;
+    const question = before.slice(0, firstOption).replace(/^प्रश्न\s*\d+\s*\.\s*/i, "").trim();
+    const optionText = before.slice(firstOption);
+    const matches = [...optionText.matchAll(/\(([A-D])\)\s*([\s\S]*?)(?=\s+\([A-D]\)\s*|$)/gi)];
+    const options = [];
+    for (const m of matches) options["ABCD".indexOf(m[1].toUpperCase())] = m[2].replace(/\s+/g, " ").trim();
+    if (!question || options.length !== 4 || options.some(x => !x)) continue;
+    out.push({question_hi:question, question_en:"", options, correct_index:"ABCD".indexOf(answer[1].toUpperCase()), explanation:answer[2] || ""});
+  }
+  return out;
+}
 function previewTextImport(){const raw=$("questionText").value;parsedTextQuestions=parseQuestionText(raw);$("textImportStatus").textContent="पहचाने गए प्रश्न: "+parsedTextQuestions.length+" | छोड़े गए/अधूरे: "+Math.max(0,(raw.match(/प्रश्न\\s*\\d+\\s*\\./g)||[]).length-parsedTextQuestions.length);$("textImportPreview").innerHTML=parsedTextQuestions.slice(0,3).map((x,i)=>'<div class="listitem"><div><b>'+(i+1)+'. '+esc(x.question_hi)+'</b><small>'+x.options.map((v,j)=>'('+String.fromCharCode(65+j)+') '+esc(v)).join(' · ')+'</small><small>सही उत्तर: '+String.fromCharCode(65+x.correct_index)+'</small></div></div>').join("")+(parsedTextQuestions.length>3?'<p>और '+(parsedTextQuestions.length-3)+' प्रश्न…</p>':"");$("textImportBtn").disabled=!parsedTextQuestions.length;}
 async function importTextQuestions(){try{if(!$("textImportTest").value)throw Error("पहले टेस्ट चुनें");if(!parsedTextQuestions.length)previewTextImport();if(!parsedTextQuestions.length)throw Error("कोई पूरा प्रश्न नहीं मिला। फॉर्मेट जाँचें।");if(!confirm(parsedTextQuestions.length+" प्रश्न चुने हुए टेस्ट में Import करें?"))return;const btn=$("textImportBtn");btn.disabled=true;let done=0;for(const x of parsedTextQuestions){await api("/tests/"+$("textImportTest").value+"/questions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(x)});done++;$("textImportStatus").textContent="Import हो रहा है: "+done+"/"+parsedTextQuestions.length;}toast(done+" प्रश्न सफलतापूर्वक Import हुए");$("questionText").value="";parsedTextQuestions=[];$("textImportPreview").innerHTML="";$("textImportStatus").textContent="Import पूरा हुआ।";await refresh();}catch(e){toast(e.message)}finally{$("textImportBtn").disabled=!parsedTextQuestions.length}}
 
