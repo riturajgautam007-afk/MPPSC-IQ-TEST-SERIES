@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#101a32"/><path d="M72 144q88-32 184 20v224q-96-52-184-20z" fill="#fff" stroke="#e6b95f" stroke-width="14" stroke-linejoin="round"/><path d="M440 144q-88-32-184 20v224q96-52 184-20z" fill="#f4f6fa" stroke="#e6b95f" stroke-width="14" stroke-linejoin="round"/><path d="M256 164v224" stroke="#e6b95f" stroke-width="12"/><text x="256" y="116" text-anchor="middle" font-family="Arial,sans-serif" font-size="54" font-weight="900" fill="#e6b95f">MPPSC IQ</text><path d="M118 230h92M118 270h92M302 230h92M302 270h92" stroke="#243b63" stroke-width="13" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07172f"/><stop offset=".55" stop-color="#102d52"/><stop offset="1" stop-color="#174a68"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0bd"/><stop offset=".48" stop-color="#e7bd67"/><stop offset="1" stop-color="#b98535"/></linearGradient>
+  <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8ce8e7"/><stop offset="1" stop-color="#2aa6b2"/></linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<rect x="14" y="14" width="484" height="484" rx="100" fill="none" stroke="url(#gold)" stroke-width="7"/>
+<rect x="27" y="27" width="458" height="458" rx="88" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="2"/>
+<path d="M90 112h332" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+<circle cx="74" cy="112" r="5" fill="#f3d58d"/><circle cx="438" cy="112" r="5" fill="#f3d58d"/>
+<text x="256" y="167" text-anchor="middle" font-family="Arial,sans-serif" font-size="43" font-weight="800" letter-spacing="9" fill="#f4d895">MPPSC</text>
+<path d="M256 194l-17 18 17 18 17-18z" fill="url(#gold)"/>
+<text x="256" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="190" font-weight="900" letter-spacing="-12" fill="#000" opacity=".24" filter="url(#shadow)">IQ</text>
+<text x="256" y="338" text-anchor="middle" font-family="Arial,sans-serif" font-size="190" font-weight="900" letter-spacing="-12" fill="#ffffff">IQ</text>
+<path d="M142 374h228" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+<path d="M256 396l8 15 17 2-12 12 3 17-16-8-16 8 3-17-12-12 17-2z" fill="url(#gold)"/>
+<text x="256" y="465" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="5" fill="url(#cyan)">LEARN • PRACTICE • SUCCEED</text>
+</svg>
