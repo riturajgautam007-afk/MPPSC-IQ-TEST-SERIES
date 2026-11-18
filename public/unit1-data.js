@@ -1,1 +1,0 @@
-window.MPPSC_IQ_UNIT1_DATA=[];
