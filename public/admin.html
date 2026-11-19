@@ -160,8 +160,40 @@ function previewTextImport(){const raw=$("questionText").value;parsedTextQuestio
 async function importTextQuestions(){try{const testId=$("textImportTest").value;if(!testId)throw Error("मौजूदा Unit/Test चुनें");const raw=$("questionText").value.trim();if(!raw)throw Error("प्रश्नों का Text Paste करें");if(!parsedTextQuestions.length)previewTextImport();if(!parsedTextQuestions.length)throw Error("कोई पूरा प्रश्न Preview में नहीं मिला। फॉर्मेट जाँचें।");if(!confirm(parsedTextQuestions.length+" पहचाने गए प्रश्न इसी मौजूदा टेस्ट में जोड़ें? पुराने प्रश्न सुरक्षित रहेंगे।"))return;const btn=$("textImportBtn");btn.disabled=true;$("textImportStatus").textContent="प्रश्न Import हो रहे हैं…";const d=await api("/tests/"+testId+"/import-text",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:raw})});toast(d.imported+" नए प्रश्न जुड़ गए | कुल "+d.total+" प्रश्न");$("questionText").value="";parsedTextQuestions=[];$("textImportPreview").innerHTML="";$("textImportStatus").textContent="सफलता: "+d.imported+" नए प्रश्न जुड़े। छोड़े गए: "+d.skipped+" | अब कुल प्रश्न: "+d.total;if(d.skippedDetails?.length)$("textImportPreview").innerHTML="<b>जिन प्रश्नों को पहचाना नहीं जा सका:</b><br>"+d.skippedDetails.map(x=>"प्रश्न "+x.number+": "+esc(x.reason)).join("<br>");await refresh();const active=document.querySelector("#unitButtons button.active");if(active)selectQuestionUnit(active.dataset.unit,active);$("questionText").focus();}catch(e){toast(e.message);$("textImportStatus").textContent=e.message;}finally{$("textImportBtn").disabled=!parsedTextQuestions.length}}
 
 
-async function loadQuestions(){try{const id=$("manageTest").value;if(!id)throw Error("टेस्ट चुनें");const d=await api("/tests/"+id+"/questions");managedQuestionCache=d.questions||[];$("managedQuestions").innerHTML=managedQuestionCache.length?managedQuestionCache.map((q,i)=>'<div class="listitem" style="display:block"><b>'+ (i+1)+'. '+esc(q.question_hi)+'</b><small>'+q.options.map((v,j)=>'('+String.fromCharCode(65+j)+') '+esc(v)).join(' · ')+'</small><div class="row" style="margin-top:8px"><button class="btn soft" onclick="editQuestion('+Number(q.id)+')">संपादित करें</button><button class="btn danger" onclick="deleteQuestion('+Number(q.id)+')">हटाएँ</button></div></div>').join(""):'इस टेस्ट में अभी प्रश्न नहीं हैं।';}catch(e){toast(e.message)}}
-async function editQuestion(id){const q=managedQuestionCache.find(x=>Number(x.id)===Number(id));if(!q)return;const hi=prompt("प्रश्न (हिंदी)",q.question_hi);if(hi===null)return;const en=prompt("प्रश्न (English)",q.question_en||"");if(en===null)return;const opts=q.options.map((v,i)=>prompt("विकल्प "+String.fromCharCode(65+i),v));if(opts.some(v=>v===null))return;const answer=prompt("सही उत्तर A/B/C/D",String.fromCharCode(65+Number(q.correct_index)));if(answer===null)return;const ai="ABCD".indexOf(answer.trim().toUpperCase());if(ai<0) return toast("सही उत्तर A/B/C/D में दें");const explanation=prompt("व्याख्या",q.explanation||"");if(explanation===null)return;try{await api("/questions/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({question_hi:hi,question_en:en,options:opts,correct_index:ai,explanation})});toast("प्रश्न अपडेट हो गया");await loadQuestions();await refresh()}catch(e){toast(e.message)}}
+let editingQuestionId=null;
+function renderManagedQuestions(){
+ const host=$("managedQuestions");
+ if(!managedQuestionCache.length){host.textContent="इस टेस्ट में अभी प्रश्न नहीं हैं।";return;}
+ host.innerHTML=managedQuestionCache.map((q,i)=>{
+  const editing=Number(editingQuestionId)===Number(q.id);
+  const letters=["A","B","C","D"];
+  if(!editing){
+   return '<div class="listitem" style="display:block;padding:14px 0"><b>'+(i+1)+'. '+esc(q.question_hi)+'</b><small>'+q.options.map((v,j)=>'('+letters[j]+') '+esc(v)).join(' · ')+'</small><div class="row" style="margin-top:9px"><button class="btn soft" onclick="editQuestion('+Number(q.id)+')">✏️ Edit & Save</button><button class="btn danger" onclick="deleteQuestion('+Number(q.id)+')">हटाएँ</button></div></div>';
+  }
+  return '<div class="card" style="border:2px solid #e6b95f;margin:12px 0;background:#fffdf8">'+
+   '<div style="font-weight:800;color:#936500;margin-bottom:10px">प्रश्न '+(i+1)+' · संपादन मोड</div>'+
+   '<label>प्रश्न</label><div id="edit-q-'+q.id+'" contenteditable="true" style="padding:12px;border:1px solid #dce3ed;border-radius:11px;background:white;min-height:58px;white-space:pre-wrap">'+esc(q.question_hi)+'</div>'+
+   '<div class="grid">'+q.options.map((v,j)=>'<div><label>विकल्प '+letters[j]+'</label><div id="edit-opt-'+q.id+'-'+j+'" contenteditable="true" style="padding:12px;border:1px solid #dce3ed;border-radius:11px;background:white;min-height:48px;white-space:pre-wrap">'+esc(v)+'</div><label class="checkline" style="display:flex;gap:7px;align-items:center"><input type="radio" name="correct-'+q.id+'" value="'+j+'" '+(Number(q.correct_index)===j?'checked':'')+' style="width:18px;min-height:18px"> यही सही उत्तर है</label></div>').join('')+'</div>'+
+   '<label>व्याख्या एवं फैक्ट टेबल</label><div id="edit-exp-'+q.id+'" contenteditable="true" style="padding:12px;border:1px solid #dce3ed;border-radius:11px;background:white;min-height:130px;white-space:pre-wrap">'+esc(q.explanation||"")+'</div>'+
+   '<div class="row" style="margin-top:12px"><button class="btn gold full" onclick="saveQuestion('+Number(q.id)+')">💾 Save Changes</button><button class="btn soft full" onclick="cancelEditQuestion()">रद्द करें</button></div></div>';
+ }).join("");
+}
+async function loadQuestions(){try{const id=$("manageTest").value;if(!id)throw Error("टेस्ट चुनें");const d=await api("/tests/"+id+"/questions");managedQuestionCache=d.questions||[];editingQuestionId=null;renderManagedQuestions();}catch(e){toast(e.message)}}
+function editQuestion(id){editingQuestionId=Number(id);renderManagedQuestions();const el=$("edit-q-"+id);if(el)el.focus();}
+function cancelEditQuestion(){editingQuestionId=null;renderManagedQuestions();}
+async function saveQuestion(id){
+ try{
+  const q=managedQuestionCache.find(x=>Number(x.id)===Number(id));if(!q)throw Error("प्रश्न नहीं मिला");
+  const question_hi=$("edit-q-"+id).innerText.trim();
+  const options=[0,1,2,3].map(i=>$("edit-opt-"+id+"-"+i).innerText.trim());
+  const selected=document.querySelector('input[name="correct-'+id+'"]:checked');
+  if(!question_hi||options.some(x=>!x))throw Error("प्रश्न और चारों विकल्प खाली नहीं हो सकते");
+  if(!selected)throw Error("सही उत्तर चुनें");
+  const explanation=$("edit-exp-"+id).innerText.trim();
+  await api("/questions/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({question_hi,question_en:q.question_en||"",options,correct_index:Number(selected.value),explanation})});
+  editingQuestionId=null;toast("पूरा प्रश्न, विकल्प, उत्तर और व्याख्या एक साथ सेव हो गए");await loadQuestions();await refresh();
+ }catch(e){toast(e.message)}
+}
 async function deleteQuestion(id){if(!confirm("क्या यह प्रश्न हटाना चाहते हैं?"))return;try{await api("/questions/"+id,{method:"DELETE"});toast("प्रश्न हटा दिया गया");await loadQuestions();await refresh()}catch(e){toast(e.message)}}
 
 async function uploadResource(){try{const f=$("pdf").files[0];if(!f)throw Error("फाइल चुनें");const fd=new FormData();fd.append("file",f);fd.append("title",$("rt").value.trim());fd.append("unit",$("ru").value.trim());await api("/resources",{method:"POST",body:fd});$("pdf").value="";$("rt").value="";$("ru").value="";toast("फाइल अपलोड सफल")}catch(e){toast(e.message)}}
