@@ -332,7 +332,7 @@ async function loadUnit2Extras(){
    const r=await fetch('/api/tests/'+encodeURIComponent(t.id)+'/questions',{credentials:'same-origin'});
    if(!r.ok)return [];
    const d=await r.json();
-   return (d.questions||[]).map(q=>({q:q.question_hi||q.question_en||'',en:q.question_en||q.question_hi||'',options:Array.isArray(q.options)?q.options:[],answer:Number(q.correct_index),ex:q.explanation||''}));
+   return (d.questions||[]).map(q=>({q:q.question_hi||q.question_en||'',en:q.question_en||'',options:Array.isArray(q.options)?q.options:[],answer:Number(q.correct_index),ex:q.explanation||''}));
   }));
   const extras=batches.flat().filter(q=>q.q&&q.options.length===4&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<4);
   const seen=new Set(UNIT2_DATA.map(q=>String(q.q||'').trim()));
@@ -462,7 +462,11 @@ function render(){
   const q=DATA[idx],chosen=answers[idx],opts=q.options||[];
   // For questions 1401 onward, keep Hindi and English completely separate.
   const separateLang = (isMixedMode?q.__unit===6:activeUnit===6) || activeUnit===2 || idx >= 1400;
-  const questionText = separateLang ? (lang==='hi'?(q.q||''):(q.en||'')) : (lang==='hi'?(q.q||q.en):(q.en||q.q));
+  const rawHindi=String(q.q||'');
+  const bilingual=rawHindi.match(/^([\\s\\S]*?[?।])\\s+([A-Z][A-Za-z][\\s\\S]*)$/);
+  const hindiOnly=bilingual?bilingual[1].trim():rawHindi;
+  const englishOnly=String(q.en||'').trim()||(bilingual?bilingual[2].trim():'');
+  const questionText = separateLang ? (lang==='hi'?hindiOnly:englishOnly) : (lang==='hi'?(q.q||q.en):(q.en||q.q));
   const isPairQuestion=/(युग्म|सुमेलित|मिलान|match(?:ing)?|correctly matched|incorrectly matched)/i.test(questionText);
   const optionRows=opts.map((o,k)=>{let raw=String(o??'');let parts=separateLang?raw.split(/\s*\/\s*/):raw.split(/\s+\/\s+/);let shown=separateLang?(lang==='hi'?(parts[0]||''):(parts.length>1?parts.slice(1).join(' / '):'')):(lang==='hi'?(parts[0]||o):(parts.length>1?parts.slice(1).join(' / '):o));let cls=chosen!==undefined&&k===q.answer?'correct':'';if(chosen===k&&k!==q.answer)cls='wrong';return {k,shown,cls};});
   const options=isPairQuestion?`<div class="match-table-wrap statement-table-wrap"><table class="match-table statement-table answer-match-table"><thead><tr><th>${lang==='hi'?'विकल्प':'Option'}</th><th>${lang==='hi'?'युग्म / मिलान':'Pair / Match'}</th></tr></thead><tbody>${optionRows.map(({k,shown,cls})=>`<tr><td><button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}>${'ABCD'[k]||k+1}.</button></td><td><button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}>${esc(shown)}</button></td></tr>`).join('')}</tbody></table></div>`:optionRows.map(({k,shown,cls})=>`<button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}><span class="letter">${'ABCD'[k]||k+1}.</span><span>${esc(shown)}</span></button>`).join('')+'</div>';
