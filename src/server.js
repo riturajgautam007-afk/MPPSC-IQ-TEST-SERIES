@@ -6,7 +6,7 @@ let dbReady=false,dbLastError="Database connection is not ready";
 if(!secret||secret.length<32)throw new Error("JWT_SECRET must be at least 32 characters");
 if(!process.env.DATABASE_URL||!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw new Error("DATABASE_URL, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
 const supabase=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}}),bucket=process.env.SUPABASE_STORAGE_BUCKET||"mppsc-resources";
-app.disable("x-powered-by");app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"2mb"}));
+app.disable("x-powered-by");app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"2mb"}));const allowedOrigins=new Set(["https://mppsc-iq-quiz-miniapp.onrender.com","https://mppsc-iq-student-miniapp.onrender.com","https://mppsc-iq-install.onrender.com","https://riturajgautam007-afk.github.io"]);app.use((req,res,next)=>{const origin=req.headers.origin;if(origin&&allowedOrigins.has(origin)){res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Vary","Origin");res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");res.setHeader("Access-Control-Allow-Methods","GET, POST, PUT, OPTIONS");}if(req.method==="OPTIONS")return res.sendStatus(204);next();});
 // Keep the web app online even if the database is temporarily unreachable.
 app.use("/api",(q,s,n)=>{if(q.path==="/health"||q.path==="/ready")return n();if(!dbReady)return s.status(503).json({error:"Database temporarily unavailable. Please try again shortly."});n();});
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024}});
