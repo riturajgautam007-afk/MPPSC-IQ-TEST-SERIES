@@ -41,20 +41,27 @@ app.post("/api/tests/:id/import-text",requireAuth,requireAdmin,ar(async(q,s)=>{
  const raw=String(q.body?.text||"").replace(/\r\n?/g,"\n").trim();
  if(!raw)return s.status(400).json({error:"प्रश्नों का Text Paste करें"});
  if(raw.length>1500000)return s.status(413).json({error:"Text बहुत बड़ा है। इसे छोटे भागों में Import करें।"});
- const blocks=raw.split(/(?=^\s*(?:\*\*)?\s*(?:प्रश्न|Question)\s*\d+\s*[\.\):]?)/mi).map(x=>x.trim()).filter(Boolean);
+ const clean=raw.replace(/\*\*/g,"");
+ const blocks=clean.split(/(?=^\s*(?:प्रश्न|Question)\s*\d+\s*[.):])/mi).map(x=>x.trim()).filter(Boolean);
  const parsed=[],bad=[];
  for(let i=0;i<blocks.length;i++){
-  const block=blocks[i].replace(/^\s*(?:\*\*)?\s*(?:प्रश्न|Question)\s*\d+\s*[\.\):]?\s*/i,"");
-  const firstMatch=block.match(/\(A\)\s*/i);const first=firstMatch?firstMatch.index:-1;
-  const opts=[];if(first>=0){const optionText=block.slice(first);const optionRe=/\(([A-D])\)\s*([\s\S]*?)(?=\s+\([A-D]\)\s*|$)/gi;let match;while((match=optionRe.exec(optionText))!==null)opts.push({letter:match[1].toUpperCase(),value:match[2].trim()});}
-  const ans=block.match(/(?:\*\*)?\s*(?:उत्तर|सही\s*उत्तर|Answer|Correct\s*Answer)\s*[:：\-]?\s*\(?([A-D])\)?/i);
-  const explanationMatch=block.match(/(?:\*\*)?\s*(?:व्याख्या|Explanation)\s*[:：\-]?\s*([\s\S]*)$/i);
-  const question=(first>=0?block.slice(0,first):"").trim().replace(/^\*+|\*+$/g,"").trim();
-  const ordered=["A","B","C","D"].map(letter=>opts.find(o=>o.letter===letter)?.value||"");
-  if(!question||ordered.some(x=>!x)||opts.length!==4||!ans){bad.push({number:i+1,reason:"प्रश्न/चार विकल्प/उत्तर पहचान नहीं पाए"});continue;}
-  const answer=ans[1].toUpperCase().charCodeAt(0)-65;
-  const explanation=explanationMatch?explanationMatch[1].trim().replace(/\*+$/,"").trim():"";
-  parsed.push({question,options:ordered,answer,explanation});
+  const block=blocks[i].replace(/^\s*(?:प्रश्न|Question)\s*\d+\s*[.):]\s*/i,"").trim();
+  const ansRe=/(?:उत्तर|सही\s*उत्तर|Answer|Correct\s*Answer)\s*[:：\-]?\s*\(?\s*([A-D])\s*\)?/i;
+  const ans=ansRe.exec(block);
+  if(!ans){bad.push({number:i+1,reason:"उत्तर: (A/B/C/D) नहीं मिला"});continue;}
+  const optionArea=block.slice(0,ans.index);
+  const optionRe=/\(\s*([A-D])\s*\)\s*/gi;
+  const marks=[...optionArea.matchAll(optionRe)];
+  const question=(marks.length?optionArea.slice(0,marks[0].index):"").trim();
+  const options=["A","B","C","D"].map(letter=>{
+   const m=marks.find(x=>x[1].toUpperCase()===letter);
+   if(!m)return "";
+   const next=marks.find(x=>x.index>m.index);
+   return optionArea.slice(m.index+m[0].length,next?next.index:optionArea.length).replace(/\s+/g," ").trim();
+  });
+  const explanation=block.slice(ans.index+ans[0].length).replace(/^\s*(?:व्याख्या|Explanation)?\s*[:：\-]?\s*/i,"").trim().replace(/\*+$/,"").trim();
+  if(!question||options.some(x=>!x)||marks.length!==4){bad.push({number:i+1,reason:"प्रश्न और (A), (B), (C), (D) के चारों विकल्प स्पष्ट नहीं मिले"});continue;}
+  parsed.push({question,options,answer:ans[1].toUpperCase().charCodeAt(0)-65,explanation});
  }
  if(!parsed.length)return s.status(400).json({error:"कोई वैध प्रश्न नहीं मिला। प्रश्न 1., (A), (B), (C), (D), उत्तर: (B) वाला Format रखें।",skipped:bad});
  const testId=Number(q.params.id);
