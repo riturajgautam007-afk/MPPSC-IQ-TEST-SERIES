@@ -45,9 +45,8 @@ app.post("/api/tests/:id/import-text",requireAuth,requireAdmin,ar(async(q,s)=>{
  const parsed=[],bad=[];
  for(let i=0;i<blocks.length;i++){
   const block=blocks[i].replace(/^\s*(?:\*\*)?\s*(?:प्रश्न|Question)\s*\d+\s*[\.\):]?\s*/i,"");
-  const optionRe=/^\s*\(?([A-D])\)?[.)]\s*(.+?)\s*$/gim;
-  const opts=[];let match,first=-1;
-  while((match=optionRe.exec(block))!==null){if(first<0)first=match.index;opts.push({letter:match[1].toUpperCase(),value:match[2].trim()});}
+  const firstMatch=block.match(/\(A\)\s*/i);const first=firstMatch?firstMatch.index:-1;
+  const opts=[];if(first>=0){const optionText=block.slice(first);const optionRe=/\(([A-D])\)\s*([\s\S]*?)(?=\s+\([A-D]\)\s*|$)/gi;let match;while((match=optionRe.exec(optionText))!==null)opts.push({letter:match[1].toUpperCase(),value:match[2].trim()});}
   const ans=block.match(/(?:\*\*)?\s*(?:उत्तर|सही\s*उत्तर|Answer|Correct\s*Answer)\s*[:：\-]?\s*\(?([A-D])\)?/i);
   const explanationMatch=block.match(/(?:\*\*)?\s*(?:व्याख्या|Explanation)\s*[:：\-]?\s*([\s\S]*)$/i);
   const question=(first>=0?block.slice(0,first):"").trim().replace(/^\*+|\*+$/g,"").trim();
