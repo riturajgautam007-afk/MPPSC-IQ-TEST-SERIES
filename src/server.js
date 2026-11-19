@@ -50,6 +50,8 @@ app.get("/",(q,s,n)=>{
     let page=html;
     if(!/rel=["']manifest["']/.test(page)) page=page.replace(/<head[^>]*>/i,m=>m+head);
     if(!page.includes('navigator.serviceWorker.register("/sw.js")')) page=page.replace(/<\/body>/i,boot+"</body>");
+    const unit2TestsLink='<div id="unit2TestSeriesLink" style="max-width:980px;margin:10px auto;padding:0 12px"><a href="/unit2-tests.html" style="display:flex;align-items:center;justify-content:center;gap:9px;padding:12px 16px;border:1px solid #d7b653;border-radius:13px;background:linear-gradient(110deg,#10294a,#1d4774);color:#ffe08a;text-decoration:none;font-weight:800;font-size:15px;box-shadow:0 4px 14px #0b203d22">📝 UNIT 2 · अपना टेस्ट हल करें / TEST SERIES <span aria-hidden="true">→</span></a></div>';
+    if(!page.includes('id="unit2TestSeriesLink"')) page=page.replace(/<\/header>/i,'</header>'+unit2TestsLink);
     s.type("html").send(page);
   });
 });
