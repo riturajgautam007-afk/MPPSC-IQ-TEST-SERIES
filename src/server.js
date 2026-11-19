@@ -37,6 +37,40 @@ app.post("/api/wrong-questions/:id/resolve",requireAuth,studentOnly,ar(async(q,s
 app.get("/api/attempts/mine",requireAuth,studentOnly,ar(async(q,s)=>{const r=await db.query("SELECT a.id,a.score,a.total,a.created_at,t.title,t.unit FROM attempts a JOIN tests t ON t.id=a.test_id WHERE a.student_id=$1 ORDER BY a.id DESC",[+q.auth.sub]);s.json(r.rows);}));
 app.get("/api/admin/overview",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT (SELECT COUNT(*) FROM students)::int students,(SELECT COUNT(*) FROM tests)::int tests,(SELECT COUNT(*) FROM questions)::int questions,(SELECT COUNT(*) FROM attempts)::int attempts");s.json(r.rows[0]);}));
 app.get("/api/admin/students",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT id,name,telegram_id,username,created_at FROM students ORDER BY id DESC");s.json(r.rows);}));
+app.post("/api/tests/:id/import-text",requireAuth,requireAdmin,ar(async(q,s)=>{
+ const raw=String(q.body?.text||"").replace(/\r\n?/g,"\n").trim();
+ if(!raw)return s.status(400).json({error:"प्रश्नों का Text Paste करें"});
+ if(raw.length>1500000)return s.status(413).json({error:"Text बहुत बड़ा है। इसे छोटे भागों में Import करें।"});
+ const blocks=raw.split(/(?=^\s*(?:\*\*)?\s*(?:प्रश्न|Question)\s*\d+\s*[\.\):]?)/mi).map(x=>x.trim()).filter(Boolean);
+ const parsed=[],bad=[];
+ for(let i=0;i<blocks.length;i++){
+  const block=blocks[i].replace(/^\s*(?:\*\*)?\s*(?:प्रश्न|Question)\s*\d+\s*[\.\):]?\s*/i,"");
+  const optionRe=/^\s*\(?([A-D])\)?[.)]\s*(.+?)\s*$/gim;
+  const opts=[];let match,first=-1;
+  while((match=optionRe.exec(block))!==null){if(first<0)first=match.index;opts.push({letter:match[1].toUpperCase(),value:match[2].trim()});}
+  const ans=block.match(/(?:\*\*)?\s*(?:उत्तर|सही\s*उत्तर|Answer|Correct\s*Answer)\s*[:：\-]?\s*\(?([A-D])\)?/i);
+  const explanationMatch=block.match(/(?:\*\*)?\s*(?:व्याख्या|Explanation)\s*[:：\-]?\s*([\s\S]*)$/i);
+  const question=(first>=0?block.slice(0,first):"").trim().replace(/^\*+|\*+$/g,"").trim();
+  const ordered=["A","B","C","D"].map(letter=>opts.find(o=>o.letter===letter)?.value||"");
+  if(!question||ordered.some(x=>!x)||opts.length!==4||!ans){bad.push({number:i+1,reason:"प्रश्न/चार विकल्प/उत्तर पहचान नहीं पाए"});continue;}
+  const answer=ans[1].toUpperCase().charCodeAt(0)-65;
+  const explanation=explanationMatch?explanationMatch[1].trim().replace(/\*+$/,"").trim():"";
+  parsed.push({question,options:ordered,answer,explanation});
+ }
+ if(!parsed.length)return s.status(400).json({error:"कोई वैध प्रश्न नहीं मिला। प्रश्न 1., (A), (B), (C), (D), उत्तर: (B) वाला Format रखें।",skipped:bad});
+ const testId=Number(q.params.id);
+ const c=await db.pool.connect();let startOrder=0;
+ try{
+  await c.query("BEGIN");
+  const test=await c.query("SELECT id FROM tests WHERE id=$1 FOR UPDATE",[testId]);
+  if(!test.rowCount){await c.query("ROLLBACK");return s.status(404).json({error:"चुना हुआ Unit/Test नहीं मिला"});}
+  const mx=await c.query("SELECT COALESCE(MAX(sort_order),0)::int AS n FROM questions WHERE test_id=$1",[testId]);startOrder=mx.rows[0].n;
+  for(let i=0;i<parsed.length;i++){const x=parsed[i];await c.query("INSERT INTO questions(test_id,question_hi,question_en,options_json,correct_index,explanation,sort_order) VALUES($1,$2,'',$3,$4,$5,$6)",[testId,x.question,JSON.stringify(x.options),x.answer,x.explanation,startOrder+i+1]);}
+  const total=await c.query("SELECT COUNT(*)::int AS n FROM questions WHERE test_id=$1",[testId]);
+  await c.query("COMMIT");
+  s.json({imported:parsed.length,skipped:bad.length,total:total.rows[0].n,skippedDetails:bad.slice(0,30)});
+ }catch(e){await c.query("ROLLBACK");throw e;}finally{c.release();}
+}));
 app.post("/api/tests/:id/import-xlsx",requireAuth,requireAdmin,upload.single("file"),ar(async(q,s)=>{if(!q.file)return s.status(400).json({error:"Excel फाइल चुनें"});const wb=XLSX.read(q.file.buffer,{type:"buffer"}),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""}),pick=(r,keys)=>{const k=Object.keys(r).find(x=>keys.includes(x.trim().toLowerCase()));return k?r[k]:"";},map={A:0,B:1,C:2,D:3,"1":0,"2":1,"3":2,"4":3};let imported=0,skipped=0;const c=await db.pool.connect();try{await c.query("BEGIN");for(let i=0;i<rows.length;i++){const r=rows[i],qh=String(pick(r,["question_hi","question","प्रश्न"])||"").trim(),opts=["a","b","c","d"].map(k=>String(pick(r,[k,"option_"+k])||"").trim()),a=map[String(pick(r,["answer","correct_answer","उत्तर"])||"").trim().toUpperCase()];if(!qh||opts.some(x=>!x)||a===undefined){skipped++;continue;}await c.query("INSERT INTO questions(test_id,question_hi,question_en,options_json,correct_index,explanation,sort_order) VALUES($1,$2,$3,$4,$5,$6,$7)",[+q.params.id,qh,String(pick(r,["question_en"])||""),JSON.stringify(opts),a,String(pick(r,["explanation","व्याख्या"])||""),i]);imported++;}await c.query("COMMIT");}catch(e){await c.query("ROLLBACK");throw e;}finally{c.release();}s.json({imported,skipped,total:rows.length});}));
 app.get("/api/resources",requireAuth,ar(async(_q,s)=>{const r=await db.query("SELECT id,title,unit,file_path,created_at FROM resources ORDER BY id DESC");s.json(r.rows);}));
 app.post("/api/resources",requireAuth,requireAdmin,upload.single("file"),ar(async(q,s)=>{if(!q.file)return s.status(400).json({error:"PDF/file चुनें"});const filename=Date.now()+"-"+path.basename(q.file.originalname).replace(/[^\\w.-]/g,"_"),{error}=await supabase.storage.from(bucket).upload(filename,q.file.buffer,{contentType:q.file.mimetype||"application/octet-stream",upsert:false});if(error)throw error;const r=await db.query("INSERT INTO resources(title,unit,file_path) VALUES($1,$2,$3) RETURNING id",[q.body.title||q.file.originalname,q.body.unit||"",filename]);s.json({id:r.rows[0].id});}));
