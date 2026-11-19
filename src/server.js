@@ -93,7 +93,64 @@ app.get("/",(q,s,n)=>{
     let page=html;
     if(!/rel=["']manifest["']/.test(page)) page=page.replace(/<head[^>]*>/i,m=>m+head);
     if(!page.includes('navigator.serviceWorker.register("/sw.js")')) page=page.replace(/<\/body>/i,boot+"</body>");
-    const loginGate='<style id="studentLoginGateStyle">#studentLoginGate{position:fixed;inset:0;z-index:2147483000;background:linear-gradient(145deg,#0b203d,#234b78);display:flex;align-items:center;justify-content:center;padding:22px;font-family:system-ui,sans-serif}#studentLoginGate .gatecard{width:min(100%,420px);background:#fff;border:2px solid #e4bd55;border-radius:24px;padding:26px 22px;text-align:center;box-shadow:0 18px 55px #0005}#studentLoginGate .gatebrand{font-size:30px;font-weight:950;color:#17365d}#studentLoginGate .gatebrand span{color:#bd9130}#studentLoginGate p{color:#58677c;line-height:1.65}#studentLoginGate a,#studentLoginGate button{display:block;width:100%;box-sizing:border-box;text-decoration:none;background:#e4bd55;color:#10213a;padding:15px;border:0;border-radius:13px;font-weight:900;margin-top:18px;font-size:15px;cursor:pointer}#studentLoginGate button.adminEntry{background:#17365d;color:#fff;margin-top:10px}#studentLoginGate button.studentContinue{background:#167653;color:#fff;margin-top:10px}#studentLoginGate small{display:block;color:#748197;margin-top:13px}#adminInsideApp{display:none;position:fixed;inset:0;z-index:2147483600;background:#fff}#adminInsideApp iframe{width:100%;height:100%;border:0}#adminInsideApp .closeAdmin{position:absolute;right:12px;top:10px;z-index:3;background:#e4bd55;border:0;border-radius:10px;padding:9px 14px;font-weight:900;box-shadow:0 2px 10px #0003}</style><section id="studentLoginGate"><div class="gatecard"><div class="gatebrand">MPPSC <span>IQ</span></div><h2>स्वागत है</h2><p>आगे बढ़ने के लिए अपनी भूमिका चुनें।</p><a id="studentLoginLink" href="/api/auth/telegram/start">Student Login</a><section id="studentHomePanel" style="display:none;margin-top:18px"><h2 style="color:#17365d;margin:8px 0">Student Home</h2><p>MPPSC IQ में आपका स्वागत है।</p><button type="button" class="studentContinue" onclick="document.getElementById(\'studentLoginGate\').remove()">Revision शुरू करें</button></section><button id="studentContinue" class="studentContinue" type="button" style="display:none" onclick="document.getElementById(\'studentHomePanel\').style.display=\'block\';this.style.display=\'none\'">Student Home</button><button class="adminEntry" type="button" onclick="document.getElementById(\'adminInsideApp\').style.display=\'block\';document.getElementById(\'adminInsideFrame\').src=\'/admin.html\'">Admin Login</button><small>एक ही MPPSC IQ ऐप — विद्यार्थी और एडमिन के लिए अलग-अलग प्रवेश।</small></div></section><section id="adminInsideApp"><button class="closeAdmin" type="button" onclick="document.getElementById(\'adminInsideApp\').style.display=\'none\';document.getElementById(\'adminInsideFrame\').src=\'about:blank\'">✕ वापस ऐप पर</button><iframe id="adminInsideFrame" title="MPPSC IQ Admin"></iframe></section><script>(async()=>{try{const r=await fetch("/api/me",{credentials:"same-origin"});if(r.ok){const u=await r.json();if(u.role==="student"){document.getElementById("studentLoginLink").style.display="none";document.getElementById("studentContinue").style.display="none";document.querySelector("#studentLoginGate .gatecard h2").style.display="none";document.querySelector("#studentLoginGate .gatecard p").style.display="none";document.querySelector("#studentLoginGate .adminEntry").style.display="none";document.querySelector("#studentLoginGate .gatecard small").style.display="none";document.getElementById("studentHomePanel").style.display="block";}}}catch(e){}})();</script>';
+    const loginGate='<style id="studentLoginGateStyle">
+:root{--iq-navy:#102744;--iq-blue:#1f4e7d;--iq-gold:#e7bd62;--iq-bg:#f4f7fb;--iq-ink:#17263d;--iq-muted:#718096}
+#studentLoginGate{position:fixed;inset:0;z-index:2147483000;background:var(--iq-bg);display:flex;align-items:center;justify-content:center;padding:0;font-family:system-ui,"Noto Sans Devanagari",sans-serif;color:var(--iq-ink);overflow:auto}
+#studentLoginGate .gatecard{width:100%;height:100%;min-height:100%;max-width:760px;background:var(--iq-bg);padding:0 0 calc(24px + env(safe-area-inset-bottom));text-align:left;box-shadow:0 10px 45px #142b4812;overflow:auto}
+#studentLoginGate .hero{background:linear-gradient(145deg,#102744,#24578a);color:#fff;padding:32px 22px 28px;border-radius:0 0 28px 28px}
+#studentLoginGate .brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#studentLoginGate .gatebrand{font-size:27px;font-weight:950;letter-spacing:.3px;color:#fff}
+#studentLoginGate .gatebrand span{color:var(--iq-gold)}
+#studentLoginGate .brandtag{font-size:10px;letter-spacing:2px;color:#d8e2ef;margin-top:3px}
+#studentLoginGate .hero h2{font-size:23px;line-height:1.3;color:#fff;margin:26px 0 7px}
+#studentLoginGate .hero p{color:#dce7f4;margin:0;line-height:1.6;font-size:14px}
+#studentLoginGate .homebody{padding:18px 16px 0}
+#studentLoginGate .sectionlabel{font-size:13px;font-weight:850;color:#53647b;margin:8px 3px 12px}
+#studentLoginGate .featuregrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+#studentLoginGate .feature{background:#fff;border:1px solid #e4eaf2;border-radius:17px;padding:15px;min-height:104px;box-shadow:0 3px 12px #1a34500a}
+#studentLoginGate .featureicon{width:35px;height:35px;border-radius:11px;background:#eef3fa;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+#studentLoginGate .feature b{display:block;font-size:14px;color:#183452}
+#studentLoginGate .feature small{display:block;font-size:11px;color:#77869a;margin-top:4px;line-height:1.4}
+#studentLoginGate .progressrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:13px}
+#studentLoginGate .metric{background:#fff;border:1px solid #e4eaf2;border-radius:14px;padding:12px 9px;text-align:center}
+#studentLoginGate .metric strong{display:block;font-size:21px;color:#173a60}
+#studentLoginGate .metric span{font-size:10px;color:#758398}
+#studentLoginGate .primaryaction{display:block;width:100%;box-sizing:border-box;background:linear-gradient(100deg,#e8c36e,#f1d895);color:#142b49;padding:16px;border:0;border-radius:14px;font-weight:900;margin-top:17px;font-size:16px;cursor:pointer;box-shadow:0 6px 16px #c49a3d30}
+#studentLoginGate .loginlink{display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;background:var(--iq-gold);color:#102744;padding:15px;border:0;border-radius:13px;font-weight:900;margin-top:17px;font-size:15px}
+#studentLoginGate button.adminEntry{display:block;width:100%;background:#fff;color:#183452;border:1px solid #dce4ef;padding:13px;border-radius:13px;font-weight:800;margin-top:10px;font-size:14px;cursor:pointer}
+#studentLoginGate .footnote{display:block;text-align:center;color:#8a97a8;font-size:11px;margin:16px 0 0}
+#studentHomePanel{display:none}
+#studentLoginGate .studentContinue{background:#16845b;color:#fff}
+#adminInsideApp{display:none;position:fixed;inset:0;z-index:2147483600;background:#fff}
+#adminInsideApp iframe{width:100%;height:100%;border:0}
+#adminInsideApp .closeAdmin{position:absolute;right:12px;top:10px;z-index:3;background:#e4bd55;border:0;border-radius:10px;padding:9px 14px;font-weight:900;box-shadow:0 2px 10px #0003}
+@media(min-width:760px){#studentLoginGate{background:linear-gradient(135deg,#eaf0f7,#f7f9fc)}#studentLoginGate .gatecard{height:auto;min-height:0;border-radius:26px;max-height:94vh}#studentLoginGate .hero{border-radius:26px 26px 0 0;padding:34px 30px}#studentLoginGate .homebody{padding:22px 28px 26px}}
+@media(max-width:380px){#studentLoginGate .hero{padding:27px 18px 23px}#studentLoginGate .homebody{padding:14px 12px 0}#studentLoginGate .feature{padding:12px;min-height:98px}}
+</style>
+<section id="studentLoginGate"><div class="gatecard">
+<header class="hero"><div class="brandrow"><div><div class="gatebrand">MPPSC <span>IQ</span></div><div class="brandtag">GUIDING ASPIRANTS FOR EXCELLENCE</div></div><div style="font-size:11px;color:#e9d49c;border:1px solid #ffffff50;padding:7px 10px;border-radius:20px">PRELIMS</div></div>
+<h2 id="gateHeading">आपकी तैयारी, अब एक बेहतर दिशा में</h2><p id="gateSubheading">MPPSC Prelims की तैयारी के लिए टेस्ट, रिवीजन और अभ्यास — एक ही प्लेटफॉर्म पर।</p></header>
+<div class="homebody">
+<a id="studentLoginLink" class="loginlink" href="/api/auth/telegram/start">Telegram से Student Login करें</a>
+<section id="studentHomePanel">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="sectionlabel" style="margin:0 0 4px">STUDENT DASHBOARD</div><div id="studentWelcome" style="font-size:20px;font-weight:900;color:#173452">नमस्ते, विद्यार्थी</div></div><div style="font-size:12px;color:#6d7e93;background:#fff;border:1px solid #e3eaf2;padding:8px 10px;border-radius:20px">आपका अध्ययन केंद्र</div></div>
+<div class="sectionlabel" style="margin-top:21px">आपकी तैयारी के टूल</div>
+<div class="featuregrid">
+<div class="feature"><div class="featureicon">📚</div><b>10 विषय यूनिट</b><small>सभी यूनिट के प्रश्न एक ही स्थान पर</small></div>
+<div class="feature"><div class="featureicon">🔁</div><b>रिवीजन अभ्यास</b><small>महत्वपूर्ण प्रश्नों का दोहराव</small></div>
+<div class="feature"><div class="featureicon">📝</div><b>टेस्ट प्रैक्टिस</b><small>अभ्यास और अपना मूल्यांकन</small></div>
+<div class="feature"><div class="featureicon">📈</div><b>प्रदर्शन ट्रैकिंग</b><small>अपने प्रयासों की प्रगति देखें</small></div>
+</div>
+<div class="sectionlabel" style="margin-top:20px">आपकी प्रगति</div>
+<div class="progressrow"><div class="metric"><strong id="metricTests">—</strong><span>उपलब्ध टेस्ट</span></div><div class="metric"><strong id="metricAttempts">—</strong><span>आपके प्रयास</span></div><div class="metric"><strong id="metricAverage">—</strong><span>औसत स्कोर</span></div></div>
+<button type="button" class="primaryaction" onclick="document.getElementById('studentLoginGate').remove()">रिवीजन शुरू करें&nbsp; →</button>
+<div class="footnote">नियमित अभ्यास • सही विश्लेषण • बेहतर परिणाम</div>
+</section>
+<button class="adminEntry" type="button" onclick="document.getElementById('adminInsideApp').style.display='block';document.getElementById('adminInsideFrame').src='/admin.html'">Admin Login</button>
+<small class="footnote" id="gateFootnote">MPPSC IQ — आपका भरोसेमंद तैयारी प्लेटफॉर्म</small>
+</div></div></section>
+<section id="adminInsideApp"><button class="closeAdmin" type="button" onclick="document.getElementById('adminInsideApp').style.display='none';document.getElementById('adminInsideFrame').src='about:blank'">✕ वापस ऐप पर</button><iframe id="adminInsideFrame" title="MPPSC IQ Admin"></iframe></section>
+<script>(async()=>{try{const r=await fetch('/api/me',{credentials:'same-origin'});if(!r.ok)return;const u=await r.json();if(u.role!=='student')return;document.getElementById('studentLoginLink').style.display='none';document.getElementById('gateHeading').textContent='आपका स्वागत है';document.getElementById('gateSubheading').textContent='आज की तैयारी शुरू करें और अपने लक्ष्य की ओर एक कदम बढ़ाएँ।';document.getElementById('studentHomePanel').style.display='block';document.getElementById('adminInsideApp').style.display='none';document.getElementById('gateFootnote').style.display='none';const n=(u.name||'विद्यार्थी').trim();document.getElementById('studentWelcome').textContent='नमस्ते, '+n;const [tr,ar]=await Promise.all([fetch('/api/tests',{credentials:'same-origin'}),fetch('/api/attempts/mine',{credentials:'same-origin'})]);const tests=tr.ok?await tr.json():[],attempts=ar.ok?await ar.json():[];document.getElementById('metricTests').textContent=tests.length;document.getElementById('metricAttempts').textContent=attempts.length;const avg=attempts.length?Math.round(attempts.reduce((v,x)=>v+(x.total?x.score/x.total*100:0),0)/attempts.length):0;document.getElementById('metricAverage').textContent=attempts.length?avg+'%':'—';}catch(e){console.warn('Student dashboard data unavailable',e);}})();</script>
     if(!page.includes('id="studentLoginGate"')) page=page.replace(/<body([^>]*)>/i,'<body$1>'+loginGate);
     s.type("html").send(page);
   });
