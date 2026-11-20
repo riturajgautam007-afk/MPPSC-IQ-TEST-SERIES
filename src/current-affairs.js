@@ -26,7 +26,7 @@ module.exports = function currentAffairsRouter({ db, requireAuth, requireAdmin }
       .trim();
   }
   function getTag(xml, tag) {
-    const re = new RegExp("<" + tag + "(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)<\\\\/" + tag + ">", "i");
+    const re = new RegExp("<" + tag + "(?:\\s[^>]*)?>([\\s\\S]*?)<\\/" + tag + ">", "i");
     const m = xml.match(re);
     return m ? decode(m[1]) : "";
   }
