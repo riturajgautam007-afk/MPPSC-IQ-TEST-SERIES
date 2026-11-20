@@ -451,7 +451,7 @@ function render(){
   const q=DATA[idx],chosen=answers[idx],opts=q.options||[];
   // Keep Hindi and English strictly separate in every unit.
   const separateLang = true;
-  const rawQuestion = String(q.q||'').trim();
+  const rawQuestion = String(q.q||'').replace(/^(?:प्रश्न\s*\d+\s*[.):]\s*)+/i,'').trim();
   // Imported questions may keep both languages in q.q while q.en is empty.
   // Split only where a slash is followed by an English sentence.
   const bilingualMatch = rawQuestion.match(/^(.*?)(?:\s+\/\s+)([A-Za-z][\s\S]*)$/);
