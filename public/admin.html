@@ -133,7 +133,7 @@ async function importExcel(){try{const f=$("excel").files[0];if(!f)throw Error("
 
 let parsedTextQuestions=[];
 function parseQuestionText(raw) {
-  const clean = raw.replace(/\r/g, "").replace(/\*\*/g, "").trim();
+  const clean = String(raw || "").replace(/\r/g, "").replace(/\*\*/g, "").trim();
   const blocks = clean.split(/(?=^\s*प्रश्न\s*\d+\s*[.):])/mi).filter(x => x.trim());
   const out = [];
   for (const source of blocks) {
@@ -142,16 +142,18 @@ function parseQuestionText(raw) {
     const answer = ansRe.exec(block);
     if (!answer) continue;
     const optionArea = block.slice(0, answer.index);
-    const marks = [...optionArea.matchAll(/\(\s*([A-D])\s*\)\s*/gi)];
+    // Accept both (A) Option and plain A) / A. formats, including each option on a new line.
+    const marks = [...optionArea.matchAll(/\(\s*([A-D])\s*\)|(?:^|\n)\s*([A-D])\s*[).:-]\s*/gim)];
+    const getLetter = m => (m[1] || m[2] || "").toUpperCase();
     const question = (marks.length ? optionArea.slice(0, marks[0].index) : "").trim();
     const options = ["A","B","C","D"].map(letter => {
-      const mark = marks.find(m => m[1].toUpperCase() === letter);
-      if (!mark) return "";
-      const next = marks.find(m => m.index > mark.index);
+      const index = marks.findIndex(m => getLetter(m) === letter);
+      if (index < 0) return "";
+      const mark = marks[index], next = marks[index + 1];
       return optionArea.slice(mark.index + mark[0].length, next ? next.index : optionArea.length).replace(/\s+/g, " ").trim();
     });
     const explanation = block.slice(answer.index + answer[0].length).replace(/^\s*(?:व्याख्या|Explanation)?\s*[:：\-]?\s*/i, "").trim();
-    if (!question || options.some(x => !x) || marks.length !== 4) continue;
+    if (!question || options.some(x => !x) || marks.length !== 4 || ["A","B","C","D"].some(letter => marks.filter(m => getLetter(m) === letter).length !== 1)) continue;
     out.push({question_hi:question, question_en:"", options, correct_index:"ABCD".indexOf(answer[1].toUpperCase()), explanation});
   }
   return out;
