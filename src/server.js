@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express=require("express"),helmet=require("helmet"),bcrypt=require("bcryptjs"),multer=require("multer"),XLSX=require("xlsx"),path=require("node:path"),crypto=require("node:crypto"),{createClient}=require("@supabase/supabase-js");
 const db=require("./db"),{verifyTelegramInitData,issueToken,requireAuth,requireAdmin}=require("./auth");
+const createCurrentAffairsRouter=require("./current-affairs");
 const app=express(),port=process.env.PORT||3000,secret=process.env.JWT_SECRET;
 function isTelegramAdmin(id){const ids=(process.env.ADMIN_TELEGRAM_IDS||process.env.ADMIN_TELEGRAM_ID||"").split(",").map(x=>x.trim()).filter(Boolean);return ids.includes(String(id));}
 let dbReady=false,dbLastError="Database connection is not ready";
@@ -13,6 +14,8 @@ app.use("/api",(q,s,n)=>{if(q.path==="/health"||q.path==="/ready")return n();if(
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024}});
 const studentOnly=(q,s,n)=>q.auth.role==="student"?n():s.status(403).json({error:"Student only"});
 const ar=fn=>(q,s,n)=>Promise.resolve(fn(q,s,n)).catch(n);
+app.use("/api/current-affairs",createCurrentAffairsRouter({db,requireAuth,requireAdmin}));
+app.get("/current-affairs",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","current-affairs.html")));
 const OIDC_ISSUER="https://oauth.telegram.org",OIDC_REDIRECT=process.env.TELEGRAM_OIDC_REDIRECT_URI||"https://mppsc-iq-telegram-platform-mdri.onrender.com/api/auth/telegram/callback";
 let telegramJwksCache=null,telegramJwksAt=0;
 function b64u(v){return Buffer.from(v).toString("base64url");}
