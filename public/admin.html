@@ -137,7 +137,7 @@ function parseQuestionText(raw) {
   const blocks = clean.split(/(?=^\s*प्रश्न\s*\d+\s*[.):])/mi).filter(x => x.trim());
   const out = [];
   for (const source of blocks) {
-    const block = source.replace(/^\s*प्रश्न\s*\d+\s*[.):]\s*/i, "").trim();
+    const block = source.replace(/^(?:\s*प्रश्न\s*\d+\s*[.):]\s*)+/i, "").trim();
     const ansRe = /(?:उत्तर|सही\s*उत्तर|Answer|Correct\s*Answer)\s*[:：\-]?\s*\(?\s*([A-D])\s*\)?/i;
     const answer = ansRe.exec(block);
     if (!answer) continue;
