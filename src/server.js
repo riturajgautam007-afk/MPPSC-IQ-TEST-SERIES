@@ -140,7 +140,7 @@ body:not(.iq-authenticated)>:not(#studentLoginGate):not(#adminInsideApp){visibil
 </div>
 <section id="studentHomePanel">
 <div class="welcome" id="studentWelcome">नमस्ते</div>
-<button type="button" class="actionbtn revision" onclick="location.href='/revision-tests.html'">📚 रिवीजन शुरू करें</button>
+<button type="button" class="actionbtn revision" onclick="location.href='/app'">📚 रिवीजन शुरू करें</button>
 <button type="button" class="actionbtn adminpanel" id="adminPanelButton" style="display:none" onclick="document.getElementById('adminInsideApp').style.display='block';document.getElementById('adminInsideFrame').src='/admin.html'">⚙️ Admin Panel खोलें</button>
 <div class="footnote">नियमित अभ्यास • सही विश्लेषण • बेहतर परिणाम</div>
 </section>
@@ -152,6 +152,7 @@ body:not(.iq-authenticated)>:not(#studentLoginGate):not(#adminInsideApp){visibil
     s.type("html").send(page);
   });
 });
+app.get("/app",requireAuth,(q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use(express.static(path.join(__dirname,"..","public")));app.get("*",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use((e,_q,s,_n)=>{console.error(e);s.status(400).json({error:e.message||"Request failed"});});
 async function connectDatabase(){try{await db.init();dbReady=true;dbLastError="";console.log("Database connected and schema ready");const {error}=await supabase.storage.createBucket(bucket,{public:false,fileSizeLimit:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024});if(error&&!String(error.message).toLowerCase().includes("already"))console.warn("Storage bucket setup:",error.message);}catch(e){dbReady=false;dbLastError=e.message||"Database connection failed";console.error("Database unavailable; web server remains online:",dbLastError);}}
