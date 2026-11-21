@@ -91,6 +91,13 @@ app.post("/api/resources",requireAuth,requireAdmin,upload.single("file"),ar(asyn
 app.get("/uploads/:file",ar(async(q,s)=>{const {data,error}=await supabase.storage.from(bucket).createSignedUrl(q.params.file,300);if(error)return s.status(404).json({error:"File नहीं मिली"});s.redirect(data.signedUrl);}));
 // PWA app-shell headers: keep the existing quiz HTML and UI unchanged.
 app.get("/",(q,s,n)=>{
+  // Resolve authenticated role on the server before rendering the login gate.
+  let session=null;
+  try{
+    const cookies=Object.fromEntries((q.headers.cookie||"").split(";").map(x=>x.trim()).filter(Boolean).map(x=>{const i=x.indexOf("=");return [x.slice(0,i),decodeURIComponent(x.slice(i+1))]}));
+    if(cookies.mppsc_iq_token) session=require("jsonwebtoken").verify(cookies.mppsc_iq_token,secret,{issuer:"mppsc-iq"});
+  }catch(_e){}
+  if(session?.role==="student") return s.redirect(302,"/revision-tests.html");
   const file=path.join(__dirname,"..","public","index.html");
   require("node:fs").readFile(file,"utf8",(err,html)=>{
     if(err)return n(err);
