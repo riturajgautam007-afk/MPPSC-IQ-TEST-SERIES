@@ -1,1 +1,31 @@
-{"id":"/","name":"MPPSC IQ – PRE 2027","short_name":"MPPSC IQ","description":"MPPSC PRE 2027 Test Series","start_url":"/?source=pwa","scope":"/","display":"standalone","orientation":"portrait","background_color":"#0b203d","theme_color":"#0b203d","icons":[{"src":"/icons/icon-192.svg","sizes":"any","type":"image/svg+xml","purpose":"any"},{"src":"/icons/icon-512.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "id": "/",
+  "name": "MPPSC IQ – PRE 2027",
+  "short_name": "MPPSC IQ",
+  "description": "MPPSC PRE 2027 Test Series",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b203d",
+  "theme_color": "#0b203d",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "scope_extensions": [
+    {
+      "origin": "https://mppsc-iq-telegram-platform-mdri.onrender.com"
+    }
+  ]
+}
