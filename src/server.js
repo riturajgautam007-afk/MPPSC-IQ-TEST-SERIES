@@ -97,7 +97,6 @@ app.get("/",(q,s,n)=>{
     const cookies=Object.fromEntries((q.headers.cookie||"").split(";").map(x=>x.trim()).filter(Boolean).map(x=>{const i=x.indexOf("=");return [x.slice(0,i),decodeURIComponent(x.slice(i+1))]}));
     if(cookies.mppsc_iq_token) session=require("jsonwebtoken").verify(cookies.mppsc_iq_token,secret,{issuer:"mppsc-iq"});
   }catch(_e){}
-  if(session?.role==="student") return s.redirect(302,"/revision-tests.html");
   const file=path.join(__dirname,"..","public","index.html");
   require("node:fs").readFile(file,"utf8",(err,html)=>{
     if(err)return n(err);
@@ -141,7 +140,7 @@ body:not(.iq-authenticated)>:not(#studentLoginGate):not(#adminInsideApp){visibil
 </div>
 <section id="studentHomePanel">
 <div class="welcome" id="studentWelcome">नमस्ते</div>
-<button type="button" class="actionbtn revision" onclick="location.href='/revision-tests.html'">📚 रिवीजन शुरू करें</button>
+<button type="button" class="actionbtn revision" onclick="document.body.classList.add('iq-authenticated');document.getElementById('studentLoginGate').remove();document.getElementById('mppscHome')?.remove()">📚 रिवीजन शुरू करें</button>
 <button type="button" class="actionbtn adminpanel" id="adminPanelButton" style="display:none" onclick="document.getElementById('adminInsideApp').style.display='block';document.getElementById('adminInsideFrame').src='/admin.html'">⚙️ Admin Panel खोलें</button>
 <div class="footnote">नियमित अभ्यास • सही विश्लेषण • बेहतर परिणाम</div>
 </section>
