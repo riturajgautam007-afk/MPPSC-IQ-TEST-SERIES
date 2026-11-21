@@ -140,7 +140,7 @@ body:not(.iq-authenticated)>:not(#studentLoginGate):not(#adminInsideApp){visibil
 </div>
 <section id="studentHomePanel">
 <div class="welcome" id="studentWelcome">नमस्ते</div>
-<button type="button" class="actionbtn revision" onclick="document.body.classList.add('iq-authenticated');document.getElementById('studentLoginGate').remove();document.getElementById('mppscHome')?.remove()">📚 रिवीजन शुरू करें</button>
+<button type="button" class="actionbtn revision" onclick="location.href='/revision-tests.html'">📚 रिवीजन शुरू करें</button>
 <button type="button" class="actionbtn adminpanel" id="adminPanelButton" style="display:none" onclick="document.getElementById('adminInsideApp').style.display='block';document.getElementById('adminInsideFrame').src='/admin.html'">⚙️ Admin Panel खोलें</button>
 <div class="footnote">नियमित अभ्यास • सही विश्लेषण • बेहतर परिणाम</div>
 </section>
