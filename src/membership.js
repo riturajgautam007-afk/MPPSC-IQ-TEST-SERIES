@@ -98,5 +98,17 @@ function register(app,{db,requireAuth,requireAdmin,ar}){
   if(!r.rowCount)return s.status(404).json({error:"Pending request नहीं मिला"});
   s.json({ok:true});
  }));
+ app.post("/api/admin/telegram/setup",requireAuth,requireAdmin,ar(async(_q,s)=>{
+  const token=process.env.TELEGRAM_BOT_TOKEN;
+  if(!token)return s.status(503).json({error:"Render Environment में TELEGRAM_BOT_TOKEN सेट नहीं है।"});
+  const base=String(process.env.APP_BASE_URL||"https://mppsc-iq-telegram-platform-mdri.onrender.com").replace(/\/$/,"");
+  if(!/^https:\/\//.test(base))return s.status(400).json({error:"APP_BASE_URL में HTTPS URL सेट करें।"});
+  const call=async(method,body)=>{const r=await fetch("https://api.telegram.org/bot"+token+"/"+method,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(12000)});const j=await r.json();if(!j.ok)throw Error(j.description||"Telegram API error");return j.result;};
+  const bot=await call("getMe",{}),expected=String(process.env.TELEGRAM_BOT_USERNAME||"MPPSC_IQ_Quiz_Bot").replace(/^@/,"");
+  if(String(bot.username||"").toLowerCase()!==expected.toLowerCase())return s.status(409).json({error:"Configured Bot Token @"+(bot.username||"unknown")+" का है, अपेक्षित @"+expected+" है।"});
+  await call("setChatMenuButton",{menu_button:{type:"web_app",text:"MPPSC IQ खोलें",web_app:{url:base}}});
+  await call("setMyCommands",{commands:[{command:"start",description:"MPPSC IQ खोलें"},{command:"help",description:"सहायता"}]});
+  s.json({ok:true,bot:"@"+bot.username,url:base});
+ }));
 }
 module.exports={ensureSchema,requirePaid,register};
