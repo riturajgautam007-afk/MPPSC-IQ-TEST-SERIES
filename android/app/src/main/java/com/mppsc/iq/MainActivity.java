@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
                 progress.setVisibility(value >= 100 ? View.GONE : View.VISIBLE);
             }
         });
-        if (state == null) webView.loadUrl("https://mppsc-iq-install.onrender.com/?source=android");
+        if (state == null) webView.loadUrl("https://mppsc-iq-telegram-platform-mdri.onrender.com/?source=android");
         else webView.restoreState(state);
     }
 
