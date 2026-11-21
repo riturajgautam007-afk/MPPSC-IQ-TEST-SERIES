@@ -1,14 +1,1 @@
-const CACHE_NAME="mppsc-iq-shell-v4";
-const APP_SHELL=["/","/manifest.webmanifest","/icons/mppsc-iq.svg","/icons/mppsc-iq-192.png","/icons/favicon-64.png"];
-self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));});
-self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
-self.addEventListener("fetch",event=>{
-  const request=event.request;
-  const url=new URL(request.url);
-  if(request.method!=="GET"||url.origin!==self.location.origin||url.pathname.startsWith("/api/")||url.pathname.startsWith("/uploads/"))return;
-  if(request.mode==="navigate"){
-    event.respondWith(fetch(request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put("/",copy));}return response;}).catch(()=>caches.match("/")));
-    return;
-  }
-  event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));}return response;})));
-});
+const CACHE='mppsc-iq-pwa-v1';self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil((async()=>{const ks=await caches.keys();await Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)));await self.clients.claim()})()));self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==self.location.origin)return;if(r.mode==='navigate')e.respondWith(fetch(r,{cache:'no-store'}).then(res=>{caches.open(CACHE).then(c=>c.put(r,res.clone()));return res}).catch(()=>caches.match(r)))})
