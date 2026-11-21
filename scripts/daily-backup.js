@@ -19,7 +19,7 @@ const keepDays=Math.max(7,Number(process.env.BACKUP_RETENTION_DAYS)||30);
  const cutoff=Date.now()-keepDays*86400000;
  const {data:files,error:listError}=await supabase.storage.from(bucket).list("daily",{limit:1000,sortBy:{column:"name",order:"asc"}});
  if(listError)throw listError;
- const expired=(files||[]).filter(x=>x.name.endsWith(".json")&&Date.parse(x.name.slice(0,19).replace(/-/g,(_,i)=>i<10?"-":":"))<cutoff).map(x=>"daily/"+x.name);
+ const expired=(files||[]).filter(x=>x.name.endsWith(".json")&&x.created_at&&Date.parse(x.created_at)<cutoff).map(x=>"daily/"+x.name);
  if(expired.length){const {error:removeError}=await supabase.storage.from(bucket).remove(expired);if(removeError)throw removeError;}
  process.stdout.write(JSON.stringify({ok:true,object:name,bytes:bytes.length,retention_days:keepDays,deleted_old:expired.length})+"\\n");
 })().catch(e=>{console.error("BACKUP_FAILED:",e.message);process.exitCode=1;}).finally(async()=>{await pool.end();});
