@@ -238,4 +238,75 @@ $("installBtn").addEventListener("click",async()=>{if(!deferredPrompt){toast("�
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/admin-sw.js").catch(()=>{}));
 window.addEventListener("appinstalled",()=>toast("MPPSC IQ Admin ऐप इंस्टॉल हो गया"));
 </script>
+</body></htmllet selectedQuestionUnitKey="";
+function selectQuestionUnit(unit,btn){const key=normalizeUnitKey(unit);if(!key||key==="PYQs"){selectedQuestionUnitKey="";toast("कृपया UNIT 1 से UNIT 10 में से चुनें।");return;}const unitNo=Number(key.replace("Unit ",""));if(!Number.isInteger(unitNo)||unitNo<1||unitNo>10){selectedQuestionUnitKey="";toast("मान्य Unit 1 से 10 चुनें।");return;}selectedQuestionUnitKey="Unit "+unitNo;document.querySelectorAll("#unitButtons button").forEach(b=>b.classList.toggle("active",b===btn));$("selectedUnitLabel").textContent="Unit "+unitNo+" चुना गया · इसी यूनिट के मौजूदा प्रश्न बैंक में प्रश्न जुड़ेंगे (नया टेस्ट नहीं बनेगा)।";$("textImportBtn").disabled=!parsedTextQuestions.length;}
+function previewTextImport(){
+ const raw=$("questionText").value;
+ const result=parseQuestionText(raw);
+ parsedTextQuestions=result.valid;parsedTextInvalid=result.invalid;parsedTextDuplicates=result.duplicates;
+ $("textImportStatus").innerHTML="<b>कुल प्रश्न ब्लॉक:</b> "+result.total+" · <b>सही/तैयार:</b> "+result.valid.length+" · <b>अधूरे:</b> "+result.invalid.length+" · <b>आपस में डुप्लिकेट:</b> "+result.duplicates.length;
+ const validHtml=result.valid.slice(0,4).map((x,i)=>'<div class="listitem"><div><b>'+(i+1)+'. '+esc(x.question_hi)+'</b><small>'+x.options.map((v,j)=>'('+String.fromCharCode(65+j)+') '+esc(v)).join(' · ')+'</small><small>सही उत्तर: '+String.fromCharCode(65+x.correct_index)+'</small></div></div>').join("");
+ const invalidHtml=result.invalid.length?'<div class="notice" style="margin-top:10px"><b>अधूरे/अमान्य प्रश्न</b><br>'+result.invalid.slice(0,12).map(x=>'प्रश्न '+esc(x.number)+': '+esc(x.reason)).join("<br>")+(result.invalid.length>12?"<br>और "+(result.invalid.length-12)+"…":"")+'</div>':"";
+ const duplicateHtml=result.duplicates.length?'<div class="notice" style="margin-top:10px"><b>Paste में दोहराए गए प्रश्न</b><br>'+result.duplicates.slice(0,8).map(x=>'प्रश्न '+esc(x.number)+': '+esc(x.question)).join("<br>")+(result.duplicates.length>8?"<br>और "+(result.duplicates.length-8)+"…":"")+'</div>':"";
+ $("textImportPreview").innerHTML=(validHtml?'<b>Preview (पहले 4 प्रश्न)</b>'+validHtml:"<b>कोई वैध प्रश्न नहीं मिला।</b>")+invalidHtml+duplicateHtml;
+ $("textImportBtn").disabled=!result.valid.length;
+}
+async function importTextQuestions(){try{const unit=selectedQuestionUnitKey;if(!unit)throw Error("पहले UNIT 1 से UNIT 10 चुनें");const raw=$("questionText").value.trim();if(!raw)throw Error("प्रश्नों का Text Paste करें");if(!parsedTextQuestions.length)previewTextImport();if(!parsedTextQuestions.length)throw Error("कोई वैध प्रश्न Preview में नहीं मिला। फॉर्मेट जाँचें।");if(!confirm(parsedTextQuestions.length+" पहचाने गए प्रश्न "+unit+" के मौजूदा प्रश्न बैंक के अंत में जोड़ें? पुराने प्रश्न सुरक्षित रहेंगे।"))return;const btn=$("textImportBtn");btn.disabled=true;$("textImportStatus").textContent="प्रश्न Import हो रहे हैं…";const d=await api("/admin/question-bank/"+Number(unit.replace("Unit ",""))+"/append",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({questions:parsedTextQuestions})});toast(d.imported+" नए प्रश्न जुड़े · "+(d.skipped||0)+" डुप्लिकेट छोड़े गए");$("questionText").value="";parsedTextQuestions=[];$("textImportPreview").innerHTML="";$("textImportStatus").textContent="सफलता: "+d.imported+" नए प्रश्न जुड़े। डुप्लिकेट छोड़े गए: "+(d.skipped||0)+"।";if(d.skippedDetails?.length)$("textImportPreview").innerHTML="<b>जिन प्रश्नों को पहचाना नहीं जा सका:</b><br>"+d.skippedDetails.map(x=>"प्रश्न "+x.number+": "+esc(x.reason)).join("<br>");await refresh();const active=document.querySelector("#unitButtons button.active");if(active)selectQuestionUnit(active.dataset.unit,active);$("questionText").focus();}catch(e){toast(e.message);$("textImportStatus").textContent=e.message;}finally{$("textImportBtn").disabled=!parsedTextQuestions.length}}
+
+
+let editingQuestionId=null;
+function renderManagedQuestions(){
+ const host=$("managedQuestions");
+ if(!managedQuestionCache.length){host.textContent="इस टेस्ट में अभी प्रश्न नहीं हैं।";return;}
+ host.innerHTML=managedQuestionCache.map((q,i)=>{
+  const editing=Number(editingQuestionId)===Number(q.id);
+  const letters=["A","B","C","D"];
+  if(!editing){
+   return '<div class="listitem" style="display:block;padding:14px 0"><b>'+(i+1)+'. '+esc(q.question_hi)+'</b><small>'+q.options.map((v,j)=>'('+letters[j]+') '+esc(v)).join(' · ')+'</small><div class="row" style="margin-top:9px"><button class="btn soft" onclick="editQuestion('+Number(q.id)+')">✏️ Edit & Save</button><button class="btn danger" onclick="deleteQuestion('+Number(q.id)+')">हटाएँ</button></div></div>';
+  }
+  return '<div class="card" style="border:2px solid #e6b95f;margin:12px 0;background:#fffdf8">'+
+   '<div style="font-weight:800;color:#936500;margin-bottom:10px">प्रश्न '+(i+1)+' · संपादन मोड</div>'+
+   '<label>प्रश्न</label><div id="edit-q-'+q.id+'" contenteditable="true" style="padding:12px;border:1px solid #dce3ed;border-radius:11px;background:white;min-height:58px;white-space:pre-wrap">'+esc(q.question_hi)+'</div>'+
+   '<div class="grid">'+q.options.map((v,j)=>'<div><label>विकल्प '+letters[j]+'</label><div id="edit-opt-'+q.id+'-'+j+'" contenteditable="true" style="padding:12px;border:1px solid #dce3ed;border-radius:11px;background:white;min-height:48px;white-space:pre-wrap">'+esc(v)+'</div><label class="checkline" style="display:flex;gap:7px;align-items:center"><input type="radio" name="correct-'+q.id+'" value="'+j+'" '+(Number(q.correct_index)===j?'checked':'')+' style="width:18px;min-height:18px"> यही सही उत्तर है</label></div>').join('')+'</div>'+
+   '<label>व्याख्या एवं फैक्ट टेबल</label><div id="edit-exp-'+q.id+'" contenteditable="true" style="padding:12px;border:1px solid #dce3ed;border-radius:11px;background:white;min-height:130px;white-space:pre-wrap">'+esc(q.explanation||"")+'</div>'+
+   '<div class="row" style="margin-top:12px"><button class="btn gold full" onclick="saveQuestion('+Number(q.id)+')">💾 Save Changes</button><button class="btn soft full" onclick="cancelEditQuestion()">रद्द करें</button></div></div>';
+ }).join("");
+}
+async function loadQuestions(){try{const id=$("manageTest").value;if(!id)throw Error("टेस्ट चुनें");const d=await api("/tests/"+id+"/questions");managedQuestionCache=d.questions||[];editingQuestionId=null;renderManagedQuestions();}catch(e){toast(e.message)}}
+function editQuestion(id){editingQuestionId=Number(id);renderManagedQuestions();const el=$("edit-q-"+id);if(el)el.focus();}
+function cancelEditQuestion(){editingQuestionId=null;renderManagedQuestions();}
+async function saveQuestion(id){
+ try{
+  const q=managedQuestionCache.find(x=>Number(x.id)===Number(id));if(!q)throw Error("प्रश्न नहीं मिला");
+  const question_hi=$("edit-q-"+id).innerText.trim();
+  const options=[0,1,2,3].map(i=>$("edit-opt-"+id+"-"+i).innerText.trim());
+  const selected=document.querySelector('input[name="correct-'+id+'"]:checked');
+  if(!question_hi||options.some(x=>!x))throw Error("प्रश्न और चारों विकल्प खाली नहीं हो सकते");
+  if(!selected)throw Error("सही उत्तर चुनें");
+  const explanation=$("edit-exp-"+id).innerText.trim();
+  await api("/questions/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({question_hi,question_en:q.question_en||"",options,correct_index:Number(selected.value),explanation})});
+  editingQuestionId=null;toast("पूरा प्रश्न, विकल्प, उत्तर और व्याख्या एक साथ सेव हो गए");await loadQuestions();await refresh();
+ }catch(e){toast(e.message)}
+}
+async function deleteQuestion(id){if(!confirm("क्या यह प्रश्न हटाना चाहते हैं?"))return;try{await api("/questions/"+id,{method:"DELETE"});toast("प्रश्न हटा दिया गया");await loadQuestions();await refresh()}catch(e){toast(e.message)}}
+
+let bankQuestions=[],bankUnit=0,editingBankId=null;
+async function loadQuestionBank(){try{const d=await api("/admin/question-bank");$("bankUnitCounts").innerHTML=d.units.map(x=>'<button type="button" class="'+(bankUnit===x.unit?'active':'')+'" onclick="showBankUnit('+x.unit+')">UNIT '+x.unit+' <small>('+x.count+')</small></button>').join("");bankQuestions=d.questions||[];if(bankUnit)renderBankQuestions();}catch(e){toast(e.message)}}
+function showBankUnit(unit){bankUnit=Number(unit);editingBankId=null;$("bankUnitCounts").querySelectorAll("button").forEach((b,i)=>b.classList.toggle("active",i+1===bankUnit));renderBankQuestions();}
+function renderBankQuestions(){const host=$("bankQuestionList"),rows=bankQuestions.filter(x=>Number(x.unit)===bankUnit);if(!rows.length){host.textContent="इस यूनिट में अभी कोई अतिरिक्त प्रश्न नहीं है।";return;}host.innerHTML=rows.map((x,i)=>{const q=x.question_json||{},edit=Number(editingBankId)===Number(x.id);if(!edit)return '<div class="listitem" style="display:block"><b>'+((i+1)+'. '+esc(q.q||""))+'</b><small>'+((q.options||[]).map((v,j)=>'('+String.fromCharCode(65+j)+') '+esc(v)).join(' · '))+'</small><div class="row"><button class="btn soft" onclick="editBankQuestion('+x.id+')">✏️ Edit</button><button class="btn danger" onclick="deleteBankQuestion('+x.id+')">हटाएँ</button></div></div>';return '<div class="card"><label>प्रश्न</label><textarea id="bq" rows="3">'+esc(q.q||"")+'</textarea><div class="grid">'+(q.options||["","","",""]).map((v,j)=>'<div><label>विकल्प '+String.fromCharCode(65+j)+'</label><input id="bo'+j+'" value="'+esc(v)+'"><label class="checkline"><input type="radio" name="bankAnswer" value="'+j+'" '+(Number(q.answer)===j?'checked':'')+'> सही उत्तर</label></div>').join('')+'</div><label>व्याख्या</label><textarea id="be" rows="4">'+esc(q.explanation||"")+'</textarea><button class="btn gold full" onclick="saveBankQuestion('+x.id+')">Save</button><button class="btn soft full" onclick="editingBankId=null;renderBankQuestions()">रद्द करें</button></div>';}).join("");}
+function editBankQuestion(id){editingBankId=Number(id);renderBankQuestions();}
+async function saveBankQuestion(id){try{const answer=document.querySelector('input[name="bankAnswer"]:checked');if(!answer)throw Error("सही उत्तर चुनें");const d={q:$("bq").value,options:[0,1,2,3].map(i=>$("bo"+i).value),answer:Number(answer.value),explanation:$("be").value};await api("/admin/question-bank/additions/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});editingBankId=null;toast("प्रश्न अपडेट हुआ");await loadQuestionBank();}catch(e){toast(e.message)}}
+async function deleteBankQuestion(id){if(!confirm("क्या यह प्रश्न बैंक से हटाना चाहते हैं?"))return;try{await api("/admin/question-bank/additions/"+id,{method:"DELETE"});toast("प्रश्न हटाया गया");await loadQuestionBank();}catch(e){toast(e.message)}}
+async function uploadResource(){try{const f=$("pdf").files[0];if(!f)throw Error("फाइल चुनें");const fd=new FormData();fd.append("file",f);fd.append("title",$("rt").value.trim());fd.append("unit",$("ru").value.trim());await api("/resources",{method:"POST",body:fd});$("pdf").value="";$("rt").value="";$("ru").value="";toast("फाइल अपलोड सफल")}catch(e){toast(e.message)}}
+async function togglePublish(id){try{const r=await api("/tests/"+id+"/publish",{method:"POST"});toast(r.published?"टेस्ट प्रकाशित हो गया":"टेस्ट Draft में चला गया");await refresh()}catch(e){toast(e.message)}}
+async function delTest(id){if(!confirm("क्या यह टेस्ट और इसके सभी प्रश्न हटाने हैं?"))return;try{await api("/tests/"+id,{method:"DELETE"});toast("टेस्ट हटा दिया गया");await refresh()}catch(e){toast(e.message)}}
+$("loginBtn").addEventListener("click",login);checkTelegramAdmin();
+$("p").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();login()}});
+window.addEventListener("error",e=>{$("msg").textContent="पेज में तकनीकी त्रुटि: "+(e.message||"JavaScript error")});
+window.addEventListener("unhandledrejection",e=>{$("msg").textContent="अनुरोध पूरा नहीं हुआ: "+(e.reason?.message||"Network error")});
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;$("installBtn").hidden=false});
+$("installBtn").addEventListener("click",async()=>{if(!deferredPrompt){toast("ब्राउज़र मेन्यू से Add to Home screen चुनें");return}deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$("installBtn").hidden=true});
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/admin-sw.js").catch(()=>{}));
+window.addEventListener("appinstalled",()=>toast("MPPSC IQ Admin ऐप इंस्टॉल हो गया"));
+</script>
 </body></html>
