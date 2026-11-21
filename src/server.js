@@ -100,6 +100,7 @@ app.get("/",(q,s,n)=>{
     if(!/rel=["']manifest["']/.test(page)) page=page.replace(/<head[^>]*>/i,m=>m+head);
     if(!page.includes('navigator.serviceWorker.register("/sw.js")')) page=page.replace(/<\/body>/i,boot+"</body>");
     const loginGate=`<style id="studentLoginGateStyle">
+body:not(.iq-authenticated)>:not(#studentLoginGate):not(#adminInsideApp){visibility:hidden!important}
 :root{--iq-navy:#102744;--iq-blue:#1f4e7d;--iq-gold:#e7bd62;--iq-bg:#f4f7fb;--iq-ink:#17263d;--iq-muted:#718096}
 #studentLoginGate{position:fixed;inset:0;z-index:2147483000;background:var(--iq-bg);display:flex;align-items:center;justify-content:center;padding:18px;font-family:system-ui,"Noto Sans Devanagari",sans-serif;color:var(--iq-ink);overflow:auto}
 #studentLoginGate .gatecard{width:100%;max-width:560px;background:#fff;border:1px solid #e4eaf2;border-radius:24px;overflow:hidden;box-shadow:0 18px 55px #142b4818}
@@ -133,7 +134,7 @@ app.get("/",(q,s,n)=>{
 </div>
 <section id="studentHomePanel">
 <div class="welcome" id="studentWelcome">नमस्ते</div>
-<button type="button" class="actionbtn revision" onclick="document.getElementById('studentLoginGate').remove()">📚 रिवीजन शुरू करें</button>
+<button type="button" class="actionbtn revision" onclick="document.body.classList.add('iq-authenticated');document.getElementById('studentLoginGate').remove()">📚 रिवीजन शुरू करें</button>
 <button type="button" class="actionbtn adminpanel" id="adminPanelButton" style="display:none" onclick="document.getElementById('adminInsideApp').style.display='block';document.getElementById('adminInsideFrame').src='/admin.html'">⚙️ Admin Panel खोलें</button>
 <div class="footnote">नियमित अभ्यास • सही विश्लेषण • बेहतर परिणाम</div>
 </section>
