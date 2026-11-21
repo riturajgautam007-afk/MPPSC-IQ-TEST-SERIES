@@ -182,6 +182,13 @@ body:not(.iq-authenticated)>:not(#studentLoginGate):not(#adminInsideApp){visibil
   });
 });
 app.get("/app",requireAuth,(q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
+// Protect the admin HTML shell itself; API routes remain independently protected.
+app.get("/admin.html",(q,s,n)=>{
+ requireAuth(q,s,()=>{
+  if(q.auth?.role!=="admin")return s.status(403).send("Admin access केवल अधिकृत Admin के लिए है।");
+  s.sendFile(path.join(__dirname,"..","public","admin.html"));
+ });
+});
 app.use(express.static(path.join(__dirname,"..","public")));app.get("*",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use((e,_q,s,_n)=>{console.error(e);s.status(400).json({error:e.message||"Request failed"});});
 async function connectDatabase(){try{await db.init();await membership.ensureSchema(db);dbReady=true;dbLastError="";console.log("Database connected and schema ready");const {error}=await supabase.storage.createBucket(bucket,{public:false,fileSizeLimit:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024});if(error&&!String(error.message).toLowerCase().includes("already"))console.warn("Storage bucket setup:",error.message);}catch(e){dbReady=false;dbLastError=e.message||"Database connection failed";console.error("Database unavailable; web server remains online:",dbLastError);}}
