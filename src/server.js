@@ -64,7 +64,19 @@ app.get("/api/admin/backup",requireAuth,requireAdmin,ar(async(_q,res)=>{
 app.get("/api/admin/overview",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT (SELECT COUNT(*) FROM students)::int students,(SELECT COUNT(*) FROM tests)::int tests,(SELECT COUNT(*) FROM questions)::int questions,(SELECT COUNT(*) FROM attempts)::int attempts");s.json(r.rows[0]);}));
 app.get("/api/admin/analytics",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT st.id,st.name,st.username,st.telegram_id,COUNT(at.id)::int attempts,COALESCE(SUM(at.score),0)::int total_correct,COALESCE(SUM(at.total),0)::int total_questions,CASE WHEN SUM(at.total)>0 THEN ROUND(100.0*SUM(at.score)/SUM(at.total),1) ELSE 0 END average_percentage,MAX(at.created_at) last_attempt FROM students st LEFT JOIN attempts at ON at.student_id=st.id GROUP BY st.id ORDER BY attempts DESC,average_percentage DESC,st.id DESC");s.json(r.rows);}));
 app.get("/api/admin/student-performance",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT st.id AS student_id,t.unit,COUNT(a.id)::int attempts,COALESCE(SUM(a.score),0)::int total_correct,COALESCE(SUM(a.total),0)::int total_questions,CASE WHEN SUM(a.total)>0 THEN ROUND(100.0*SUM(a.score)/SUM(a.total),1) ELSE 0 END average_percentage,MAX(a.created_at) last_attempt FROM students st JOIN attempts a ON a.student_id=st.id JOIN tests t ON t.id=a.test_id GROUP BY st.id,t.unit ORDER BY st.id,average_percentage ASC");s.json(r.rows);}));
-app.get("/api/admin/students",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT id,name,telegram_id,username,created_at FROM students ORDER BY id DESC");s.json(r.rows);}));
+app.get("/api/admin/students",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT id,name,telegram_id,username,created_at FROM students ORDER BY id DESC");s.json(r.rows);}));app.get("/api/admin/students/:id/profile",requireAuth,requireAdmin,ar(async(q,s)=>{
+ const id=Number(q.params.id);if(!Number.isInteger(id)||id<1)return s.status(400).json({error:"विद्यार्थी ID सही नहीं है"});
+ const student=(await db.query("SELECT id,name,telegram_id,username,created_at FROM students WHERE id=$1",[id])).rows[0];
+ if(!student)return s.status(404).json({error:"विद्यार्थी नहीं मिला"});
+ const [summary,attempts,units,membership,wrong]=await Promise.all([
+  db.query("SELECT COUNT(*)::int attempts,COALESCE(SUM(score),0)::int total_correct,COALESCE(SUM(total),0)::int total_questions,CASE WHEN SUM(total)>0 THEN ROUND(100.0*SUM(score)/SUM(total),1) ELSE 0 END average_percentage,MAX(created_at) last_attempt FROM attempts WHERE student_id=$1",[id]),
+  db.query("SELECT a.id,a.score,a.total,CASE WHEN a.total>0 THEN ROUND(100.0*a.score/a.total,1) ELSE 0 END percentage,a.created_at,t.title,t.unit FROM attempts a JOIN tests t ON t.id=a.test_id WHERE a.student_id=$1 ORDER BY a.created_at DESC,a.id DESC LIMIT 100",[id]),
+  db.query("SELECT t.unit,COUNT(a.id)::int attempts,COALESCE(SUM(a.score),0)::int total_correct,COALESCE(SUM(a.total),0)::int total_questions,CASE WHEN SUM(a.total)>0 THEN ROUND(100.0*SUM(a.score)/SUM(a.total),1) ELSE 0 END average_percentage FROM attempts a JOIN tests t ON t.id=a.test_id WHERE a.student_id=$1 GROUP BY t.unit ORDER BY t.unit",[id]),
+  db.query("SELECT status,batch,starts_at,ends_at,amount_inr,updated_at FROM student_memberships WHERE student_id=$1",[id]),
+  db.query("SELECT COUNT(*)::int count FROM wrong_questions WHERE student_id=$1",[id])
+ ]);
+ s.json({student,summary:summary.rows[0],attempts:attempts.rows,units:units.rows,membership:membership.rows[0]||{status:"inactive"},wrong_questions:wrong.rows[0]?.count||0});
+}));
 app.post("/api/tests/:id/import-text",requireAuth,requireAdmin,ar(async(q,s)=>{
  const raw=String(q.body?.text||"").replace(/\r\n?/g,"\n").trim();
  if(!raw)return s.status(400).json({error:"प्रश्नों का Text Paste करें"});
