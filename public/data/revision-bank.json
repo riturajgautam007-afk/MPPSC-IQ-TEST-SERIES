@@ -339,8 +339,8 @@ function render(){
   const legacyMatch=structured.table?'':matchTable(lang==='hi'?(q.q||''):(q.en||''),idx);
   const visibleQuestion=structured.table?(structured.intro||title):questionText;
   const cardTitle=isMixedMode?`UNIT ${String(q.__unit).padStart(2,'0')} · ${title} ${idx+1}`:`${title} ${idx+1}`;
-  const bookmarkKey=String(Number(q.__unit||activeUnit))+':'+String(String(q.__qid||((q.__unit||activeUnit)+':'+idx)).split(':').pop());const bookmarkButton=revisionBookmarkMap[bookmarkKey]?'★ बुकमार्क हटाएँ':'☆ बुकमार्क';const actionBar=\`<div class="revision-question-actions"><button type="button" onclick="toggleRevisionBookmark(\${idx})">\${bookmarkButton}</button><button type="button" onclick="reportRevisionQuestion(\${idx})">⚑ रिपोर्ट</button></div>\`;
-  return \`<section class="card" id="qcard-\${idx}"><div class="qtext">\${cardTitle}. \${esc(visibleQuestion)}</div>\${structured.table||legacyMatch}\${options}\${actionBar}</section>\`
+  const bookmarkKey=String(Number(q.__unit||activeUnit))+':'+String(String(q.__qid||((q.__unit||activeUnit)+':'+idx)).split(':').pop());const bookmarkButton=revisionBookmarkMap[bookmarkKey]?'★ बुकमार्क हटाएँ':'☆ बुकमार्क';const actionBar=`<div class="revision-question-actions"><button type="button" onclick="toggleRevisionBookmark(${idx})">${bookmarkButton}</button><button type="button" onclick="reportRevisionQuestion(${idx})">⚑ रिपोर्ट</button></div>`;
+  return `<section class="card" id="qcard-${idx}"><div class="qtext">${cardTitle}. ${esc(visibleQuestion)}</div>${structured.table||legacyMatch}${options}${actionBar}</section>`
  }).join('');
  const wrongBtn=document.querySelector('.bottom button[onclick="showWrong()"]');if(wrongBtn){wrongBtn.textContent=reviewMode?`Next Wrong ${reviewPos+1}/${reviewIds.length}`:`Wrong (${wrong})`;wrongBtn.style.display=unitWrongMode?'none':'';}if(unitWrongMode){['backBtn','nextBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.display='none';});const mb=document.querySelector('.mixbar');if(mb)mb.style.display='none';}
 }
