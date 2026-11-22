@@ -111,7 +111,7 @@ function mountNativeRevisionQuiz(){
      }
     }
     ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
-    try{fn(...args)}catch(error){console.error('Quiz click action failed:',match[1],error)}
+    try{fn(...args);if(unitNav?.contains(control))setTimeout(()=>setStage('questions'),80)}catch(error){console.error('Quiz click action failed:',match[1],error)}
    },true);
    const raw=sourceScript.textContent;
    const patched=raw
