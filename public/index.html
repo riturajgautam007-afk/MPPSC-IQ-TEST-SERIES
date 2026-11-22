@@ -81,7 +81,7 @@ function mountNativeRevisionQuiz(){
   const btn=ev.target&&ev.target.closest?ev.target.closest('.revision-question-actions button'):null;
   if(!btn||!((btn.textContent||'').includes('रिपोर्ट')))return;
   const raw=btn.getAttribute('onclick')||'';
-  const nums=raw.match(/\\d+/g)||[];
+  const nums=raw.match(/[0-9]+/g)||[];
   if(nums.length<2)return;
   ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
   window.reportRevisionQuestion(Number(nums[0]),Number(nums[1]));
