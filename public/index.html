@@ -40,43 +40,48 @@ async function mountNativeRevisionQuiz(){
  const host=$('revisionQuizNative');if(!host||nativeRevisionQuizReady||nativeRevisionQuizLoading)return;
  nativeRevisionQuizLoading=true;host.innerHTML='<div class="empty">क्विज़ सिस्टम लोड हो रहा है…</div>';
  try{
-  const response=await fetch('/pre2027-revision-quiz.html',{credentials:'same-origin'});if(!response.ok)throw new Error('क्विज़ फ़ाइल लोड नहीं हुई।');
-  const source=await response.text(),parsed=new DOMParser().parseFromString(source,'text/html'),root=host.attachShadow({mode:'open'});
-  const styles=[...parsed.querySelectorAll('style')].map(x=>x.textContent).join('\n');
-  const markup=parsed.body.innerHTML.replace(/<script[\\s\\S]*?<\\/script>/gi,'');
-  const scopeStyle=document.createElement('style');scopeStyle.textContent=styles+'\n'+
-   ':host{display:block;color:#f4f2ec;background:#171a20;border:1px solid #2a303a;border-radius:18px;overflow:hidden;font-family:Inter,system-ui,"Noto Sans Devanagari",sans-serif}'+
-   'body{background:transparent!important;color:#f4f2ec!important}'+
-   '.header{display:none!important}.topsticky{position:relative!important;top:auto!important;box-shadow:none!important;background:#171a20!important}'+
-   '.langbar{background:#171a20!important;border-color:#2a303a!important}.langbar button{background:#242830!important;color:#f4f2ec!important;border-color:#3a4350!important}.langbar button.active{background:#ffd84f!important;color:#171717!important;border-color:#ffd84f!important}'+
-   '.meta,.topsticky #stickyMeta{background:#202630!important;color:#dce4f0!important;border-color:#344052!important}'+
-   '.card{background:#111a29!important;color:#f4f2ec!important;border-color:#304158!important;box-shadow:none!important}.qtext{color:#f4f2ec!important}.eng{color:#b9c5d6!important}'+
-   '.option{background:#1c2b40!important;color:#eaf0f8!important;border-color:#344a65!important}.letter{color:#ffd84f!important}.option.correct{background:#174a35!important;color:#eafff2!important}.option.wrong{background:#542b32!important;color:#fff!important}'+
-   '.bottom{position:sticky!important;bottom:auto!important;z-index:5!important;flex-wrap:wrap!important;background:#101216!important;border-color:#2a303a!important;box-shadow:none!important}.bottom button,.bottom .score-chip{background:#263d5d!important;color:#fff!important;border-color:#405b7e!important}.bottom .score-chip{background:#171a20!important}'+
-   '.sticky-tools{background:#171a20!important}.match-table,.match-table td{background:#1c2b40!important;color:#eaf0f8!important;border-color:#344a65!important}.match-table th{background:#263d5d!important;color:#fff!important}'+
-   '.progress-track{background:#303b4b!important}.progress-fill{background:#ffd84f!important}.review-note{background:#332b16!important;color:#ffe39a!important;border-color:#695621!important}'+
-   '.unitbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:10px;background:#171a20!important}.unitbar button{min-width:0;padding:9px 3px;border:1px solid #3a4658;border-radius:10px;background:#242830;color:#eaf0f8;font-weight:800}.unitbar button.active{background:#ffd84f;color:#171717;border-color:#ffd84f}'+
-   '.wrap{margin:10px auto 14px!important;padding:0 9px!important}.bottom{padding:8px!important}.bottom .mixbar{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;width:100%}.bottom .mixbar button{white-space:normal!important}'+
-   '@media(max-width:520px){.unitbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.bottom button,.bottom .score-chip{font-size:10px!important;padding:7px 5px!important}}';
-  root.appendChild(scopeStyle);const shell=document.createElement('div');shell.innerHTML=markup;root.appendChild(shell);
-  const bodyProxy={classList:host.classList,appendChild:n=>root.appendChild(n),removeChild:n=>n.remove()};
-  const doc={getElementById:id=>root.getElementById(id),querySelector:q=>root.querySelector(q),querySelectorAll:q=>root.querySelectorAll(q),createElement:t=>document.createElement(t),body:bodyProxy,head:document.head,documentElement:host};
-  const win=window;
-  const script=parsed.querySelector('script')?.textContent||'';if(!script)throw new Error('क्विज़ स्क्रिप्ट उपलब्ध नहीं है।');
-  const expose=';window.setUnit=setUnit;window.setPYQs=setPYQs;window.showAnalysis=showAnalysis;window.setLang=setLang;window.toggleTheme=toggleTheme;window.changePage=changePage;window.showWrong=showWrong;window.refreshAll=refreshAll;window.shuffleCurrentUnit=shuffleCurrentUnit;window.mixAllUnits=mixAllUnits;window.choose=choose;window.downloadMistakesCSV=downloadMistakesCSV;window.downloadUltraPNG=downloadUltraPNG;window.printPerformanceReport=printPerformanceReport;window.reviewAllRecordedWrong=reviewAllRecordedWrong;window.reviewWrongByUnit=reviewWrongByUnit;window.setAnalysisTab=setAnalysisTab;window.showWrong=showWrong;window.showAllRecordedWrong=showAllRecordedWrong;window.applyTheme=applyTheme;window.resetQuizState=resetQuizState;window.updateUnitButtons=updateUnitButtons;window.loadPerformance=loadPerformance;window.recordPerformance=recordPerformance;window.savePerformance=savePerformance;window.cleanLang=cleanLang;window.makeTable=makeTable;window.matchTable=matchTable;window.structuredQuestionTable=structuredQuestionTable;window.performanceSummary=performanceSummary;window.renderProgressPane=renderProgressPane;window.renderRevisionPane=renderRevisionPane;';
-  new Function('document','window','localStorage','alert','confirm',script+expose)(doc,win,localStorage,alert,confirm);
-  // Shadow-root inline handlers are not reliable in embedded webviews. Route every quiz click through one delegated listener.
-  const parseArgs=(raw)=>{if(!raw.trim())return[];return raw.split(/,(?=(?:[^'"]|'[^']*'|"[^"]*")*$)/).map(v=>{v=v.trim();if((v[0]==="'"&&v.at(-1)==="'")||(v[0]==='"'&&v.at(-1)==='"'))return v.slice(1,-1);if(/^-?\\d+(?:\\.\\d+)?$/.test(v))return Number(v);return v;});};
-  root.addEventListener('click',event=>{
-   const target=event.target instanceof Element?event.target.closest('[onclick]'):null;if(!target)return;
-   const expression=target.getAttribute('onclick')||'';target.removeAttribute('onclick');
-   const match=expression.match(/^([A-Za-z_$][\\w$]*)\\s*\\((.*)\\)\\s*;?$/s);if(!match)return;
-   event.preventDefault();event.stopPropagation();
-   const handler=window[match[1]];if(typeof handler!=='function'){console.error('Quiz handler missing:',match[1]);return;}
-   try{handler(...parseArgs(match[2]));}catch(error){console.error('Quiz click failed:',match[1],error);alert('इस बटन को चलाने में समस्या आई: '+error.message);}
-  },true);
-  // Remove static inline attributes too; delegated handler above handles both static and dynamically rendered quiz controls.
-  root.querySelectorAll('[onclick]').forEach(element=>element.removeAttribute('onclick'));
+  const frame=document.createElement('iframe');
+  frame.title='MPPSC IQ Unit-wise Revision Quiz';
+  frame.src='/pre2027-revision-quiz.html';
+  frame.setAttribute('loading','eager');
+  frame.setAttribute('allow','clipboard-write');
+  frame.style.cssText='display:block;width:100%;height:calc(100vh - 205px);min-height:720px;max-height:1200px;border:0;border-radius:14px;background:#171a20;';
+  frame.addEventListener('load',()=>{
+   try{
+    const d=frame.contentDocument;
+    if(!d||!d.head)return;
+    const style=d.createElement('style');
+    style.textContent=`
+     html,body{background:#171a20!important;color:#f4f2ec!important}
+     body{padding-bottom:0!important}
+     .header{display:none!important}
+     .wrap{max-width:100%!important;margin:10px auto 14px!important;padding:0 9px!important}
+     .langbar{background:#171a20!important;border-color:#2a303a!important}
+     .langbar button{background:#242830!important;color:#f4f2ec!important;border-color:#3a4350!important}
+     .langbar button.active{background:#ffd84f!important;color:#171717!important;border-color:#ffd84f!important}
+     .meta{background:#202630!important;color:#dce4f0!important;border-color:#344052!important}
+     .card{background:#111a29!important;color:#f4f2ec!important;border-color:#304158!important;box-shadow:none!important}
+     .qtext{color:#f4f2ec!important}.eng{color:#b9c5d6!important}
+     .option{background:#1c2b40!important;color:#eaf0f8!important;border-color:#344a65!important}
+     .letter{color:#ffd84f!important}.option.correct{background:#174a35!important;color:#eafff2!important}
+     .option.wrong{background:#542b32!important;color:#fff!important}
+     .bottom{background:#101216!important;border-color:#2a303a!important}
+     .bottom button,.bottom .score-chip{background:#263d5d!important;color:#fff!important;border-color:#405b7e!important}
+     .bottom .score-chip{background:#171a20!important}
+     .match-table,.match-table td{background:#1c2b40!important;color:#eaf0f8!important;border-color:#344a65!important}
+     .match-table th{background:#263d5d!important;color:#fff!important}
+     .progress-track{background:#303b4b!important}.progress-fill{background:#ffd84f!important}
+     .unitbar{background:#171a20!important}
+     .unitbar button{background:#242830!important;color:#eaf0f8!important;border-color:#3a4658!important}
+     .unitbar button.active{background:#ffd84f!important;color:#171717!important;border-color:#ffd84f!important}
+     .feedback{background:#202630!important;color:#eaf0f8!important}
+     .unit-empty,.notice{background:#202630!important;color:#eaf0f8!important;border-color:#344052!important}
+     @media(max-width:520px){.bottom{padding-bottom:calc(8px + env(safe-area-inset-bottom))!important}}
+    `;
+    d.head.appendChild(style);
+   }catch(error){console.error('Quiz theme integration failed:',error);}
+  });
+  host.replaceChildren(frame);
   nativeRevisionQuizReady=true;
  }catch(e){host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(e.message)+'</div>';console.error(e)}
  finally{nativeRevisionQuizLoading=false}
