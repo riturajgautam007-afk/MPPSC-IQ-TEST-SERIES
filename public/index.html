@@ -52,7 +52,7 @@ function mountNativeRevisionQuiz(){
  });
  host.replaceChildren(frame);
 }
-function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='tests')mountNativeRevisionQuiz()if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
+function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='tests')mountNativeRevisionQuiz();if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
 document.querySelectorAll('#examSeg button').forEach(b=>b.onclick=()=>{exam=b.dataset.exam;document.querySelectorAll('#examSeg button').forEach(x=>x.classList.toggle('active',x===b));loadTests()});
 $('themeBtn').onclick=()=>document.body.classList.toggle('light');
