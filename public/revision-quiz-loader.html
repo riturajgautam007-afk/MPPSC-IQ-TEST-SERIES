@@ -9,18 +9,31 @@
   const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable: '+p);return r.text()}));
   const html=parts.join('');
   if(!html.includes('UNIT1_DATA')||!html.includes('toggleRevisionBookmark')||!html.includes('</body>'))throw Error('Quiz source validation failed');
-  const bridge=`<script>
+  const bridge=\`<script>
   document.addEventListener('click',function(e){
    const b=e.target.closest('button');if(!b)return;
    const inline=b.getAttribute('onclick')||'';
-   const m=inline.match(/toggleRevisionBookmark\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*this\\s*\\)/);
-   if(!m)return;
-   e.preventDefault();e.stopImmediatePropagation();
-   if(typeof window.toggleRevisionBookmark!=='function'){alert('Bookmark function load नहीं हुआ।');return;}
-   window.toggleRevisionBookmark(Number(m[1]),Number(m[2]),b);
+   const bm=inline.match(/toggleRevisionBookmark\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*this\\s*\\)/);
+   if(bm){e.preventDefault();e.stopImmediatePropagation();if(typeof window.toggleRevisionBookmark!=='function'){alert('Bookmark function load नहीं हुआ।');return;}window.toggleRevisionBookmark(Number(bm[1]),Number(bm[2]),b);return;}
+   const rm=inline.match(/reportRevisionQuestion\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)/);
+   if(rm){window.__activeRevisionReport={unit:Number(rm[1]),index:Number(rm[2])};return;}
+   if((b.textContent||'').trim().includes('रिपोर्ट भेजें')){
+    const active=window.__activeRevisionReport;if(!active)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    if(b.dataset.sending==='1'||b.dataset.sent==='1')return;
+    const q=(window.UNIT_DATA_MAP?.[active.unit]||[])[active.index];if(!q){alert('प्रश्न डेटा नहीं मिला।');return;}
+    const root=b.closest('[role="dialog"]')||b.closest('.modal')||b.closest('.report-modal')||b.parentElement?.parentElement?.parentElement||document;
+    const sel=root.querySelector('select'),area=root.querySelector('textarea');
+    const selected=sel?.selectedOptions?.[0],issue=(selected?.textContent||sel?.value||'').trim(),detail=(area?.value||'').trim();
+    if(!issue||/समस्या चुनें|चुनें/.test(issue)){alert('कृपया पहले समस्या चुनें।');return;}
+    const reason=issue+(detail?' — '+detail:'');
+    b.dataset.sending='1';b.disabled=true;b.textContent='भेज रहे हैं…';
+    fetch('/api/revision-question-reports',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({unit:active.unit,index:active.index,question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason})})
+    .then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'रिपोर्ट सेव नहीं हुई');b.textContent='✓ रिपोर्ट भेज दी गई';b.dataset.sent='1';window.__activeRevisionReport=null;})
+    .catch(err=>{b.disabled=false;b.dataset.sending='';b.textContent='रिपोर्ट भेजें';alert(err.message||'रिपोर्ट भेजने में समस्या हुई।');});
+   }
   },true);
-  <\/script>`;
-  const finalHtml=html.replace('</body>',bridge+'</body>');
+  <\/script>\`;  const finalHtml=html.replace('</body>',bridge+'</body>');
   if(finalHtml===html)throw Error('Quiz page insertion failed');
   document.open();document.write(finalHtml);document.close();
  }catch(e){console.error('MPPSC IQ revision quiz loader:',e);document.body.innerHTML='<p style="font:16px system-ui;padding:20px;color:#b00">Quiz लोड नहीं हुआ: '+String(e&&e.message||e)+'</p>';}
