@@ -59,7 +59,7 @@ function mountNativeRevisionQuiz(){
     back.style.cssText='display:none;margin:8px 10px;padding:8px 13px;border:1px solid #64748b;border-radius:8px;background:#1e3552;color:#fff;font-weight:700;font-size:13px';
     unitNav?.parentNode?.insertBefore(back,unitNav);
     const showUnits=()=>{flow.textContent='.langbar,#stickyMeta,.wrap,.bottom{display:none!important}';if(unitNav)unitNav.style.display='grid';back.style.display='none';};
-    const showQuestions=()=>{flow.textContent='.langbar,#stickyMeta,.wrap,.bottom{display:block!important}';if(unitNav)unitNav.style.display='none';back.style.display='inline-block';};
+    const showQuestions=()=>{flow.textContent='';if(unitNav)unitNav.style.display='none';back.style.display='inline-block';};
     back.addEventListener('click',showUnits);
     unitNav?.addEventListener('click',ev=>{
      const btn=ev.target.closest('button');if(!btn)return;
