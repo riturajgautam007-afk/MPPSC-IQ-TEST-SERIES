@@ -107,21 +107,17 @@ async function mountNativeRevisionQuiz(){
     return typeof value==='function'?value.bind(target):value;
    }});
    const expose=names.map(n=>'if(typeof '+n+'==="function")window['+JSON.stringify(n)+']='+n+';').join('\n');
-   const executeQuiz=new Function('document','window','localStorage','alert','confirm','quizRoot',originalScript.textContent+'\n'+expose);
+   // Attach controls inside the quiz script scope so local functions resolve reliably.
+   const bindControls = [
+    'for(let unit=1;unit<=10;unit++){',
+    ' const button=document.getElementById("unit"+unit+"Btn");',
+    ' if(button){button.removeAttribute("onclick");button.addEventListener("click",function(e){e.preventDefault();setUnit(unit);});}',
+    '}',
+    'const pyq=document.getElementById("pyqBtn");if(pyq){pyq.removeAttribute("onclick");pyq.addEventListener("click",function(e){e.preventDefault();setPYQs();});}',
+    'const analysis=document.getElementById("analysisBtn");if(analysis){analysis.removeAttribute("onclick");analysis.addEventListener("click",function(e){e.preventDefault();showAnalysis();});}'
+   ].join('\n');
+   const executeQuiz=new Function('document','window','localStorage','alert','confirm','quizRoot',originalScript.textContent+'\n'+expose+'\n'+bindControls);
    executeQuiz(scopedDocument,window,localStorage,window.alert.bind(window),window.confirm.bind(window),root);
-   // Shadow-DOM buttons use explicit listeners instead of inline onclick attributes.
-   // This guarantees unit switching works inside the app's embedded quiz surface.
-   for(let unit=1;unit<=10;unit++){
-    const button=root.querySelector('#unit'+unit+'Btn');
-    if(button){
-     button.removeAttribute('onclick');
-     button.addEventListener('click',()=>window.setUnit(unit));
-    }
-   }
-   const pyqButton=root.querySelector('#pyqBtn');
-   if(pyqButton){pyqButton.removeAttribute('onclick');pyqButton.addEventListener('click',()=>window.setPYQs());}
-   const analysisButton=root.querySelector('#analysisBtn');
-   if(analysisButton){analysisButton.removeAttribute('onclick');analysisButton.addEventListener('click',()=>window.showAnalysis());}
    nativeRevisionQuizReady=true;
   }catch(e){
    host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(e.message)+'</div>';
