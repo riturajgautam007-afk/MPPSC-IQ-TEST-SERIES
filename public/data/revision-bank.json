@@ -4,7 +4,75 @@ let activeUnit=2,isMixedMode=false,isUnitShuffled=false,unitWrongMode=false;let 
 const PERFORMANCE_KEY='mppscIqCandidatePerformance_v1';
 function loadPerformance(){try{const x=JSON.parse(localStorage.getItem(PERFORMANCE_KEY)||'{}');return x&&x.questions&&typeof x.questions==='object'?x:{questions:{},recent:[]};}catch(e){return {questions:{},recent:[]};}}
 let performanceData=loadPerformance();
-function savePerformance(){try{localStorage.setItem(PERFORMANCE_KEY,JSON.stringify(performanceData));}catch(e){}}
+let remoteProgressReady=false,remoteProgressTimer=null,remoteProgressBusy=false,remoteProgressAgain=false;
+function buildRevisionSession(){
+ const order=Array.isArray(DATA)?DATA.map((q,i)=>String(q.__qid||((q.__unit||activeUnit)+':'+i))).slice(0,30000):[];
+ const safeAnswers={};
+ for(const [k,v] of Object.entries(answers||{})){const i=Number(k);if(Number.isInteger(i)&&i>=0&&i<30000&&Number.isInteger(Number(v))&&Number(v)>=0&&Number(v)<=3)safeAnswers[String(i)]=Number(v);}
+ return {activeUnit:Number(activeUnit)||2,isMixedMode:!!isMixedMode,isUnitShuffled:!!isUnitShuffled,questionOrder:order,answers:safeAnswers,currentIndex:Math.max(0,Math.min(30000,Number(currentIndex)||0)),savedAt:Date.now()};
+}
+function scheduleRevisionProgressSync(){
+ if(!remoteProgressReady)return;
+ clearTimeout(remoteProgressTimer);
+ remoteProgressTimer=setTimeout(syncRevisionProgress,500);
+}
+async function syncRevisionProgress(){
+ if(!remoteProgressReady)return;
+ if(remoteProgressBusy){remoteProgressAgain=true;return;}
+ remoteProgressBusy=true;
+ try{
+  const body={performance:performanceData||{questions:{},recent:[],history:[]},session:buildRevisionSession()};
+  const response=await fetch('/api/revision-progress',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.error||('Progress save failed ('+response.status+')'));}
+ }catch(error){console.warn('Revision progress sync failed; local backup retained.',error);}
+ finally{remoteProgressBusy=false;if(remoteProgressAgain){remoteProgressAgain=false;scheduleRevisionProgressSync();}}
+}
+function mergeRevisionPerformance(local,remote){
+ const a=local&&typeof local==='object'?local:{},b=remote&&typeof remote==='object'?remote:{};
+ const questions={...(a.questions||{})};
+ for(const [id,rr] of Object.entries(b.questions||{})){
+  const lr=questions[id]||{},r=rr||{},latest=(Number(r.lastAt)||0)>=(Number(lr.lastAt)||0)?r:lr;
+  const correct=Math.max(Number(lr.correct)||0,Number(r.correct)||0),wrong=Math.max(Number(lr.wrong)||0,Number(r.wrong)||0);
+  questions[id]={...lr,...r,unit:Number(latest.unit||r.unit||lr.unit)||0,attempts:Math.max(Number(lr.attempts)||0,Number(r.attempts)||0,correct+wrong),correct,wrong,lastCorrect:latest.lastCorrect??null,lastAt:Math.max(Number(lr.lastAt)||0,Number(r.lastAt)||0)};
+ }
+ const timeline=(x,y,limit)=>{const all=[...(Array.isArray(x)?x:[]),...(Array.isArray(y)?y:[])],seen=new Map();for(const item of all){if(!item||!Number(item.at))continue;seen.set(String(item.at)+'|'+String(item.unit)+'|'+String(item.correct),item);}return [...seen.values()].sort((p,q)=>(Number(p.at)||0)-(Number(q.at)||0)).slice(-limit);};
+ return {questions,recent:timeline(a.recent,b.recent,100),history:timeline(a.history,b.history,10000)};
+}
+async function restoreRevisionProgress(){
+ try{
+  const response=await fetch('/api/revision-progress',{method:'GET',credentials:'include',cache:'no-store'});
+  if(!response.ok)return;
+  const saved=await response.json();
+  let remotePerformance=saved.performance_json||{};
+  let remoteSession=saved.session_json||{};
+  if(typeof remotePerformance==='string'){try{remotePerformance=JSON.parse(remotePerformance)}catch(_e){remotePerformance={}}}
+  if(typeof remoteSession==='string'){try{remoteSession=JSON.parse(remoteSession)}catch(_e){remoteSession={}}}
+  performanceData=mergeRevisionPerformance(performanceData,remotePerformance);
+  try{localStorage.setItem(PERFORMANCE_KEY,JSON.stringify(performanceData));}catch(_e){}
+  const unit=Number(remoteSession.activeUnit);
+  if(Number.isInteger(unit)&&unit>=0&&unit<=12){
+   activeUnit=unit;isMixedMode=!!remoteSession.isMixedMode;isUnitShuffled=!!remoteSession.isUnitShuffled;
+   const baseMap=new Map();
+   for(const [u,items] of Object.entries(UNIT_DATA_MAP)){(items||[]).forEach((q,i)=>baseMap.set(u+':'+i,{...q,__unit:Number(u),__qid:u+':'+i}));}
+   if(Array.isArray(remoteSession.questionOrder)&&remoteSession.questionOrder.length){
+    const restored=remoteSession.questionOrder.map(id=>baseMap.get(String(id))).filter(Boolean);
+    if(restored.length)DATA=restored;
+   }else if(unit>=1&&unit<=10){DATA=(UNIT_DATA_MAP[unit]||[]).map((q,i)=>({...q,__unit:unit,__qid:unit+':'+i}));}
+   else if(unit===0&&isMixedMode){DATA=[];for(const [u,items] of Object.entries(UNIT_DATA_MAP)){(items||[]).forEach((q,i)=>DATA.push({...q,__unit:Number(u),__qid:u+':'+i}));}}
+   else if(unit===11||unit===12)DATA=[];
+   answers={};
+   for(const [k,v] of Object.entries(remoteSession.answers||{})){const i=Number(k),n=Number(v);if(Number.isInteger(i)&&i>=0&&i<DATA.length&&Number.isInteger(n)&&n>=0&&n<=3)answers[i]=n;}
+   currentIndex=Math.max(0,Math.min(Math.max(0,DATA.length-1),Number(remoteSession.currentIndex)||0));
+   page=Math.floor(currentIndex/PER);
+   reviewMode=false;reviewIds=[];reviewPos=0;unitWrongMode=false;
+   updateUnitButtons(unit);
+  }
+  remoteProgressReady=true;
+  render();
+  scheduleRevisionProgressSync();
+ }catch(error){console.warn('Revision progress restore unavailable; local progress retained.',error);}
+}
+function savePerformance(){try{localStorage.setItem(PERFORMANCE_KEY,JSON.stringify(performanceData));}catch(e){}scheduleRevisionProgressSync();}
 function recordPerformance(q,index,selected){const unit=Number(q.__unit||activeUnit||0);const qid=q.__qid||`${unit}:${index}`;const ok=selected===q.answer;const at=Date.now();const rec=performanceData.questions[qid]||(performanceData.questions[qid]={unit,attempts:0,correct:0,wrong:0,lastCorrect:null,lastAt:0});rec.unit=unit;rec.attempts++;if(ok)rec.correct++;else rec.wrong++;rec.lastCorrect=ok;rec.lastAt=at;performanceData.recent=Array.isArray(performanceData.recent)?performanceData.recent:[];performanceData.recent.push({unit,correct:ok,at});if(performanceData.recent.length>30)performanceData.recent=performanceData.recent.slice(-30);performanceData.history=Array.isArray(performanceData.history)?performanceData.history:[];performanceData.history.push({unit,correct:ok,at});if(performanceData.history.length>5000)performanceData.history=performanceData.history.slice(-5000);savePerformance();}
 function performanceSummary(){const records=Object.values(performanceData.questions||{});const units=Array.from({length:10},(_,i)=>i+1);const stats=units.map(unit=>{const rs=records.filter(r=>Number(r.unit)===unit);const attempts=rs.reduce((n,r)=>n+(r.attempts||0),0),correct=rs.reduce((n,r)=>n+(r.correct||0),0),wrong=rs.reduce((n,r)=>n+(r.wrong||0),0),unique=rs.length,accuracy=attempts?correct/attempts*100:0;return {unit,attempts,correct,wrong,unique,total:(UNIT_DATA_MAP[unit]||[]).length,accuracy};});const attempts=stats.reduce((n,x)=>n+x.attempts,0),correct=stats.reduce((n,x)=>n+x.correct,0),wrong=stats.reduce((n,x)=>n+x.wrong,0),unique=records.length,total=stats.reduce((n,x)=>n+x.total,0);const active=stats.filter(x=>x.attempts>0);const strongest=active.length?active.reduce((a,b)=>b.accuracy>a.accuracy?b:a):null;const weakest=active.length?active.reduce((a,b)=>b.accuracy<a.accuracy?b:a):null;const recent=performanceData.recent||[];const recentCorrect=recent.filter(x=>x.correct).length;const allMistakes=Object.entries(performanceData.questions||{}).filter(([,r])=>(r.wrong||0)>0).map(([qid,r])=>{const [unit,index]=qid.split(':').map(Number);const q=(UNIT_DATA_MAP[unit]||[])[index];return {qid,unit,index,wrong:r.wrong||0,correct:r.correct||0,attempts:r.attempts||0,lastCorrect:r.lastCorrect,question:q?cleanLang(lang==='hi'?(q.q||q.en):(q.en||q.q),lang):'प्रश्न उपलब्ध नहीं',rightAnswer:q?cleanLang(q.options?.[q.answer]||'',lang):'',q};}).sort((a,b)=>b.wrong-a.wrong||a.attempts-b.attempts);const repeatWrong=allMistakes.filter(x=>x.wrong>1).length,recovered=allMistakes.filter(x=>x.lastCorrect===true).length;return {stats,attempts,correct,wrong,unique,total,accuracy:attempts?correct/attempts*100:0,score:correct*3-wrong,unattempted:Math.max(0,total-unique),completion:total?unique/total*100:0,strongest,weakest,recentCount:recent.length,recentAccuracy:recent.length?recentCorrect/recent.length*100:0,allMistakes,uniqueWrong:allMistakes.length,repeatWrong,recovered};}
 // Stable question identifiers keep performance linked to the original unit even after shuffling.
@@ -157,6 +225,7 @@ function printPerformanceReport(){window.print();}
 function renderProgressPane(a){const hist=Array.isArray(performanceData.history)?performanceData.history:[];const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const key=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;const items=hist.filter(x=>{const t=new Date(x.at);return `${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`===key;});const ok=items.filter(x=>x.correct).length;days.push({label:d.toLocaleDateString(lang==='hi'?'hi-IN':'en-IN',{day:'numeric',month:'short'}),count:items.length,accuracy:items.length?ok/items.length*100:0});}const max=Math.max(1,...days.map(x=>x.count));const bars=days.map(x=>`<div class="trend-day"><div class="trend-bar-area"><i style="height:${Math.max(3,x.count/max*100)}%" title="${x.count} ${lang==='hi'?'प्रयास':'attempts'}"></i></div><b>${x.count}</b><span>${x.label}</span><small>${x.count?x.accuracy.toFixed(0)+'%':'—'}</small></div>`).join('');const recent=(performanceData.recent||[]).slice(-30);const recentRows=recent.slice().reverse().slice(0,10).map((x,i)=>`<tr><td>${i+1}</td><td>UNIT ${String(x.unit).padStart(2,'0')}</td><td>${x.correct?(lang==='hi'?'सही':'Correct'):(lang==='hi'?'गलत':'Wrong')}</td><td>${new Date(x.at).toLocaleString(lang==='hi'?'hi-IN':'en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td></tr>`).join('');return `<div class="analysis-mini-cards"><div><b>${a.recentCount}</b><span>${lang==='hi'?'हाल के उत्तर':'Recent answers'}</span></div><div><b>${a.recentAccuracy.toFixed(1)}%</b><span>${lang==='hi'?'हाल की सटीकता':'Recent accuracy'}</span></div><div><b>${days.reduce((n,d)=>n+d.count,0)}</b><span>${lang==='hi'?'पिछले 7 दिन के प्रयास':'Attempts · last 7 days'}</span></div></div><h3 class="analysis-section-title">${lang==='hi'?'पिछले 7 दिनों की गतिविधि':'Last 7 Days Activity'}</h3><div class="trend-chart">${bars}</div><p class="analysis-note">${lang==='hi'?'बार की ऊँचाई दैनिक प्रयासों की संख्या दिखाती है; नीचे सटीकता दी गई है।':'Bar height shows daily attempts; accuracy is shown below each bar.'}</p><h3 class="analysis-section-title">${lang==='hi'?'हाल के 10 उत्तर':'Last 10 Answers'}</h3><div class="analysis-table-wrap"><table class="analysis-table"><thead><tr><th>#</th><th>${lang==='hi'?'यूनिट':'Unit'}</th><th>${lang==='hi'?'परिणाम':'Result'}</th><th>${lang==='hi'?'समय':'Time'}</th></tr></thead><tbody>${recentRows||`<tr><td colspan="4">${lang==='hi'?'अभी कोई रिकॉर्ड नहीं':'No activity recorded yet'}</td></tr>`}</tbody></table></div><div class="analysis-note">${lang==='hi'?'दैनिक इतिहास इस अपडेट के बाद किए गए प्रयासों से बनेगा। पहले के रिकॉर्ड में केवल हाल के 30 उत्तर उपलब्ध हो सकते हैं।':'Daily history builds from attempts made after this update. Older records may contain only the last 30 answers.'}</div>`;}
 function renderRevisionPane(a){const repeat=a.allMistakes.filter(x=>x.wrong>1);const recovered=a.allMistakes.filter(x=>x.lastCorrect===true);const list=(items)=>items.length?`<div class="analysis-table-wrap"><table class="analysis-table"><thead><tr><th>${lang==='hi'?'यूनिट':'Unit'}</th><th>${lang==='hi'?'प्रश्न':'Question'}</th><th>${lang==='hi'?'गलत बार':'Wrong'}</th><th>${lang==='hi'?'स्थिति':'Status'}</th></tr></thead><tbody>${items.slice(0,12).map(m=>`<tr><td>UNIT ${String(m.unit).padStart(2,'0')}</td><td>${esc(m.question)}</td><td>${m.wrong}</td><td>${m.lastCorrect?(lang==='hi'?'अब सही':'Now correct'):(lang==='hi'?'दोहराएँ':'Revise')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="analysis-note">${lang==='hi'?'अभी डेटा उपलब्ध नहीं है।':'No data available yet.'}</div>`;return `<div class="revision-actions"><button onclick="reviewAllRecordedWrong()">${lang==='hi'?'सभी गलत प्रश्नों का टेस्ट शुरू करें':'Start All Wrong Questions Test'}</button><button class="secondary-action" onclick="downloadMistakesCSV()">${lang==='hi'?'गलत प्रश्न CSV डाउनलोड':'Download Wrong Questions CSV'}</button></div><h3 class="analysis-section-title">${lang==='hi'?'बार-बार गलत हुए प्रश्न':'Repeatedly Incorrect Questions'} · ${repeat.length}</h3>${list(repeat)}<h3 class="analysis-section-title">${lang==='hi'?'सुधार किए गए प्रश्न':'Recovered Questions'} · ${recovered.length}</h3>${list(recovered)}<div class="analysis-note">${lang==='hi'?'रिवीजन सूची में वे प्रश्न आते हैं जिन पर कम-से-कम एक बार गलत उत्तर दिया गया है।':'The revision list includes every question answered incorrectly at least once.'}</div>`;}
 function render(){
+ scheduleRevisionProgressSync();
  const available=DATA.length;
  const questionBox=document.getElementById('questions');
  if(!available){
@@ -240,7 +309,7 @@ function changePage(d){clearTimeout(autoTimer);if(reviewMode){reviewPos=Math.max
 function applyTheme(theme){document.body.classList.toggle('dark',theme==='dark');const b=document.getElementById('themeBtn');if(b){b.textContent=theme==='dark'?'☀️ Light':'🌙 Dark';b.setAttribute('aria-pressed',theme==='dark'?'true':'false');}try{localStorage.setItem('mppscIqTheme',theme)}catch(e){}}
 function toggleTheme(){applyTheme(document.body.classList.contains('dark')?'light':'dark')}
 (function(){let t='light';try{t=localStorage.getItem('mppscIqTheme')||'light'}catch(e){}applyTheme(t)})();
-render();</script>
+render();restoreRevisionProgress();</script>
 <style id="mppsc-performance-alignment-fix">
 /* Final alignment: centered panel, equal-width columns, no horizontal overflow */
 .performance-panel{width:100%!important;max-width:780px!important;box-sizing:border-box!important;margin-left:auto!important;margin-right:auto!important}
