@@ -42,12 +42,23 @@ function mountNativeRevisionQuiz(){
  nativeRevisionQuizReady=true;
  const frame=document.createElement('iframe');
  frame.title='MPPSC IQ Revision Quiz';
- frame.src='/pre2027-revision-quiz.html?v=20261123-restored-v26';
+ frame.src='/pre2027-revision-quiz.html?v=20261123-restored-v27';
  frame.addEventListener('load',()=>{
   try{
    const d=frame.contentDocument;
    const header=d&&d.querySelector('.topsticky > .header');
    if(header)header.style.setProperty('display','none','important');
+   if(d&&!d.getElementById('mppsc-compact-unit-buttons')){
+    const style=d.createElement('style');
+    style.id='mppsc-compact-unit-buttons';
+    style.textContent=`
+     .unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:5px!important;padding:7px 9px!important;align-items:center!important}
+     .unitbar button{height:32px!important;min-height:32px!important;padding:4px 2px!important;font-size:11px!important;line-height:1!important;letter-spacing:0!important;border-radius:7px!important;box-shadow:0 1px 3px rgba(0,0,0,.16)!important}
+     .unitbar button.active{transform:none!important}
+     @media(max-width:600px){.unitbar{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;padding:6px 7px!important}.unitbar button{height:29px!important;min-height:29px!important;padding:3px 2px!important;font-size:10px!important;border-radius:6px!important}}
+    `;
+    (d.head||d.documentElement).appendChild(style);
+   }
   }catch(e){console.warn('Quiz header cleanup:',e);}
  });
  frame.loading='eager';
