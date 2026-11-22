@@ -40,7 +40,17 @@ function mountNativeRevisionQuiz(){
  const host=$('revisionQuizNative');
  if(!host||nativeRevisionQuizReady)return;
  nativeRevisionQuizReady=true;
- host.innerHTML='<iframe title="MPPSC IQ Revision Quiz" src="/pre2027-revision-quiz.html?v=20261122-bookmark-report" loading="eager" style="display:block;width:100%;height:calc(100dvh - 112px);min-height:720px;border:0;margin:0;padding:0;background:#171a20;border-radius:0;overflow:auto"></iframe>';
+ const frame=document.createElement('iframe');
+ frame.title='MPPSC IQ Revision Quiz';
+ frame.src='/pre2027-revision-quiz.html?v=20261122-unit3-datafix';
+ frame.loading='eager';
+ frame.style.cssText='display:block;width:100%;height:calc(100dvh - 112px);min-height:720px;border:0;margin:0;padding:0;background:#171a20;border-radius:0;overflow:auto';
+ frame.addEventListener('load',()=>{
+  try{
+   frame.contentWindow.eval("UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);UNIT3_DATA[448].answer=0;UNIT3_DATA[462].answer=1;render();");
+  }catch(error){console.error('Revision quiz data correction failed',error);}
+ });
+ host.replaceChildren(frame);
 }
 function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='tests')mountNativeRevisionQuiz();if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
