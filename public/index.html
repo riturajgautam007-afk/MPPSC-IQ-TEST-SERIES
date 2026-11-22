@@ -97,7 +97,7 @@ async function mountNativeRevisionQuiz(){
    });
    const originalScript=parsed.querySelector('script');
    if(!originalScript)throw new Error('Quiz JavaScript नहीं मिली');
-   const names=[...originalScript.textContent.matchAll(/function\\s+([A-Za-z_$][\\w$]*)\\s*\\(/g)].map(x=>x[1]);
+   const names=[...originalScript.textContent.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(x=>x[1]);
    const scopedDocument=new Proxy(document,{get(target,key){
     if(key==='getElementById')return id=>root.querySelector('#'+CSS.escape(String(id)));
     if(key==='querySelector')return selector=>root.querySelector(selector);
@@ -106,8 +106,8 @@ async function mountNativeRevisionQuiz(){
     const value=Reflect.get(target,key,target);
     return typeof value==='function'?value.bind(target):value;
    }});
-   const expose=names.map(n=>'if(typeof '+n+'==="function")window['+JSON.stringify(n)+']='+n+';').join('\\n');
-   const executeQuiz=new Function('document','window','localStorage','alert','confirm','quizRoot',originalScript.textContent+'\\n'+expose);
+   const expose=names.map(n=>'if(typeof '+n+'==="function")window['+JSON.stringify(n)+']='+n+';').join('\n');
+   const executeQuiz=new Function('document','window','localStorage','alert','confirm','quizRoot',originalScript.textContent+'\n'+expose);
    executeQuiz(scopedDocument,window,localStorage,window.alert.bind(window),window.confirm.bind(window),root);
    nativeRevisionQuizReady=true;
   }catch(e){
