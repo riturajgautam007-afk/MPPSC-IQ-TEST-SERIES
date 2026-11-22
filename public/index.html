@@ -75,13 +75,13 @@ function mountNativeRevisionQuiz(){
   }catch(e){if(btn){btn.disabled=false;btn.textContent='⚑ रिपोर्ट';}alert(e.message||'रिपोर्ट भेजने में समस्या हुई।');}
  };
  document.addEventListener('click',function(ev){
-  const btn=ev.target&&ev.target.closest?ev.target.closest('.revision-question-actions button'):null;
-  if(!btn||!((btn.textContent||'').includes('रिपोर्ट')))return;
+  const btn=ev.target&&ev.target.closest?ev.target.closest('button[onclick*="reportRevisionQuestion"]'):null;
+  if(!btn)return;
   const raw=btn.getAttribute('onclick')||'';
-  const nums=raw.match(/[0-9]+/g)||[];
-  if(nums.length<2)return;
+  const match=raw.match(/reportRevisionQuestion\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)/);
+  if(!match)return;
   ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
-  window.reportRevisionQuestion(Number(nums[0]),Number(nums[1]));
+  window.reportRevisionQuestion(Number(match[1]),Number(match[2]));
  },true);
  try{
   const saved=await api('/revision-progress');
