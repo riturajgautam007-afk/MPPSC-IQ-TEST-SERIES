@@ -67,28 +67,19 @@ function mountNativeRevisionQuiz(){
  try{const rows=await api('/revision-bookmarks');for(const row of rows){const k=bookmarkKey(row.unit,row.question_index);window.__revisionBookmarkKeys[k]=row.question_key;}}catch(e){console.warn('Revision bookmarks load:',e.message)}
  const oldToggleBookmark=toggleRevisionBookmark;
  toggleRevisionBookmark=function(unit,index,button){const before=revisionBookmarks().some(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));oldToggleBookmark(unit,index,button);const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const key=bookmarkKey(unit,index);if(before){const serverKey=window.__revisionBookmarkKeys[key];if(serverKey)api('/revision-bookmarks/'+encodeURIComponent(serverKey),{method:'DELETE'}).then(()=>delete window.__revisionBookmarkKeys[key]).catch(e=>console.warn('Bookmark delete:',e.message));}else{api('/revision-bookmarks',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)})}).then(d=>window.__revisionBookmarkKeys[key]=d.question_key).catch(e=>console.warn('Bookmark save:',e.message));}};
- document.addEventListener('click',function(ev){
-  const btn=ev.target&&ev.target.closest?ev.target.closest('.revision-question-actions button'):null;
-  if(!btn||!((btn.textContent||'').includes('रिपोर्ट')))return;
-  const raw=btn.getAttribute('onclick')||'',m=raw.match(/reportRevisionQuestion\\((\\d+)\\s*,\\s*(\\d+)\\)/);
-  if(!m)return;
-  ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
-  try{window.reportRevisionQuestion(Number(m[1]),Number(m[2]));}catch(err){console.error('Report button:',err);alert('Report फॉर्म खोलने में समस्या: '+(err.message||err));}
- },true);
- window.reportRevisionQuestion=function(unit,index){
+ window.reportRevisionQuestion=async function(unit,index){
   const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;
-  let modal=document.getElementById('mppscRevisionReportModal');
-  if(!modal){modal=document.createElement('div');modal.id='mppscRevisionReportModal';modal.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;font:16px system-ui,sans-serif;color:#17243d';
-   modal.innerHTML='<div style="width:100%;max-width:440px;background:#fff;border-radius:16px;padding:18px;box-shadow:0 12px 40px #0005"><b style="font-size:18px">⚑ प्रश्न रिपोर्ट करें</b><p style="font-size:13px;color:#586579;margin:8px 0">इस प्रश्न में क्या समस्या है?</p><select id="mppscRevisionReportReason" style="width:100%;padding:12px;border:1px solid #ccd5e2;border-radius:10px;font:inherit"><option value="">समस्या चुनें</option><option>गलत उत्तर</option><option>प्रश्न में त्रुटि</option><option>विकल्प में त्रुटि</option><option>भाषा / टाइपिंग त्रुटि</option><option>अन्य</option></select><textarea id="mppscRevisionReportDetail" placeholder="विवरण लिखें (वैकल्पिक)" style="width:100%;min-height:82px;margin-top:10px;padding:12px;border:1px solid #ccd5e2;border-radius:10px;font:inherit;box-sizing:border-box"></textarea><div style="display:flex;gap:8px;margin-top:12px"><button id="mppscRevisionReportCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:10px;background:#edf1f7;font-weight:700">रद्द करें</button><button id="mppscRevisionReportSend" type="button" style="flex:1;padding:12px;border:0;border-radius:10px;background:#173b63;color:#fff;font-weight:700">रिपोर्ट भेजें</button></div><div id="mppscRevisionReportStatus" style="font-size:12px;margin-top:9px"></div></div>';
-   document.body.appendChild(modal);
+  const buttons=[...document.querySelectorAll('.revision-question-actions button')];
+  const btn=buttons.find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));
+  if(btn&&btn.dataset.reporting==='1')return;
+  if(btn){btn.dataset.reporting='1';btn.disabled=true;btn.textContent='… रिपोर्ट भेजी जा रही है';}
+  try{
+   await api('/revision-question-reports',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:'विद्यार्थी द्वारा प्रश्न रिपोर्ट'})});
+   if(btn){btn.textContent='✓ रिपोर्ट हो गई';btn.dataset.reported='1';}
+  }catch(e){
+   if(btn){btn.disabled=false;btn.dataset.reporting='0';btn.textContent='⚑ रिपोर्ट';}
+   alert(e.message||'रिपोर्ट भेजने में समस्या हुई।');
   }
-  modal.style.display='flex';const reasonEl=modal.querySelector('#mppscRevisionReportReason'),detailEl=modal.querySelector('#mppscRevisionReportDetail'),send=modal.querySelector('#mppscRevisionReportSend'),status=modal.querySelector('#mppscRevisionReportStatus');
-  reasonEl.value='';detailEl.value='';status.textContent='';send.disabled=false;send.textContent='रिपोर्ट भेजें';
-  modal.querySelector('#mppscRevisionReportCancel').onclick=()=>modal.style.display='none';
-  send.onclick=async()=>{const reason=reasonEl.value;if(!reason){status.textContent='कृपया समस्या चुनें।';return;}send.disabled=true;send.textContent='भेजा जा रहा है…';status.textContent='';
-   try{await api('/revision-question-reports',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:reason+(detailEl.value.trim()?' — '+detailEl.value.trim():'')})});status.style.color='#16845b';status.textContent='रिपोर्ट सफलतापूर्वक भेज दी गई।';send.textContent='भेज दिया';setTimeout(()=>{modal.style.display='none'},900);}
-   catch(e){status.style.color='#b42318';status.textContent=e.message||'रिपोर्ट भेजने में समस्या हुई।';send.disabled=false;send.textContent='दोबारा भेजें';}
-  };
  };
  try{
   const saved=await api('/revision-progress');
