@@ -13,7 +13,7 @@ app.disable("x-powered-by");app.use(helmet({contentSecurityPolicy:false}));app.u
 // Keep the web app online even if the database is temporarily unreachable.
 app.use("/api",(q,s,n)=>{if(q.path==="/health"||q.path==="/ready")return n();if(!dbReady)return s.status(503).json({error:"Database temporarily unavailable. Please try again shortly."});n();});
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024}});
-const studentOnly=(q,s,n)=>q.auth.role==="student"?n():s.status(403).json({error:"Student only"});
+const studentOnly=(q,s,n)=>(q.auth.role==="student"||q.auth.role==="admin")?n():s.status(403).json({error:"Student only"});
 const ar=fn=>(q,s,n)=>Promise.resolve(fn(q,s,n)).catch(n);
 const requirePaid=membership.requirePaid(db);
 membership.register(app,{db,requireAuth,requireAdmin,ar});
