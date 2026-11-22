@@ -1,26 +1,28 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><p style="font:16px system-ui;padding:20px">MPPSC IQ Quiz लोड हो रहा है…</p><script>(async()=>{try{const version='20261123-bookmark-delegation-v15';const paths=['/revision-quiz-part1.txt','/revision-quiz-part2.txt','/revision-quiz-part3.txt','/revision-quiz.html','/data/revision-bank.json'].map(p=>p+'?v='+version);const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable');return r.text()}));let html=parts.join('');if(!html.includes('UNIT1_DATA')||!html.includes('</body>'))throw Error('Quiz source validation failed');const reportStart=html.indexOf('function reportRevisionQuestion(i){');
-const reportEnd=html.indexOf('\n\nfunction render()',reportStart);
-if(reportStart<0||reportEnd<0)throw Error('Live report function not found');
-const reportFix=String.raw`async function reportRevisionQuestion(i,button){
- const q=DATA[i];if(!q)return;
- if(button&&button.disabled)return;
- const unit=Number(q.__unit||activeUnit),qid=String(q.__qid||unit+':'+i),index=Number(qid.split(':').pop());
- const payload={unit,index,question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:'प्रश्न में त्रुटि'};
- if(button){button.disabled=true;button.textContent='भेज रहे हैं…';}
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body><p style="font:16px system-ui;padding:20px">MPPSC IQ Quiz लोड हो रहा है…</p>
+<script>
+(async()=>{
  try{
-  const r=await fetch('/api/revision-question-reports',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw Error(d.error||'रिपोर्ट नहीं भेजी जा सकी');
-  if(button){button.textContent='✓ रिपोर्ट हो गई';button.disabled=true;}
-  else alert('रिपोर्ट भेज दी गई।');
- }catch(e){
-  if(button){button.disabled=false;button.textContent='⚑ रिपोर्ट';}
-  alert(e.message||'रिपोर्ट भेजने में समस्या हुई');
- }
-}`;
-html=html.slice(0,reportStart)+reportFix+html.slice(reportEnd);
-html=html.replace(/onclick="reportRevisionQuestion\(\$\{idx\}\)"/g,'onclick="reportRevisionQuestion(${idx},this)"');
-html=html.replace('<button type="button" onclick="toggleRevisionBookmark(${idx})">${bookmarkButton}</button><button type="button" onclick="reportRevisionQuestion(${idx})">⚑ रिपोर्ट</button>','<button type="button" data-revision-action="bookmark" data-question-index="${idx}">${bookmarkButton}</button><button type="button" data-revision-action="report" data-question-index="${idx}">⚑ रिपोर्ट</button>');
-const clickBridge = ['window.toggleRevisionBookmark=toggleRevisionBookmark;window.reportRevisionQuestion=reportRevisionQuestion;',"document.addEventListener('click',function(e){const b=e.target.closest('[data-revision-action]');if(!b)return;const i=Number(b.getAttribute('data-question-index'));if(!Number.isInteger(i))return;e.preventDefault();e.stopImmediatePropagation();if(b.getAttribute('data-revision-action')==='bookmark')window.toggleRevisionBookmark(i);else if(b.getAttribute('data-revision-action')==='report')window.reportRevisionQuestion(i,b);},true);","document.addEventListener('click',function(e){const b=e.target.closest('button');if(!b)return;const a=b.getAttribute('onclick')||'';const m=a.match(/toggleRevisionBookmark\\((\\d+)\\)/);if(!m)return;e.preventDefault();e.stopImmediatePropagation();window.toggleRevisionBookmark(Number(m[1]));},true);"].join(String.fromCharCode(10));
-html=html.replace('<'+'/script>',clickBridge+'<'+'/script>');
-document.open();document.write(html);document.close()}catch(e){console.error('MPPSC IQ revision quiz loader:',e);document.body.innerHTML='<p style="font:16px system-ui;padding:20px;color:#b00">Quiz लोड नहीं हुआ: '+String(e&&e.message||e)+'</p>'}})();</script></body></html>
+  const version='20261123-bookmark-clickfix-v16';
+  const paths=['/revision-quiz-part1.txt','/revision-quiz-part2.txt','/revision-quiz-part3.txt','/revision-quiz.html','/data/revision-bank.json'].map(p=>p+'?v='+version);
+  const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable: '+p);return r.text()}));
+  const html=parts.join('');
+  if(!html.includes('UNIT1_DATA')||!html.includes('toggleRevisionBookmark')||!html.includes('</body>'))throw Error('Quiz source validation failed');
+  const bridge=`<script>
+  document.addEventListener('click',function(e){
+   const b=e.target.closest('button');if(!b)return;
+   const inline=b.getAttribute('onclick')||'';
+   const m=inline.match(/toggleRevisionBookmark\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*this\\s*\\)/);
+   if(!m)return;
+   e.preventDefault();e.stopImmediatePropagation();
+   if(typeof window.toggleRevisionBookmark!=='function'){alert('Bookmark function load नहीं हुआ।');return;}
+   window.toggleRevisionBookmark(Number(m[1]),Number(m[2]),b);
+  },true);
+  <\/script>`;
+  const finalHtml=html.replace('</body>',bridge+'</body>');
+  if(finalHtml===html)throw Error('Quiz page insertion failed');
+  document.open();document.write(finalHtml);document.close();
+ }catch(e){console.error('MPPSC IQ revision quiz loader:',e);document.body.innerHTML='<p style="font:16px system-ui;padding:20px;color:#b00">Quiz लोड नहीं हुआ: '+String(e&&e.message||e)+'</p>';}
+})();
+</script></body></html>
