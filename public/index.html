@@ -95,11 +95,13 @@ function mountNativeRevisionQuiz(){
     const control=ev.target.closest('[onclick]');
     if(!control||!root.contains(control))return;
     const code=(control.getAttribute('onclick')||'').trim();
-    const match=code.match(/^([A-Za-z_$][\\w$]*)\\((.*)\\);?$/s);
-    if(!match)return;
-    const fn=window[match[1]];
+    const open=code.indexOf('('),close=code.lastIndexOf(')');
+    if(open<1||close<open)return;
+    const fnName=code.slice(0,open).trim();
+    if(!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(fnName))return;
+    const fn=window[fnName];
     if(typeof fn!=='function')return;
-    const args=[];const rawArgs=match[2].trim();
+    const args=[];const rawArgs=code.slice(open+1,close).trim();
     if(rawArgs){
      const parts=rawArgs.match(/(?:'[^']*'|"[^"]*"|[^,])+/g)||[];
      for(const part0 of parts){const part=part0.trim();if(!part)continue;
@@ -111,7 +113,7 @@ function mountNativeRevisionQuiz(){
      }
     }
     ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
-    try{fn(...args);if(unitNav?.contains(control))setTimeout(()=>setStage('questions'),80)}catch(error){console.error('Quiz click action failed:',match[1],error)}
+    try{fn(...args);if(unitNav?.contains(control))setTimeout(()=>setStage('questions'),80)}catch(error){console.error('Quiz click action failed:',fnName,error)}
    },true);
    const raw=sourceScript.textContent;
    const patched=raw
