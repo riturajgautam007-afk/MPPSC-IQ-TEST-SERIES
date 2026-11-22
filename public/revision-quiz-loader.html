@@ -4,23 +4,31 @@
 <script>
 (async()=>{
  try{
-  const version='20261123-quiz-recovery-v20';
-  const paths=['/revision-quiz-part1.txt','/revision-quiz-part2.txt','/revision-quiz-part3.txt','/revision-quiz.html','/data/revision-bank.json'].map(p=>p+'?v='+version);
-  const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable: '+p+' ('+r.status+')');return r.text()}));
-  const html=parts.join('');
-  if(!html.includes('UNIT1_DATA')||!html.includes('toggleRevisionBookmark')||!html.includes('</body>'))throw Error('Quiz source validation failed');
-  const bridge=\`<script>
+  const url='/pre2027-revision-quiz.html?v=20261123-source-recovery-v21';
+  const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)throw new Error('Quiz source unavailable ('+response.status+')');
+  const html=await response.text();
+  if(html.length<1000000||!html.includes('UNIT1_DATA')||!html.includes('UNIT_DATA_MAP')||!html.includes('toggleRevisionBookmark')||!html.includes('reportRevisionQuestion'))throw new Error('Quiz source validation failed');
+  const bridge=`<script>
   document.addEventListener('click',function(e){
    const b=e.target.closest('button');if(!b)return;
    const inline=b.getAttribute('onclick')||'';
-   const m=inline.match(/toggleRevisionBookmark\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*this\\s*\\)/);
-   if(!m)return;
-   e.preventDefault();e.stopImmediatePropagation();
-   if(typeof window.toggleRevisionBookmark!=='function'){alert('Bookmark function load नहीं हुआ।');return;}
-   window.toggleRevisionBookmark(Number(m[1]),Number(m[2]),b);
+   let m=inline.match(/toggleRevisionBookmark\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*this\\s*\\)/);
+   if(m){
+    e.preventDefault();e.stopImmediatePropagation();
+    if(typeof window.toggleRevisionBookmark!=='function'){alert('Bookmark function load नहीं हुआ।');return;}
+    window.toggleRevisionBookmark(Number(m[1]),Number(m[2]),b);return;
+   }
+   m=inline.match(/reportRevisionQuestion\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)/);
+   if(m){
+    e.preventDefault();e.stopImmediatePropagation();
+    if(typeof window.reportRevisionQuestion!=='function'){alert('Report function load नहीं हुआ।');return;}
+    window.reportRevisionQuestion(Number(m[1]),Number(m[2]));
+   }
   },true);
-  <\/script>\`;  const finalHtml=html.replace('</body>',bridge+'</body>');
-  if(finalHtml===html)throw Error('Quiz page insertion failed');
+  <\\/script>`;
+  const finalHtml=html.replace('</body>',bridge+'</body>');
+  if(finalHtml===html)throw new Error('Quiz page insertion failed');
   document.open();document.write(finalHtml);document.close();
  }catch(e){console.error('MPPSC IQ revision quiz loader:',e);document.body.innerHTML='<p style="font:16px system-ui;padding:20px;color:#b00">Quiz लोड नहीं हुआ: '+String(e&&e.message||e)+'</p>';}
 })();
