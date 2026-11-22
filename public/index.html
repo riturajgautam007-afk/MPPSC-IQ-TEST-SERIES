@@ -99,8 +99,9 @@ function mountNativeRevisionQuiz(){
     if(open<1||close<open)return;
     const fnName=code.slice(0,open).trim();
     if(!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(fnName))return;
-    const fn=window[fnName];
-    if(typeof fn!=='function')return;
+    const localActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion};
+    const fn=window[fnName]||localActions[fnName];
+    if(typeof fn!=='function'){console.error('Quiz action unavailable:',fnName);return;}
     const args=[];const rawArgs=code.slice(open+1,close).trim();
     if(rawArgs){
      const parts=rawArgs.match(/(?:'[^']*'|"[^"]*"|[^,])+/g)||[];
