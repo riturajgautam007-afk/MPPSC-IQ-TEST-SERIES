@@ -4,11 +4,11 @@
 <script>
 (async()=>{
  try{
-  const url='/pre2027-revision-quiz.html?v=20261123-source-recovery-v21';
-  const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
-  if(!response.ok)throw new Error('Quiz source unavailable ('+response.status+')');
+  const response=await fetch('/pre2027-revision-quiz.html?v=20261123-source-recovery-v22',{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)throw new Error('Quiz source HTTP '+response.status);
   const html=await response.text();
-  if(html.length<1000000||!html.includes('UNIT1_DATA')||!html.includes('UNIT_DATA_MAP')||!html.includes('toggleRevisionBookmark')||!html.includes('reportRevisionQuestion'))throw new Error('Quiz source validation failed');
+  const checks={size:html.length,unit:html.includes('UNIT1_DATA'),map:html.includes('UNIT_DATA_MAP'),bookmark:html.includes('toggleRevisionBookmark'),report:html.includes('reportRevisionQuestion'),body:html.includes('</body>')};
+  if(!checks.unit||!checks.bookmark||!checks.body)throw new Error('Source incomplete: '+JSON.stringify(checks));
   const bridge=`<script>
   document.addEventListener('click',function(e){
    const b=e.target.closest('button');if(!b)return;
@@ -28,7 +28,6 @@
   },true);
   <\\/script>`;
   const finalHtml=html.replace('</body>',bridge+'</body>');
-  if(finalHtml===html)throw new Error('Quiz page insertion failed');
   document.open();document.write(finalHtml);document.close();
  }catch(e){console.error('MPPSC IQ revision quiz loader:',e);document.body.innerHTML='<p style="font:16px system-ui;padding:20px;color:#b00">Quiz लोड नहीं हुआ: '+String(e&&e.message||e)+'</p>';}
 })();
