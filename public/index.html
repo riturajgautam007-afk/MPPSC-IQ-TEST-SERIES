@@ -63,7 +63,7 @@ function mountNativeRevisionQuiz(){
      let out='';
      for(const rule of [...rules]){
       if(rule.type===1){
-       const selectors=rule.selectorText.split(',').map(x=>{let q=x.trim();q=q.replace(/(^|\\s)(html|body)(?=\\b|\\s|$)/g,'$1#revisionQuizRoot').replace(/:root/g,'#revisionQuizRoot');return '#revisionQuizRoot '+q.replace(/^#revisionQuizRoot\\s*/, '')});
+       const selectors=rule.selectorText.split(',').map(x=>{let q=x.trim();q=q.replace(/(^|\s)(html|body)(?=\b|\s|$)/g,'$1#revisionQuizRoot').replace(/:root/g,'#revisionQuizRoot');return '#revisionQuizRoot '+q.replace(/^#revisionQuizRoot\s*/, '')});
        out+=selectors.join(',')+'{'+rule.style.cssText+'}';
       }else if(rule.type===4||rule.type===12){
        out+=rule.cssText.slice(0,rule.cssText.indexOf('{')+1)+walk(rule.cssRules)+'}';
