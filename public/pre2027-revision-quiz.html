@@ -729,7 +729,27 @@ function revisionBookmarks(){try{const v=JSON.parse(localStorage.getItem(REVISIO
 function revisionBookmarkExists(unit,index){return revisionBookmarks().some(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));}
 function toggleRevisionBookmark(unit,index,button){const rows=revisionBookmarks(),pos=rows.findIndex(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));if(pos>=0)rows.splice(pos,1);else{const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;rows.unshift({unit,index,question:q.q||'',english:q.en||'',options:q.options||[],answer:q.answer,savedAt:new Date().toISOString()});}try{localStorage.setItem(REVISION_BOOKMARK_KEY,JSON.stringify(rows));}catch(e){alert('बुकमार्क सेव नहीं हो सका।');return;}const active=pos<0;button.classList.toggle('saved',active);button.textContent=active?'🔖✓ बुकमार्क किया':'🔖 बुकमार्क';}
 async function reportRevisionQuestion(unit,index){const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const reason=prompt('इस प्रश्न में क्या समस्या है?\nगलत उत्तर / प्रश्न / विकल्प / भाषा');if(!reason||!reason.trim())return;const message=`MPPSC IQ Revision Quiz · UNIT ${String(unit).padStart(2,'0')} · प्रश्न ${index+1}\nसमस्या: ${reason.trim()}\nप्रश्न: ${q.q||''}\nविकल्प: ${(q.options||[]).join(' | ')}\nउत्तर कुंजी: ${Number(q.answer)+1}`;try{const response=await fetch('/api/support',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:'Quiz Question Report',message})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'रिपोर्ट भेजी नहीं जा सकी');alert('प्रश्न रिपोर्ट भेज दी गई है।');}catch(error){alert(error.message||'रिपोर्ट भेजने में समस्या हुई।');}}
-render();</script>
+async function loadAdminQuestionBankIntoQuiz(){
+ try{
+  const response=await fetch('/api/question-bank-overrides',{credentials:'include',cache:'no-store'});
+  if(!response.ok)throw new Error('Question bank API '+response.status);
+  const payload=await response.json();
+  const edits=payload.edits||{},additions=payload.additions||{};
+  for(let unit=1;unit<=10;unit++){
+   const base=(UNIT_DATA_MAP[unit]||[]).map((q,index)=>{
+    const edited=edits[unit+':'+index];
+    return edited&&typeof edited==='object'?{...q,...edited}:q;
+   });
+   const extra=Array.isArray(additions[String(unit)])?additions[String(unit)]:[];
+   UNIT_DATA_MAP[unit]=base.concat(extra.filter(q=>q&&typeof q.q==='string'&&Array.isArray(q.options)&&q.options.length===4&&Number.isInteger(Number(q.answer))));
+  }
+  if(!isMixedMode&&activeUnit>=1&&activeUnit<=10){
+   DATA=(UNIT_DATA_MAP[activeUnit]||[]).map((q,i)=>({...q,__unit:activeUnit,__qid:`${activeUnit}:${i}`}));
+   resetQuizState();render();
+  }
+ }catch(error){console.warn('Admin question bank could not be loaded:',error);}
+}
+render();loadAdminQuestionBankIntoQuiz();</script>
 <style id="mppsc-performance-alignment-fix">
 /* Final alignment: centered panel, equal-width columns, no horizontal overflow */
 .performance-panel{width:100%!important;max-width:780px!important;box-sizing:border-box!important;margin-left:auto!important;margin-right:auto!important}
