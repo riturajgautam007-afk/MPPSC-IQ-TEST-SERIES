@@ -42,7 +42,20 @@ function mountNativeRevisionQuiz(){
  nativeRevisionQuizReady=true;
  const frame=document.createElement('iframe');
  frame.title='MPPSC IQ Revision Quiz';
- frame.src='/pre2027-revision-quiz.html?v=20261123-restored-v24';
+ frame.src='/pre2027-revision-quiz.html?v=20261123-restored-v25';
+ frame.addEventListener('load',()=>{
+  try{
+   const d=frame.contentDocument;
+   const nodes=[...d.querySelectorAll('body *')];
+   const first=nodes.find(el=>(el.textContent||'').replace(/\\s+/g,' ').trim()==='MPPSC IQ');
+   const second=nodes.find(el=>(el.textContent||'').replace(/\\s+/g,' ').trim()==='MPPSC PRE 2027 PROGRAM');
+   if(first&&second){
+    let p=first;
+    while(p&&p!==d.body&&!p.contains(second))p=p.parentElement;
+    if(p&&p!==d.body)p.style.display='none';
+   }
+  }catch(e){console.warn('Quiz header cleanup:',e);}
+ });
  frame.loading='eager';
  frame.style.cssText='display:block;width:100%;height:calc(100dvh - 112px);min-height:720px;border:0;margin:0;padding:0;background:#171a20;border-radius:0;overflow:auto';
  frame.addEventListener('load',()=>{
