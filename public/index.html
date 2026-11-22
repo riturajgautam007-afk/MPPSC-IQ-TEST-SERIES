@@ -68,19 +68,24 @@ function mountNativeRevisionQuiz(){
  const oldToggleBookmark=toggleRevisionBookmark;
  toggleRevisionBookmark=function(unit,index,button){const before=revisionBookmarks().some(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));oldToggleBookmark(unit,index,button);const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const key=bookmarkKey(unit,index);if(before){const serverKey=window.__revisionBookmarkKeys[key];if(serverKey)api('/revision-bookmarks/'+encodeURIComponent(serverKey),{method:'DELETE'}).then(()=>delete window.__revisionBookmarkKeys[key]).catch(e=>console.warn('Bookmark delete:',e.message));}else{api('/revision-bookmarks',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)})}).then(d=>window.__revisionBookmarkKeys[key]=d.question_key).catch(e=>console.warn('Bookmark save:',e.message));}};
  window.reportRevisionQuestion=async function(unit,index){
-  const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;
-  const buttons=[...document.querySelectorAll('.revision-question-actions button')];
-  const btn=buttons.find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));
-  if(btn&&btn.dataset.reporting==='1')return;
-  if(btn){btn.dataset.reporting='1';btn.disabled=true;btn.textContent='… रिपोर्ट भेजी जा रही है';}
+  const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q){console.warn('Report question not found',unit,index);return;}
+  const btn=[...document.querySelectorAll('.revision-question-actions button')].find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));
+  if(btn&&btn.dataset.reported==='1')return;
+  if(btn){btn.disabled=true;btn.textContent='… भेज रहे हैं';}
   try{
-   await api('/revision-question-reports',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:'विद्यार्थी द्वारा प्रश्न रिपोर्ट'})});
-   if(btn){btn.textContent='✓ रिपोर्ट हो गई';btn.dataset.reported='1';}
-  }catch(e){
-   if(btn){btn.disabled=false;btn.dataset.reporting='0';btn.textContent='⚑ रिपोर्ट';}
-   alert(e.message||'रिपोर्ट भेजने में समस्या हुई।');
-  }
+   await api('/revision-question-reports',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:'प्रश्न में त्रुटि'})});
+   if(btn){btn.dataset.reported='1';btn.textContent='✓ रिपोर्ट हो गई';}
+  }catch(e){if(btn){btn.disabled=false;btn.textContent='⚑ रिपोर्ट';}alert(e.message||'रिपोर्ट भेजने में समस्या हुई।');}
  };
+ document.addEventListener('click',function(ev){
+  const btn=ev.target&&ev.target.closest?ev.target.closest('.revision-question-actions button'):null;
+  if(!btn||!((btn.textContent||'').includes('रिपोर्ट')))return;
+  const raw=btn.getAttribute('onclick')||'';
+  const nums=raw.match(/\\d+/g)||[];
+  if(nums.length<2)return;
+  ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
+  window.reportRevisionQuestion(Number(nums[0]),Number(nums[1]));
+ },true);
  try{
   const saved=await api('/revision-progress');
   const p=saved.performance_json||{},s=saved.session_json||{};
