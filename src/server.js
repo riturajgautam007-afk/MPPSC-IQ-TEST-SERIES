@@ -239,7 +239,7 @@ body:not(.iq-authenticated)>:not(#studentLoginGate):not(#adminInsideApp){visibil
     s.type("html").send(page);
   });
 });
-app.get("/app",requireAuth,(q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
+app.get("/app",requireAuth,(q,s)=>{s.set("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");s.set("Pragma","no-cache");s.set("Expires","0");s.sendFile(path.join(__dirname,"..","public","index.html"));});
 // Protect the admin HTML shell itself; API routes remain independently protected.
 app.get("/admin.html",(q,s,n)=>{
  requireAuth(q,s,()=>{
