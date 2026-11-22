@@ -106,13 +106,9 @@ async function mountNativeRevisionQuiz(){
     const value=Reflect.get(target,key,target);
     return typeof value==='function'?value.bind(target):value;
    }});
-   const wrapper='(function(document,window,localStorage,alert,confirm,quizRoot){\\n'+originalScript.textContent+'\\n'+names.map(n=>'if(typeof '+n+'==="function")window['+JSON.stringify(n)+']='+n+';').join('\\n')+'\\n})(window.__mppscQuizDoc,window,localStorage,window.alert.bind(window),window.confirm.bind(window),window.__mppscQuizRoot);';
-   window.__mppscQuizDoc=scopedDocument;window.__mppscQuizRoot=root;
-   const runner=document.createElement('script');
-   runner.textContent=wrapper;
-   document.head.appendChild(runner);
-   runner.remove();
-   delete window.__mppscQuizDoc;delete window.__mppscQuizRoot;
+   const expose=names.map(n=>'if(typeof '+n+'==="function")window['+JSON.stringify(n)+']='+n+';').join('\\n');
+   const executeQuiz=new Function('document','window','localStorage','alert','confirm','quizRoot',originalScript.textContent+'\\n'+expose);
+   executeQuiz(scopedDocument,window,localStorage,window.alert.bind(window),window.confirm.bind(window),root);
    nativeRevisionQuizReady=true;
   }catch(e){
    host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(e.message)+'</div>';
