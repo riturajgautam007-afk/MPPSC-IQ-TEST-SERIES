@@ -199,8 +199,32 @@ function previewTextImport(){
  $("textImportPreview").innerHTML=(validHtml?'<b>Preview (पहले 4 प्रश्न)</b>'+validHtml:"<b>कोई वैध प्रश्न नहीं मिला।</b>")+invalidHtml+duplicateHtml;
  $("textImportBtn").disabled=!result.valid.length;
 }
-async function importTextQuestions(){try{const unit=selectedQuestionUnitKey;if(!unit)throw Error("पहले UNIT 1 से UNIT 10 चुनें");const raw=$("questionText").value.trim();if(!raw)throw Error("प्रश्नों का Text Paste करें");if(parsedTextSnapshot!==$("questionText").value)previewTextImport();if(!parsedTextQuestions.length)throw Error("कोई वैध प्रश्न Preview में नहीं मिला। फॉर्मेट जाँचें।");if(!confirm(parsedTextQuestions.length+" पहचाने गए प्रश्न "+unit+" के मौजूदा प्रश्न बैंक के अंत में जोड़ें? पुराने प्रश्न सुरक्षित रहेंगे।"))return;const btn=$("textImportBtn");btn.disabled=true;$("textImportStatus").textContent="प्रश्न Import हो रहे हैं…";const d=await api("/admin/question-bank/"+Number(unit.replace("Unit ",""))+"/append",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({questions:parsedTextQuestions})});toast(d.imported+" नए प्रश्न जुड़े · "+(d.skipped||0)+" डुप्लिकेट छोड़े गए");$("questionText").value="";parsedTextQuestions=[];parsedTextInvalid=[];parsedTextDuplicates=[];parsedTextSnapshot="";$("textImportPreview").innerHTML="";$("textImportStatus").textContent="सफलता: "+d.imported+" नए प्रश्न जुड़े। डुप्लिकेट छोड़े गए: "+(d.skipped||0)+"।";if(d.skippedDetails?.length)$("textImportPreview").innerHTML="<b>जिन प्रश्नों को पहचाना नहीं जा सका:</b><br>"+d.skippedDetails.map(x=>"प्रश्न "+x.number+": "+esc(x.reason)).join("<br>");await refresh();const active=document.querySelector("#unitButtons button.active");if(active)selectQuestionUnit(active.dataset.unit,active);$("questionText").focus();}catch(e){toast(e.message);$("textImportStatus").textContent=e.message;}finally{$("textImportBtn").disabled=!parsedTextQuestions.length}}
-
+async function importTextQuestions(){
+ try{
+  const unit=selectedQuestionUnitKey;
+  if(!unit)throw Error("पहले UNIT 1 से UNIT 10 चुनें");
+  const raw=$("questionText").value.trim();
+  if(!raw)throw Error("प्रश्नों का Text Paste करें");
+  if(parsedTextSnapshot!==$("questionText").value)previewTextImport();
+  if(!parsedTextQuestions.length)throw Error("कोई वैध प्रश्न Preview में नहीं मिला। फॉर्मेट जाँचें।");
+  if(!confirm(parsedTextQuestions.length+" तैयार प्रश्न "+unit+" में जोड़ें? पुराने प्रश्न सुरक्षित रहेंगे।"))return;
+  const btn=$("textImportBtn");btn.disabled=true;
+  $("textImportStatus").textContent="प्रश्न Import हो रहे हैं…";
+  const d=await api("/admin/question-bank/"+Number(unit.replace("Unit ",""))+"/append",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({questions:parsedTextQuestions})});
+  const imported=d.imported||0,skipped=d.skipped||0,invalidCount=parsedTextInvalid.length,pasteDupCount=parsedTextDuplicates.length;
+  const detailRows=(d.duplicateDetails||[]).map(x=>'<li>प्रश्न '+esc(x.row)+': '+esc(x.question)+' — '+esc(x.reason)+'</li>').join("");
+  const invalidRows=parsedTextInvalid.map(x=>'<li>प्रश्न '+esc(x.number)+': '+esc(x.reason)+'</li>').join("");
+  const pasteDupRows=parsedTextDuplicates.map(x=>'<li>प्रश्न '+esc(x.number)+': '+esc(x.question)+' — Paste में दोहराया गया</li>').join("");
+  $("textImportStatus").innerHTML='<b>Import रिपोर्ट · '+esc(unit)+'</b><br>सफलतापूर्वक जोड़े गए: <b>'+imported+'</b><br>पहले से मौजूद होने के कारण छोड़े गए: <b>'+skipped+'</b><br>Paste में डुप्लिकेट: <b>'+pasteDupCount+'</b><br>अमान्य/अधूरे: <b>'+invalidCount+'</b>';
+  $("textImportPreview").innerHTML=(detailRows?'<div class="notice"><b>पहले से मौजूद प्रश्न</b><ul>'+detailRows+'</ul></div>':'')+(pasteDupRows?'<div class="notice"><b>Paste में दोहराए गए प्रश्न</b><ul>'+pasteDupRows+'</ul></div>':'')+(invalidRows?'<div class="notice"><b>अमान्य/अधूरे प्रश्न</b><ul>'+invalidRows+'</ul></div>':'');
+  toast(imported+" नए प्रश्न जुड़े · "+(skipped+pasteDupCount)+" डुप्लिकेट छोड़े गए");
+  $("questionText").value="";parsedTextQuestions=[];parsedTextInvalid=[];parsedTextDuplicates=[];parsedTextSnapshot="";
+  await refresh();
+  const active=document.querySelector("#unitButtons button.active");if(active)selectQuestionUnit(active.dataset.unit,active);
+  $("questionText").focus();
+ }catch(e){toast(e.message);$("textImportStatus").textContent=e.message;}
+ finally{$("textImportBtn").disabled=!parsedTextQuestions.length;}
+}
 
 let editingQuestionId=null;
 function renderManagedQuestions(){
