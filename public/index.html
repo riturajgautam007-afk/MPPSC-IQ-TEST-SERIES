@@ -65,6 +65,18 @@ async function mountNativeRevisionQuiz(){
   const script=parsed.querySelector('script')?.textContent||'';if(!script)throw new Error('क्विज़ स्क्रिप्ट उपलब्ध नहीं है।');
   const expose=';window.setUnit=setUnit;window.setPYQs=setPYQs;window.showAnalysis=showAnalysis;window.setLang=setLang;window.toggleTheme=toggleTheme;window.changePage=changePage;window.showWrong=showWrong;window.refreshAll=refreshAll;window.shuffleCurrentUnit=shuffleCurrentUnit;window.mixAllUnits=mixAllUnits;window.choose=choose;window.downloadMistakesCSV=downloadMistakesCSV;window.downloadUltraPNG=downloadUltraPNG;window.printPerformanceReport=printPerformanceReport;window.reviewAllRecordedWrong=reviewAllRecordedWrong;window.reviewWrongByUnit=reviewWrongByUnit;window.setAnalysisTab=setAnalysisTab;window.showWrong=showWrong;window.showAllRecordedWrong=showAllRecordedWrong;window.applyTheme=applyTheme;window.resetQuizState=resetQuizState;window.updateUnitButtons=updateUnitButtons;window.loadPerformance=loadPerformance;window.recordPerformance=recordPerformance;window.savePerformance=savePerformance;window.cleanLang=cleanLang;window.makeTable=makeTable;window.matchTable=matchTable;window.structuredQuestionTable=structuredQuestionTable;window.performanceSummary=performanceSummary;window.renderProgressPane=renderProgressPane;window.renderRevisionPane=renderRevisionPane;';
   new Function('document','window','localStorage','alert','confirm',script+expose)(doc,win,localStorage,alert,confirm);
+  // Shadow-root inline handlers are not reliable in embedded webviews. Route every quiz click through one delegated listener.
+  const parseArgs=(raw)=>{if(!raw.trim())return[];return raw.split(/,(?=(?:[^'"]|'[^']*'|"[^"]*")*$)/).map(v=>{v=v.trim();if((v[0]==="'"&&v.at(-1)==="'")||(v[0]==='"'&&v.at(-1)==='"'))return v.slice(1,-1);if(/^-?\\d+(?:\\.\\d+)?$/.test(v))return Number(v);return v;});};
+  root.addEventListener('click',event=>{
+   const target=event.target instanceof Element?event.target.closest('[onclick]'):null;if(!target)return;
+   const expression=target.getAttribute('onclick')||'';target.removeAttribute('onclick');
+   const match=expression.match(/^([A-Za-z_$][\\w$]*)\\s*\\((.*)\\)\\s*;?$/s);if(!match)return;
+   event.preventDefault();event.stopPropagation();
+   const handler=window[match[1]];if(typeof handler!=='function'){console.error('Quiz handler missing:',match[1]);return;}
+   try{handler(...parseArgs(match[2]));}catch(error){console.error('Quiz click failed:',match[1],error);alert('इस बटन को चलाने में समस्या आई: '+error.message);}
+  },true);
+  // Remove static inline attributes too; delegated handler above handles both static and dynamically rendered quiz controls.
+  root.querySelectorAll('[onclick]').forEach(element=>element.removeAttribute('onclick'));
   nativeRevisionQuizReady=true;
  }catch(e){host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(e.message)+'</div>';console.error(e)}
  finally{nativeRevisionQuizLoading=false}
