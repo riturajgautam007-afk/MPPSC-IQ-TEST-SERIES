@@ -345,7 +345,7 @@ function toggleTheme(){applyTheme(document.body.classList.contains('dark')?'ligh
 function flushRevisionProgress(){if(!revisionRestoreComplete)return;saveRevisionLocalSnapshot();if(!remoteProgressReady)return;const body=JSON.stringify({performance:performanceData,session:buildRevisionSession()});if(body.length<=60000)fetch('/api/revision-progress',{method:'PUT',credentials:'include',keepalive:true,headers:{'Content-Type':'application/json'},body}).catch(()=>{});}
 window.addEventListener('pagehide',flushRevisionProgress);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushRevisionProgress();});
-render();restoreRevisionProgress();</script>
+render();restoreRevisionProgress();loadRevisionBookmarks().then(()=>render());</script>
 <style id="mppsc-performance-alignment-fix">
 /* Final alignment: centered panel, equal-width columns, no horizontal overflow */
 .performance-panel{width:100%!important;max-width:780px!important;box-sizing:border-box!important;margin-left:auto!important;margin-right:auto!important}
