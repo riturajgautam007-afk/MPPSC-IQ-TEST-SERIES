@@ -35,95 +35,12 @@ async function api(path,opt={}){const r=await fetch('/api'+path,{credentials:'sa
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function paid(){return mem?.role==='admin'||(mem?.membership?.status==='active'&&(!mem.membership.ends_at||new Date(mem.membership.ends_at)>new Date()))}
 function toggleRevisionQuiz(){mountNativeRevisionQuiz();}
-let nativeRevisionQuizLoading=false,nativeRevisionQuizReady=false;
-async function mountNativeRevisionQuiz(){
+let nativeRevisionQuizReady=false;
+function mountNativeRevisionQuiz(){
  const host=$('revisionQuizNative');
- if(!host||nativeRevisionQuizReady||nativeRevisionQuizLoading)return;
- nativeRevisionQuizLoading=true;
- host.innerHTML='<div class="empty">क्विज़ सिस्टम लोड हो रहा है…</div>';
- (async()=>{
-  try{
-   const response=await fetch('/pre2027-revision-quiz.html',{cache:'no-store'});
-   if(!response.ok)throw new Error('Quiz file HTTP '+response.status);
-   const html=await response.text();
-   const parsed=new DOMParser().parseFromString(html,'text/html');
-   const shadow=host.shadowRoot||host.attachShadow({mode:'open'});
-   shadow.innerHTML='';
-   const root=document.createElement('div');
-   root.id='mppscQuizRoot';
-   root.style.cssText='display:block;width:100%;min-width:0;color:#f4f2ec;background:#171a20;';
-   shadow.appendChild(root);
-   parsed.querySelectorAll('style').forEach(source=>{
-    const style=document.createElement('style');
-    style.textContent=source.textContent;
-    shadow.appendChild(style);
-   });
-   const theme=document.createElement('style');
-   theme.textContent=`
-    :host{display:block;width:100%;min-width:0;background:#171a20;color:#f4f2ec}
-    #mppscQuizRoot{font-family:Inter,system-ui,"Noto Sans Devanagari",sans-serif!important}
-    #mppscQuizRoot .header{display:none!important}
-    #mppscQuizRoot .topsticky{position:sticky;top:0;z-index:15;background:#171a20}
-    #mppscQuizRoot .wrap{max-width:100%!important;margin:0 auto 10px!important;padding:0 2px!important}
-    #mppscQuizRoot .langbar{position:relative!important;top:auto!important;background:#171a20!important;border-color:#2a303a!important;box-shadow:none!important}
-    #mppscQuizRoot .langbar button{background:#242830!important;color:#f4f2ec!important;border-color:#3a4350!important}
-    #mppscQuizRoot .langbar button.active{background:#176a50!important;color:#fff!important;border-color:#28a879!important}
-    #mppscQuizRoot .meta{background:#202630!important;color:#dce4f0!important;border-color:#344052!important}
-    #mppscQuizRoot .card{background:#111a29!important;color:#f4f2ec!important;border-color:#304158!important;box-shadow:none!important}
-    #mppscQuizRoot .qtext{color:#f4f2ec!important}
-    #mppscQuizRoot .eng{color:#b9c5d6!important}
-    #mppscQuizRoot .option{background:#1c2b40!important;color:#eaf0f8!important;border-color:#344a65!important}
-    #mppscQuizRoot .letter{color:#ffd84f!important}
-    #mppscQuizRoot .option.correct{background:#174a35!important;color:#eafff2!important}
-    #mppscQuizRoot .option.wrong{background:#542b32!important;color:#fff!important}
-    #mppscQuizRoot .bottom{position:sticky!important;left:auto!important;right:auto!important;bottom:0!important;z-index:12!important;background:#101216!important;border-color:#2a303a!important}
-    #mppscQuizRoot .bottom button,#mppscQuizRoot .bottom .score-chip{background:#263d5d!important;color:#fff!important;border-color:#405b7e!important}
-    #mppscQuizRoot .bottom .score-chip{background:#171a20!important}
-    #mppscQuizRoot .progress-track{background:#303b4b!important}
-    #mppscQuizRoot .progress-fill{background:#ffd84f!important}
-    #mppscQuizRoot .unitbar{background:#171a20!important}
-    #mppscQuizRoot .unitbar button{background:#242830!important;color:#eaf0f8!important;border-color:#3a4658!important}
-    #mppscQuizRoot .unitbar button.active{background:#ffd84f!important;color:#171717!important;border-color:#ffd84f!important}
-    #mppscQuizRoot .feedback{background:#202630!important;color:#eaf0f8!important}
-    #mppscQuizRoot .unit-empty,#mppscQuizRoot .notice{background:#202630!important;color:#eaf0f8!important;border-color:#344052!important}
-    `;
-   shadow.appendChild(theme);
-   const nodes=[parsed.querySelector('.topsticky'),parsed.querySelector('main.wrap'),parsed.querySelector('.bottom')];
-   nodes.forEach((node,i)=>{
-    if(!node)return;
-    const clone=document.importNode(node,true);
-    if(i===0)clone.querySelector('.header')?.remove();
-    root.appendChild(clone);
-   });
-   const originalScript=parsed.querySelector('script');
-   if(!originalScript)throw new Error('Quiz JavaScript नहीं मिली');
-   const names=[...originalScript.textContent.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(x=>x[1]);
-   const scopedDocument=new Proxy(document,{get(target,key){
-    if(key==='getElementById')return id=>root.querySelector('#'+CSS.escape(String(id)));
-    if(key==='querySelector')return selector=>root.querySelector(selector);
-    if(key==='querySelectorAll')return selector=>root.querySelectorAll(selector);
-    if(key==='body'||key==='head'||key==='documentElement')return root;
-    const value=Reflect.get(target,key,target);
-    return typeof value==='function'?value.bind(target):value;
-   }});
-   const expose=names.map(n=>'if(typeof '+n+'==="function")window['+JSON.stringify(n)+']='+n+';').join('\n');
-   // Attach controls inside the quiz script scope so local functions resolve reliably.
-   const bindControls = [
-    'for(let unit=1;unit<=10;unit++){',
-    ' const button=document.getElementById("unit"+unit+"Btn");',
-    ' if(button){button.removeAttribute("onclick");button.addEventListener("click",function(e){e.preventDefault();setUnit(unit);});}',
-    '}',
-    'const pyq=document.getElementById("pyqBtn");if(pyq){pyq.removeAttribute("onclick");pyq.addEventListener("click",function(e){e.preventDefault();setPYQs();});}',
-    'const analysis=document.getElementById("analysisBtn");if(analysis){analysis.removeAttribute("onclick");analysis.addEventListener("click",function(e){e.preventDefault();showAnalysis();});}'
-   ].join('\n');
-   const executeQuiz=new Function('document','window','localStorage','alert','confirm','quizRoot',originalScript.textContent+'\n'+expose+'\n'+bindControls);
-   executeQuiz(scopedDocument,window,localStorage,window.alert.bind(window),window.confirm.bind(window),root);
-   nativeRevisionQuizReady=true;
-  }catch(e){
-   host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(e.message)+'</div>';
-   console.error('MPPSC IQ native quiz integration failed',e);
-  }finally{nativeRevisionQuizLoading=false}
- })();
+ if(!host||nativeRevisionQuizReady)return;
+ nativeRevisionQuizReady=true;
+ host.innerHTML='<iframe title="MPPSC IQ Revision Quiz" src="/pre2027-revision-quiz.html" loading="eager" style="display:block;width:100%;height:calc(100dvh - 112px);min-height:720px;border:0;margin:0;padding:0;background:#171a20;border-radius:0;overflow:auto" allow="clipboard-read; clipboard-write"></iframe>';
 }
 function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard'||id==='tests')loadTests();if(id==='tests')mountNativeRevisionQuiz();if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
