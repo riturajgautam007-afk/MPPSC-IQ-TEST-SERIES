@@ -62,11 +62,8 @@ function mountNativeRevisionQuiz(){
  choose=function(i,k){oldChoose(i,k);try{const q=DATA[i],unit=Number(q?.__unit||activeUnit);if(q&&unit>=1&&unit<=10)api('/revision-answers',{method:'POST',body:JSON.stringify({unit,index:Number(i),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer),selected:Number(k)})}).catch(e=>console.warn('Revision answer sync:',e.message));}catch(e){}queueSave();clearTimeout(answerTimer);answerTimer=setTimeout(queueSave,900)};
  for(const fn of ['setUnit','setPYQs','showAnalysis','shuffleCurrentUnit','mixAllUnits','changePage']){try{const original=window[fn];if(typeof original==='function')window[fn]=function(...args){const out=original.apply(this,args);queueSave();return out}}catch(e){}}
  window.addEventListener('beforeunload',()=>{try{saveNow()}catch(e){}});
- window.__revisionBookmarkKeys={};
- const bookmarkKey=(u,i)=>String(u)+':'+String(i);
- try{const rows=await api('/revision-bookmarks');for(const row of rows){const k=bookmarkKey(row.unit,row.question_index);window.__revisionBookmarkKeys[k]=row.question_key;}}catch(e){console.warn('Revision bookmarks load:',e.message)}
  const oldToggleBookmark=toggleRevisionBookmark;
- toggleRevisionBookmark=function(unit,index,button){const before=revisionBookmarks().some(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));oldToggleBookmark(unit,index,button);const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const key=bookmarkKey(unit,index);if(before){const serverKey=window.__revisionBookmarkKeys[key];if(serverKey)api('/revision-bookmarks/'+encodeURIComponent(serverKey),{method:'DELETE'}).then(()=>delete window.__revisionBookmarkKeys[key]).catch(e=>console.warn('Bookmark delete:',e.message));}else{api('/revision-bookmarks',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)})}).then(d=>window.__revisionBookmarkKeys[key]=d.question_key).catch(e=>console.warn('Bookmark save:',e.message));}};
+ toggleRevisionBookmark=function(unit,index,button){return oldToggleBookmark(unit,index,button);};
  window.reportRevisionQuestion=async function(unit,index){
   const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q){console.warn('Report question not found',unit,index);return;}
   const btn=[...document.querySelectorAll('.revision-question-actions button')].find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));
