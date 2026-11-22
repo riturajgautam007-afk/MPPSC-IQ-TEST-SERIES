@@ -64,7 +64,22 @@ app.get("/api/admin/backup",requireAuth,requireAdmin,ar(async(_q,res)=>{
 app.get("/api/admin/overview",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT (SELECT COUNT(*) FROM students)::int students,(SELECT COUNT(*) FROM tests)::int tests,(SELECT COUNT(*) FROM questions)::int questions,(SELECT COUNT(*) FROM attempts)::int attempts");s.json(r.rows[0]);}));
 app.get("/api/admin/analytics",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT st.id,st.name,st.username,st.telegram_id,COUNT(at.id)::int attempts,COALESCE(SUM(at.score),0)::int total_correct,COALESCE(SUM(at.total),0)::int total_questions,CASE WHEN SUM(at.total)>0 THEN ROUND(100.0*SUM(at.score)/SUM(at.total),1) ELSE 0 END average_percentage,MAX(at.created_at) last_attempt FROM students st LEFT JOIN attempts at ON at.student_id=st.id GROUP BY st.id ORDER BY attempts DESC,average_percentage DESC,st.id DESC");s.json(r.rows);}));
 app.get("/api/admin/student-performance",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT st.id AS student_id,t.unit,COUNT(a.id)::int attempts,COALESCE(SUM(a.score),0)::int total_correct,COALESCE(SUM(a.total),0)::int total_questions,CASE WHEN SUM(a.total)>0 THEN ROUND(100.0*SUM(a.score)/SUM(a.total),1) ELSE 0 END average_percentage,MAX(a.created_at) last_attempt FROM students st JOIN attempts a ON a.student_id=st.id JOIN tests t ON t.id=a.test_id GROUP BY st.id,t.unit ORDER BY st.id,average_percentage ASC");s.json(r.rows);}));
-app.get("/api/admin/students",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT id,name,telegram_id,username,created_at FROM students ORDER BY id DESC");s.json(r.rows);}));app.get("/api/admin/students/:id/profile",requireAuth,requireAdmin,ar(async(q,s)=>{
+app.get("/api/admin/students",requireAuth,requireAdmin,ar(async(_q,s)=>{const r=await db.query("SELECT id,name,telegram_id,username,created_at FROM students ORDER BY id DESC");s.json(r.rows);}));app.get("/api/admin/students/export.xlsx",requireAuth,requireAdmin,ar(async(_q,s)=>{
+ const [students,units]=await Promise.all([
+  db.query("SELECT st.id,st.name,st.username,st.telegram_id,st.created_at,COUNT(a.id)::int attempts,COALESCE(SUM(a.score),0)::int total_correct,COALESCE(SUM(a.total),0)::int total_questions,CASE WHEN SUM(a.total)>0 THEN ROUND(100.0*SUM(a.score)/SUM(a.total),1) ELSE 0 END average_percentage,MAX(a.created_at) last_attempt FROM students st LEFT JOIN attempts a ON a.student_id=st.id GROUP BY st.id ORDER BY st.id DESC"),
+  db.query("SELECT st.name,st.telegram_id,t.unit,COUNT(a.id)::int attempts,COALESCE(SUM(a.score),0)::int total_correct,COALESCE(SUM(a.total),0)::int total_questions,CASE WHEN SUM(a.total)>0 THEN ROUND(100.0*SUM(a.score)/SUM(a.total),1) ELSE 0 END average_percentage FROM students st JOIN attempts a ON a.student_id=st.id JOIN tests t ON t.id=a.test_id GROUP BY st.id,st.name,st.telegram_id,t.unit ORDER BY st.id DESC,t.unit")
+ ]);
+ const wb=XLSX.utils.book_new();
+ const summary=students.rows.map(x=>({"विद्यार्थी ID":x.id,"नाम":x.name,"Username":x.username||"","Telegram ID":x.telegram_id,"पंजीकरण तिथि":x.created_at,"कुल टेस्ट":x.attempts,"कुल सही उत्तर":x.total_correct,"कुल प्रश्न":x.total_questions,"औसत प्रतिशत":Number(x.average_percentage),"अंतिम टेस्ट":x.last_attempt||""}));
+ const unitRows=units.rows.map(x=>({"नाम":x.name,"Telegram ID":x.telegram_id,"Unit":x.unit||"अन्य","टेस्ट प्रयास":x.attempts,"सही उत्तर":x.total_correct,"कुल प्रश्न":x.total_questions,"औसत प्रतिशत":Number(x.average_percentage)}));
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),"Student Summary");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(unitRows),"Unit Performance");
+ const buffer=XLSX.write(wb,{type:"buffer",bookType:"xlsx"});
+ s.setHeader("Content-Type","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+ s.setHeader("Content-Disposition",'attachment; filename="MPPSC-IQ-Student-Progress.xlsx"');
+ s.send(buffer);
+}));
+app.get("/api/admin/students/:id/profile",requireAuth,requireAdmin,ar(async(q,s)=>{
  const id=Number(q.params.id);if(!Number.isInteger(id)||id<1)return s.status(400).json({error:"विद्यार्थी ID सही नहीं है"});
  const student=(await db.query("SELECT id,name,telegram_id,username,created_at FROM students WHERE id=$1",[id])).rows[0];
  if(!student)return s.status(404).json({error:"विद्यार्थी नहीं मिला"});
