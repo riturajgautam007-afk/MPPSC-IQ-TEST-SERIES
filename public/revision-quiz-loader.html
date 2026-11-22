@@ -4,9 +4,9 @@
 <script>
 (async()=>{
  try{
-  const version='20261123-restore-quiz-loader-v19';
+  const version='20261123-quiz-recovery-v20';
   const paths=['/revision-quiz-part1.txt','/revision-quiz-part2.txt','/revision-quiz-part3.txt','/revision-quiz.html','/data/revision-bank.json'].map(p=>p+'?v='+version);
-  const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'default',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable: '+p+' ('+r.status+')');return r.text()}));
+  const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable: '+p+' ('+r.status+')');return r.text()}));
   const html=parts.join('');
   if(!html.includes('UNIT1_DATA')||!html.includes('toggleRevisionBookmark')||!html.includes('</body>'))throw Error('Quiz source validation failed');
   const bridge=\`<script>
