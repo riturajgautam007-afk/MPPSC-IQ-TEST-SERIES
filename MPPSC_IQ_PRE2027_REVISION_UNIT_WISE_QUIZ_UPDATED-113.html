@@ -701,7 +701,7 @@ function render(){
  document.getElementById('progressFill').style.width=`${(currentIndex+1)/DATA.length*100}%`;
  document.getElementById('reviewNote').textContent=reviewMode?`Wrong Question ${reviewPos+1} / ${reviewIds.length}`:unitWrongMode?(currentIndex===DATA.length-1&&answers[currentIndex]!==undefined?(lang==='hi'?'इस यूनिट के सभी गलत प्रश्न पूरे हुए।':'All wrong questions in this unit completed.'):`${lang==='hi'?'गलत प्रश्न':'Wrong questions'} ${currentIndex+1} / ${DATA.length} · ${lang==='hi'?'उत्तर देते ही अगला प्रश्न खुलेगा':'Next question opens after answering'}`):'';
  const title=lang==='hi'?'प्रश्न':'Question';
- document.getElementById('questions').innerHTML=indices.map(idx=>{
+ try{document.getElementById('questions').innerHTML=indices.map(idx=>{
   const q=DATA[idx],chosen=answers[idx],opts=q.options||[];
   const separateLang=(isMixedMode?q.__unit===6:activeUnit===6)||idx>=1400;
   const questionSource=lang==='hi'?(q.q||q.en):(q.en||q.q);const questionParts=String(questionSource??'').split(/\s*\/\s*/);let questionText=lang==='hi'?(questionParts[0]||questionSource):(questionParts.length>1?questionParts.slice(1).join(' / '):questionSource);questionText=String(questionText).replace(/^(?:प्रश्न|Question)\s*\d+\.\s*/i,'');
@@ -715,7 +715,18 @@ function render(){
   const qUnit=Number(q.__unit||activeUnit||0),qOriginalIndex=Number(String(q.__qid||`${qUnit}:${idx}`).split(":").pop());
   const isBookmarked=isRevisionBookmarked(qUnit,qOriginalIndex);
   return `<section class="card" id="qcard-${idx}"><div class="qtext">${cardTitle}. ${esc(visibleQuestion)}</div><div class="revision-question-actions"><button type="button" class="revision-q-action ${isBookmarked?"saved":""}" onclick="toggleRevisionBookmark(${qUnit},${qOriginalIndex},this)">${isBookmarked?"🔖✓ बुकमार्क किया":"🔖 बुकमार्क"}</button><button type="button" class="revision-q-action" onclick="reportRevisionQuestion(${qUnit},${qOriginalIndex})">⚑ प्रश्न रिपोर्ट करें</button></div>${structured.table||legacyMatch}${options}</section>`;
- }).join('');
+ }).join('');}catch(renderError){
+  console.error('Advanced question renderer failed; using safe question cards:',renderError);
+  questionBox.innerHTML=indices.map(idx=>{
+   const q=DATA[idx]||{},unit=Number(q.__unit||activeUnit||0),original=Number(String(q.__qid||unit+':'+idx).split(':').pop());
+   const raw=String(lang==='hi'?(q.q||q.en||''):(q.en||q.q||''));
+   const parts=raw.split(' / '),question=lang==='hi'?parts[0]:parts.slice(1).join(' / ')||raw;
+   const opts=Array.isArray(q.options)?q.options:[];
+   const buttons=opts.map((opt,k)=>{const pair=String(opt??'').split(' / '),shown=pair.length>1?pair[lang==='hi'?0:1]:pair[0];const chosen=answers[idx];const cls=chosen!==undefined&&k===q.answer?'correct':chosen===k&&k!==q.answer?'wrong':'';return '<button class="option '+cls+'" onclick="choose('+idx+','+k+')" '+(chosen!==undefined||reviewMode?'disabled':'')+'><span class="letter">'+('ABCD'[k]||k+1)+'.</span><span>'+esc(shown)+'</span></button>';}).join('');
+   const saved=isRevisionBookmarked(unit,original);
+   return '<section class="card" id="qcard-'+idx+'"><div class="qtext"> प्रश्न '+(idx+1)+'. '+esc(question)+'</div><div class="revision-question-actions"><button type="button" class="revision-q-action '+(saved?'saved':'')+'" onclick="toggleRevisionBookmark('+unit+','+original+',this)">'+(saved?'🔖✓ बुकमार्क किया':'🔖 बुकमार्क')+'</button><button type="button" class="revision-q-action" onclick="reportRevisionQuestion('+unit+','+original+')">⚑ प्रश्न रिपोर्ट करें</button></div>'+buttons+'</section>';
+  }).join('');
+ }
  const wrongBtn=document.querySelector('.bottom button[onclick="showWrong()"]');if(wrongBtn){wrongBtn.textContent=reviewMode?`Next Wrong ${reviewPos+1}/${reviewIds.length}`:`Wrong (${wrong})`;wrongBtn.style.display=unitWrongMode?'none':'';}if(unitWrongMode){['backBtn','nextBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.display='none';});const mb=document.querySelector('.mixbar');if(mb)mb.style.display='none';}
 }
 
