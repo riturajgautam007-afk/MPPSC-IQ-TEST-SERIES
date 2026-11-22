@@ -247,7 +247,7 @@ app.get("/admin.html",(q,s,n)=>{
   s.sendFile(path.join(__dirname,"..","public","admin.html"));
  });
 });
-app.get("/pre2027-revision-quiz.html",(q,s)=>{s.set("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");s.set("Pragma","no-cache");s.set("Expires","0");s.sendFile(path.join(__dirname,"..","public","revision-quiz-loader.html"));});
+app.get("/pre2027-revision-quiz.html",(q,s)=>{s.set("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");s.set("Pragma","no-cache");s.set("Expires","0");s.sendFile(path.join(__dirname,"..","public","pre2027-revision-quiz.html"));});
 app.use(express.static(path.join(__dirname,"..","public")));app.get("*",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use((e,_q,s,_n)=>{console.error(e);s.status(400).json({error:e.message||"Request failed"});});
 async function connectDatabase(){try{await db.init();await membership.ensureSchema(db);dbReady=true;dbLastError="";console.log("Database connected and schema ready");const {error}=await supabase.storage.createBucket(bucket,{public:false,fileSizeLimit:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024});if(error&&!String(error.message).toLowerCase().includes("already"))console.warn("Storage bucket setup:",error.message);}catch(e){dbReady=false;dbLastError=e.message||"Database connection failed";console.error("Database unavailable; web server remains online:",dbLastError);}}
