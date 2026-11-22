@@ -98,16 +98,57 @@ function mountNativeRevisionQuiz(){
     temp.remove();return scoped;
    };
    sourceStyles.forEach((el,i)=>{const st=document.createElement('style');st.dataset.quizStyle=String(i);st.textContent=scopeCss(el.textContent||'');document.head.appendChild(st)});
-   const appFit=document.createElement('style');appFit.textContent='#revisionQuizRoot .bottom{bottom:88px!important;z-index:25!important}#revisionQuizRoot .wrap{padding-bottom:18px!important}#revisionQuizRoot .unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:5px!important;padding:7px 9px!important}#revisionQuizRoot .unitbar button{height:32px!important;min-height:32px!important;padding:4px 2px!important;font-size:11px!important;line-height:1!important;border-radius:7px!important}@media(max-width:600px){#revisionQuizRoot .unitbar{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;padding:6px 7px!important}#revisionQuizRoot .unitbar button{height:29px!important;min-height:29px!important;padding:3px 2px!important;font-size:10px!important;border-radius:6px!important}}';document.head.appendChild(appFit);
+   const appFit=document.createElement('style');appFit.textContent=`
+#revisionQuizRoot{color:var(--ink)!important;background:transparent!important;font-family:inherit!important}
+#revisionQuizRoot .header,#revisionQuizRoot .langbar,#revisionQuizRoot #stickyMeta,#revisionQuizRoot .bottom{display:none!important}
+#revisionQuizRoot .topsticky{position:static!important;background:transparent!important}
+#revisionQuizRoot .unitbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:15px;margin:10px 0}
+#revisionQuizRoot .unitbar button{min-width:0;height:auto;min-height:42px;padding:8px 4px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);font:700 12px/1.2 inherit}
+#revisionQuizRoot .unitbar button.active{background:var(--gold);color:#151515;border-color:var(--gold)}
+#revisionQuizRoot .wrap{width:100%;max-width:none;margin:10px 0 14px;padding:0 0 14px}
+#revisionQuizRoot .progress-track{background:var(--panel2)}
+#revisionQuizRoot .card{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-left:3px solid var(--gold)!important;border-radius:15px!important;box-shadow:none!important}
+#revisionQuizRoot .qtext{color:var(--ink)!important}
+#revisionQuizRoot .option{background:var(--panel2)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:11px!important}
+#revisionQuizRoot .option.correct{background:#164b35!important;color:#eafff1!important}
+#revisionQuizRoot .option.wrong{background:#542b30!important;color:#fff0f0!important}
+#revisionQuizRoot .feedback{background:var(--panel2)!important;color:var(--ink)!important}
+#revisionQuizRoot .sticky-tools{display:none!important}
+#revisionQuizNative .quiz-native-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0}
+#revisionQuizNative .quiz-native-toolbar button,#revisionQuizNative .quiz-native-controls button{border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);font:700 13px inherit;padding:10px 12px;min-height:40px}
+#revisionQuizNative .quiz-native-toolbar button.active{background:var(--gold);color:#171717}
+#revisionQuizNative .quiz-native-status{margin-left:auto;color:var(--muted);font-size:12px}
+#revisionQuizNative .quiz-native-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0 18px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+#revisionQuizNative .quiz-native-controls button:first-child{grid-column:1/-1}
+#revisionQuizNative .quiz-native-controls button:active,#revisionQuizNative .quiz-native-toolbar button:active{transform:scale(.98)}
+#revisionQuizRoot.dark{--navy:#f1f3f6;--blue:#d4a72c;--ink:var(--ink);--line:var(--line)}
+#revisionQuizRoot:not(.dark) .card{background:var(--panel)!important}
+@media(max-width:600px){#revisionQuizRoot .unitbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:9px}#revisionQuizRoot .unitbar button{font-size:11px;min-height:40px}#revisionQuizNative .quiz-native-controls{grid-template-columns:repeat(2,minmax(0,1fr))}#revisionQuizNative .quiz-native-controls button{font-size:11px;padding:9px 6px}}
+`;document.head.appendChild(appFit);
    const header=root.querySelector('.topsticky > .header');if(header)header.style.display='none';
    const unitNav=root.querySelector('#unitbar');
    const back=document.createElement('button');back.type='button';back.textContent='← सभी यूनिट / टेस्ट';back.style.cssText='display:none;margin:8px 10px;padding:8px 13px;border:1px solid #64748b;border-radius:8px;background:#1e3552;color:#fff;font-weight:700;font-size:13px';
    unitNav?.parentNode?.insertBefore(back,unitNav);
+   const nativeToolbar=document.createElement('div');nativeToolbar.className='quiz-native-toolbar';
+   nativeToolbar.innerHTML='<button type="button" id="nativeQuizHindi" class="active">हिंदी</button><button type="button" id="nativeQuizEnglish">English</button><span class="quiz-native-status" id="nativeQuizStatus">प्रश्न लोड हो रहे हैं…</span>';
+   const nativeControls=document.createElement('div');nativeControls.className='quiz-native-controls';
+   nativeControls.innerHTML='<button type="button" data-old="backBtn">← पिछला पेज</button><button type="button" data-old="nextBtn">अगला पेज →</button><button type="button" data-old="wrong">गलत प्रश्न</button><button type="button" data-old="refresh">↻ Refresh</button><button type="button" data-old="shuffle">↻ इस यूनिट के प्रश्न Shuffle</button><button type="button" data-old="mix">⇄ सभी यूनिट मिक्स</button>';
+   const quizWrap=root.querySelector('.wrap');unitNav?.parentNode?.insertBefore(nativeToolbar,unitNav);if(quizWrap)quizWrap.after(nativeControls);
+   nativeControls.querySelector('[data-old="backBtn"]').onclick=()=>root.querySelector('#backBtn')?.click();
+   nativeControls.querySelector('[data-old="nextBtn"]').onclick=()=>root.querySelector('#nextBtn')?.click();
+   nativeControls.querySelector('[data-old="wrong"]').onclick=()=>root.querySelector('.bottom button:nth-of-type(3)')?.click();
+   nativeControls.querySelector('[data-old="refresh"]').onclick=()=>root.querySelector('.bottom button:nth-of-type(4)')?.click();
+   nativeControls.querySelector('[data-old="shuffle"]').onclick=()=>root.querySelector('#shuffleUnitBtn')?.click();
+   nativeControls.querySelector('[data-old="mix"]').onclick=()=>root.querySelector('#mixAllBtn')?.click();
+   nativeToolbar.querySelector('#nativeQuizHindi').onclick=()=>root.querySelector('#hiBtn')?.click();
+   nativeToolbar.querySelector('#nativeQuizEnglish').onclick=()=>root.querySelector('#enBtn')?.click();
    const setStage=(stage)=>{
     const hide=stage==='units';
-    ['.langbar','#stickyMeta','.wrap','.bottom'].forEach(sel=>root.querySelectorAll(sel).forEach(el=>el.style.display=hide?'none':''));
+    ['.wrap'].forEach(sel=>root.querySelectorAll(sel).forEach(el=>el.style.display=hide?'none':''));
     if(unitNav)unitNav.style.display=hide?'grid':'none';
+    nativeToolbar.style.display=hide?'none':'flex';nativeControls.style.display=hide?'none':'grid';
     back.style.display=hide?'none':'inline-block';
+    root.classList.toggle('dark',!document.body.classList.contains('light'));
    };
    back.addEventListener('click',()=>setStage('units'));
    unitNav?.addEventListener('click',ev=>{if(ev.target.closest('button'))setTimeout(()=>setStage('questions'),80)},true);
