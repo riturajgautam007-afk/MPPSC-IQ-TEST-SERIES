@@ -493,6 +493,35 @@ DATA=UNIT2_DATA.map((q,i)=>({...q,__unit:2,__qid:`2:${i}`}));
 function resetQuizState(){answers={};page=0;currentIndex=0;reviewMode=false;reviewIds=[];reviewPos=0;unitWrongMode=false;clearTimeout(autoTimer);}
 function updateUnitButtons(n){for(let i=1;i<=10;i++){const b=document.getElementById('unit'+i+'Btn');if(b)b.classList.toggle('active',i===n);}const pyq=document.getElementById('pyqBtn');if(pyq)pyq.classList.toggle('active',n===11);const analysis=document.getElementById('analysisBtn');if(analysis)analysis.classList.toggle('active',n===12);}
 function setUnit(n){activeUnit=n;isMixedMode=false;isUnitShuffled=false;DATA=(UNIT_DATA_MAP[n]||[]).map((q,i)=>({...q,__unit:n,__qid:`${n}:${i}`}));resetQuizState();updateUnitButtons(n);document.querySelector('.title').textContent='MPPSC PRE 2027 PROGRAM';render();window.scrollTo({top:0,behavior:'smooth'});}
+// Load Admin Text Upload additions into the same live unit-wise Revision Quiz bank.
+async function loadAdminQuestionBank(){
+ try{
+  const response=await fetch('/api/question-bank-overrides',{credentials:'include',cache:'no-store'});
+  if(!response.ok)throw new Error('Question bank sync unavailable');
+  const payload=await response.json();
+  const edits=payload.edits&&typeof payload.edits==='object'?payload.edits:{};
+  const additions=payload.additions&&typeof payload.additions==='object'?payload.additions:{};
+  for(let unit=1;unit<=10;unit++){
+   if(!Array.isArray(UNIT_DATA_MAP[unit]))UNIT_DATA_MAP[unit]=[];
+   const base=UNIT_DATA_MAP[unit];
+   for(let i=0;i<base.length;i++){
+    const edit=edits[unit+':'+i];
+    if(edit&&typeof edit==='object')base[i]={...base[i],...edit};
+   }
+   const extra=Array.isArray(additions[String(unit)])?additions[String(unit)]:[];
+   const seen=new Set(base.map(x=>String(x.q||'').normalize('NFKC').toLocaleLowerCase('hi').replace(/[\\s\\p{P}]+/gu,' ').trim()));
+   extra.forEach(x=>{
+    if(!x||typeof x.q!=='string'||!Array.isArray(x.options)||x.options.length!==4)return;
+    const key=x.q.normalize('NFKC').toLocaleLowerCase('hi').replace(/[\\s\\p{P}]+/gu,' ').trim();
+    if(!key||seen.has(key))return;seen.add(key);
+    base.push({q:x.q,en:String(x.en||''),options:x.options,answer:Number(x.answer),explanation:String(x.explanation||'')});
+   });
+  }
+  DATA=(UNIT_DATA_MAP[activeUnit]||[]).map((q,i)=>({...q,__unit:activeUnit,__qid:`${activeUnit}:${i}`}));
+  resetQuizState();render();
+ }catch(error){console.warn('Admin question bank sync skipped:',error);}
+}
+
 function setPYQs(){activeUnit=11;isMixedMode=false;isUnitShuffled=false;DATA=[];resetQuizState();updateUnitButtons(0);document.getElementById('pyqBtn').classList.add('active');document.querySelector('.title').textContent='MPPSC PRE 2027 | PREVIOUS YEAR QUESTIONS (PYQs)';render();window.scrollTo({top:0,behavior:'smooth'});}
 function showAnalysis(){activeUnit=12;isMixedMode=false;isUnitShuffled=false;DATA=[];resetQuizState();updateUnitButtons(12);document.querySelector('.title').textContent='MPPSC PRE 2027 PROGRAM';render();window.scrollTo({top:0,behavior:'smooth'});}
 function shuffleArray(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -740,7 +769,7 @@ function toggleRevisionBookmark(unit,index,button){const list=getRevisionBookmar
 async function reportRevisionQuestion(unit,index){const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const reason=prompt('इस प्रश्न में क्या समस्या है?\\nजैसे: गलत उत्तर / गलत प्रश्न / विकल्प में गलती / भाषा की गलती');if(!reason||!reason.trim())return;const message=`MPPSC IQ Revision Quiz | UNIT ${String(unit).padStart(2,'0')} | प्रश्न ${index+1}\\nसमस्या: ${reason.trim()}\\nप्रश्न: ${q.q||''}\\nविकल्प: ${(q.options||[]).join(' | ')}\\nसही उत्तर (मूल डेटा): ${Number(q.answer)+1}`;try{const response=await fetch('/api/support',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:'Quiz Question Report',message})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'रिपोर्ट भेजी नहीं जा सकी');alert('प्रश्न रिपोर्ट MPPSC IQ टीम को भेज दी गई है।');}catch(e){alert(e.message||'रिपोर्ट भेजने में समस्या हुई। कृपया लॉगिन जाँचें।');}}
 
 (function(){let t='light';try{t=localStorage.getItem('mppscIqTheme')||'light'}catch(e){}applyTheme(t)})();
-render();</script>
+render();loadAdminQuestionBank();</script>
 <style id="mppsc-performance-alignment-fix">
 /* Final alignment: centered panel, equal-width columns, no horizontal overflow */
 .performance-panel{width:100%!important;max-width:780px!important;box-sizing:border-box!important;margin-left:auto!important;margin-right:auto!important}
