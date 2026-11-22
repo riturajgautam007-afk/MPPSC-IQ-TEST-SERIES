@@ -8,11 +8,27 @@ function revisionStorageKey(){return REVISION_SESSION_KEY+':'+revisionStudentId;
 function loadPerformance(){try{const x=JSON.parse(localStorage.getItem(PERFORMANCE_KEY)||'{}');return x&&x.questions&&typeof x.questions==='object'?x:{questions:{},recent:[]};}catch(e){return {questions:{},recent:[]};}}
 let performanceData=loadPerformance();
 let remoteProgressReady=false,remoteProgressTimer=null,remoteProgressBusy=false,remoteProgressAgain=false;
+let revisionUnitSessions={};
+function captureRevisionUnitSession(){
+ const unit=Number(activeUnit);
+ if(!Number.isInteger(unit)||unit<1||unit>10||isMixedMode||!Array.isArray(DATA)||!DATA.length)return;
+ const safeAnswers={};
+ for(const [k,v] of Object.entries(answers||{})){const i=Number(k);if(Number.isInteger(i)&&i>=0&&i<DATA.length&&Number.isInteger(Number(v))&&Number(v)>=0&&Number(v)<=3)safeAnswers[String(i)]=Number(v);}
+ revisionUnitSessions[String(unit)]={isMixedMode:false,isUnitShuffled:!!isUnitShuffled,questionOrder:DATA.map((q,i)=>String(q.__qid||((q.__unit||unit)+':'+i))).slice(0,30000),answers:safeAnswers,currentIndex:Math.max(0,Math.min(Math.max(0,DATA.length-1),Number(currentIndex)||0)),savedAt:Date.now()};
+}
+function restoreRevisionUnitSession(unit,saved){
+ const base=(UNIT_DATA_MAP[unit]||[]).map((q,i)=>({...q,__unit:unit,__qid:String(unit)+':'+i}));
+ if(saved&&Array.isArray(saved.questionOrder)&&saved.questionOrder.length){const byId=new Map(base.map(q=>[q.__qid,q]));const ordered=saved.questionOrder.map(id=>byId.get(String(id))).filter(Boolean);if(ordered.length)DATA=ordered;else DATA=base;}else DATA=base;
+ activeUnit=unit;isMixedMode=false;isUnitShuffled=!!saved?.isUnitShuffled;answers={};
+ for(const [k,v] of Object.entries(saved?.answers||{})){const i=Number(k),n=Number(v);if(Number.isInteger(i)&&i>=0&&i<DATA.length&&Number.isInteger(n)&&n>=0&&n<=3)answers[i]=n;}
+ currentIndex=Math.max(0,Math.min(Math.max(0,DATA.length-1),Number(saved?.currentIndex)||0));page=Math.floor(currentIndex/PER);reviewMode=false;reviewIds=[];reviewPos=0;unitWrongMode=false;updateUnitButtons(unit);
+}
 function buildRevisionSession(){
+ captureRevisionUnitSession();
  const order=Array.isArray(DATA)?DATA.map((q,i)=>String(q.__qid||((q.__unit||activeUnit)+':'+i))).slice(0,30000):[];
  const safeAnswers={};
  for(const [k,v] of Object.entries(answers||{})){const i=Number(k);if(Number.isInteger(i)&&i>=0&&i<30000&&Number.isInteger(Number(v))&&Number(v)>=0&&Number(v)<=3)safeAnswers[String(i)]=Number(v);}
- return {activeUnit:Number(activeUnit)||2,isMixedMode:!!isMixedMode,isUnitShuffled:!!isUnitShuffled,questionOrder:order,answers:safeAnswers,currentIndex:Math.max(0,Math.min(30000,Number(currentIndex)||0)),savedAt:Date.now()};
+ return {activeUnit:Number(activeUnit)||2,isMixedMode:!!isMixedMode,isUnitShuffled:!!isUnitShuffled,questionOrder:order,answers:safeAnswers,currentIndex:Math.max(0,Math.min(30000,Number(currentIndex)||0)),savedAt:Date.now(),unitSessions:revisionUnitSessions};
 }
 function saveRevisionLocalSnapshot(){try{localStorage.setItem(revisionStorageKey(),JSON.stringify({session_json:buildRevisionSession(),performance_json:performanceData}));}catch(e){}}
 function scheduleRevisionProgressSync(){
@@ -64,20 +80,22 @@ async function restoreRevisionProgress(){
  const localSession=local?.session_json||{};
  const remoteAt=Number(remoteSession.savedAt)||0,localAt=Number(localSession.savedAt)||0;
  const session=localAt>remoteAt?localSession:remoteSession;
+ revisionUnitSessions=session.unitSessions&&typeof session.unitSessions==='object'&&!Array.isArray(session.unitSessions)?session.unitSessions:{};
  const unit=Number(session.activeUnit);
+ const activeSession=(unit>=1&&unit<=10&&revisionUnitSessions[String(unit)])?revisionUnitSessions[String(unit)]:session;
  if(Number.isInteger(unit)&&unit>=0&&unit<=12){
-  activeUnit=unit;isMixedMode=!!session.isMixedMode;isUnitShuffled=!!session.isUnitShuffled;
+  activeUnit=unit;isMixedMode=!!activeSession.isMixedMode;isUnitShuffled=!!activeSession.isUnitShuffled;
   const baseMap=new Map();
   for(const [u,items] of Object.entries(UNIT_DATA_MAP)){(items||[]).forEach((q,i)=>baseMap.set(u+':'+i,{...q,__unit:Number(u),__qid:u+':'+i}));}
-  if(Array.isArray(session.questionOrder)&&session.questionOrder.length){const restored=session.questionOrder.map(id=>baseMap.get(String(id))).filter(Boolean);if(restored.length)DATA=restored;}
+  if(Array.isArray(activeSession.questionOrder)&&activeSession.questionOrder.length){const restored=activeSession.questionOrder.map(id=>baseMap.get(String(id))).filter(Boolean);if(restored.length)DATA=restored;}
   else if(unit>=1&&unit<=10)DATA=(UNIT_DATA_MAP[unit]||[]).map((q,i)=>({...q,__unit:unit,__qid:unit+':'+i}));
   else if(unit===0&&isMixedMode){DATA=[];for(const [u,items] of Object.entries(UNIT_DATA_MAP)){(items||[]).forEach((q,i)=>DATA.push({...q,__unit:Number(u),__qid:u+':'+i}));}}
   else if(unit===11||unit===12)DATA=[];
   answers={};
-  for(const [k,v] of Object.entries(session.answers||{})){const i=Number(k),n=Number(v);if(Number.isInteger(i)&&i>=0&&i<DATA.length&&Number.isInteger(n)&&n>=0&&n<=3)answers[i]=n;}
+  for(const [k,v] of Object.entries(activeSession.answers||{})){const i=Number(k),n=Number(v);if(Number.isInteger(i)&&i>=0&&i<DATA.length&&Number.isInteger(n)&&n>=0&&n<=3)answers[i]=n;}
   const savedByQuestion=new Map((revisionAnswerSnapshot||[]).map(x=>[String(x.unit)+':'+String(x.question_index),Number(x.selected_index)]));
   DATA.forEach((q,i)=>{const key=String(q.__qid||String(q.__unit||activeUnit)+':'+i);if(savedByQuestion.has(key)){const v=savedByQuestion.get(key);if(Number.isInteger(v)&&v>=0&&v<=3)answers[i]=v;}});
-  currentIndex=Math.max(0,Math.min(Math.max(0,DATA.length-1),Number(session.currentIndex)||0));
+  currentIndex=Math.max(0,Math.min(Math.max(0,DATA.length-1),Number(activeSession.currentIndex)||0));
   page=Math.floor(currentIndex/PER);reviewMode=false;reviewIds=[];reviewPos=0;unitWrongMode=false;updateUnitButtons(unit);
  }
  remoteProgressReady=remoteReady;
@@ -93,9 +111,9 @@ function performanceSummary(){const records=Object.values(performanceData.questi
 DATA=UNIT2_DATA.map((q,i)=>({...q,__unit:2,__qid:`2:${i}`}));
 function resetQuizState(){answers={};page=0;currentIndex=0;reviewMode=false;reviewIds=[];reviewPos=0;unitWrongMode=false;clearTimeout(autoTimer);}
 function updateUnitButtons(n){for(let i=1;i<=10;i++){const b=document.getElementById('unit'+i+'Btn');if(b)b.classList.toggle('active',i===n);}const pyq=document.getElementById('pyqBtn');if(pyq)pyq.classList.toggle('active',n===11);const analysis=document.getElementById('analysisBtn');if(analysis)analysis.classList.toggle('active',n===12);}
-function setUnit(n){activeUnit=n;isMixedMode=false;isUnitShuffled=false;DATA=(UNIT_DATA_MAP[n]||[]).map((q,i)=>({...q,__unit:n,__qid:`${n}:${i}`}));resetQuizState();updateUnitButtons(n);document.querySelector('.title').textContent='MPPSC PRE 2027 PROGRAM';render();window.scrollTo({top:0,behavior:'smooth'});}
-function setPYQs(){activeUnit=11;isMixedMode=false;isUnitShuffled=false;DATA=[];resetQuizState();updateUnitButtons(0);document.getElementById('pyqBtn').classList.add('active');document.querySelector('.title').textContent='MPPSC PRE 2027 | PREVIOUS YEAR QUESTIONS (PYQs)';render();window.scrollTo({top:0,behavior:'smooth'});}
-function showAnalysis(){activeUnit=12;isMixedMode=false;isUnitShuffled=false;DATA=[];resetQuizState();updateUnitButtons(12);document.querySelector('.title').textContent='MPPSC PRE 2027 PROGRAM';render();window.scrollTo({top:0,behavior:'smooth'});}
+function setUnit(n){n=Number(n);if(!Number.isInteger(n)||n<1||n>10)return;captureRevisionUnitSession();const saved=revisionUnitSessions[String(n)];if(saved)restoreRevisionUnitSession(n,saved);else{activeUnit=n;isMixedMode=false;isUnitShuffled=false;DATA=(UNIT_DATA_MAP[n]||[]).map((q,i)=>({...q,__unit:n,__qid:String(n)+':'+i}));resetQuizState();}updateUnitButtons(n);document.querySelector('.title').textContent='MPPSC PRE 2027 PROGRAM';render();window.scrollTo({top:0,behavior:'smooth'});}
+function setPYQs(){captureRevisionUnitSession();activeUnit=11;isMixedMode=false;isUnitShuffled=false;DATA=[];resetQuizState();updateUnitButtons(0);document.getElementById('pyqBtn').classList.add('active');document.querySelector('.title').textContent='MPPSC PRE 2027 | PREVIOUS YEAR QUESTIONS (PYQs)';render();window.scrollTo({top:0,behavior:'smooth'});}
+function showAnalysis(){captureRevisionUnitSession();activeUnit=12;isMixedMode=false;isUnitShuffled=false;DATA=[];resetQuizState();updateUnitButtons(12);document.querySelector('.title').textContent='MPPSC PRE 2027 PROGRAM';render();window.scrollTo({top:0,behavior:'smooth'});}
 function shuffleArray(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function shuffleCurrentUnit(){const base=UNIT_DATA_MAP[activeUnit]||[];if(!base.length){alert('इस यूनिट में अभी प्रश्न उपलब्ध नहीं हैं।');return;}isMixedMode=false;isUnitShuffled=true;DATA=shuffleArray(base.map((q,i)=>({...q,__unit:activeUnit,__qid:`${activeUnit}:${i}`})));resetQuizState();updateUnitButtons(activeUnit);document.querySelector('.title').textContent='MPPSC PRE 2027 | UNIT '+String(activeUnit).padStart(2,'0')+' | SHUFFLE PRACTICE';render();window.scrollTo({top:0,behavior:'smooth'});}
 function mixAllUnits(){const available=Object.entries(UNIT_DATA_MAP).filter(([,items])=>Array.isArray(items)&&items.length);if(!available.length){alert('अभी किसी यूनिट में प्रश्न उपलब्ध नहीं हैं।');return;}const combined=[];for(const [unit,items] of available){for(let i=0;i<items.length;i++)combined.push({...items[i],__unit:Number(unit),__qid:`${unit}:${i}`});}DATA=shuffleArray(combined);activeUnit=0;isMixedMode=true;isUnitShuffled=false;resetQuizState();updateUnitButtons(0);document.querySelector('.title').textContent='MPPSC PRE 2027 | ALL UNITS | MIXED PRACTICE';render();window.scrollTo({top:0,behavior:'smooth'});} 
