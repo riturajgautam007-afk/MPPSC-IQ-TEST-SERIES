@@ -42,7 +42,7 @@ function mountNativeRevisionQuiz(){
  nativeRevisionQuizReady=true;
  const frame=document.createElement('iframe');
  frame.title='MPPSC IQ Revision Quiz';
- frame.src='/pre2027-revision-quiz.html?v=20261123-direct-source-v23';
+ frame.src='/pre2027-revision-quiz.html?v=20261123-restored-v24';
  frame.loading='eager';
  frame.style.cssText='display:block;width:100%;height:calc(100dvh - 112px);min-height:720px;border:0;margin:0;padding:0;background:#171a20;border-radius:0;overflow:auto';
  frame.addEventListener('load',()=>{
@@ -62,8 +62,8 @@ function mountNativeRevisionQuiz(){
  choose=function(i,k){oldChoose(i,k);try{const q=DATA[i],unit=Number(q?.__unit||activeUnit);if(q&&unit>=1&&unit<=10)api('/revision-answers',{method:'POST',body:JSON.stringify({unit,index:Number(i),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer),selected:Number(k)})}).catch(e=>console.warn('Revision answer sync:',e.message));}catch(e){}queueSave();clearTimeout(answerTimer);answerTimer=setTimeout(queueSave,900)};
  for(const fn of ['setUnit','setPYQs','showAnalysis','shuffleCurrentUnit','mixAllUnits','changePage']){try{const original=window[fn];if(typeof original==='function')window[fn]=function(...args){const out=original.apply(this,args);queueSave();return out}}catch(e){}}
  window.addEventListener('beforeunload',()=>{try{saveNow()}catch(e){}});
- const oldToggleBookmark=toggleRevisionBookmark;
- toggleRevisionBookmark=function(unit,index,button){return oldToggleBookmark(unit,index,button);};
+ // The restored v91 quiz has no legacy toggleRevisionBookmark global.
+ // Avoid aborting the progress/report integration on an undefined legacy handler.
  window.reportRevisionQuestion=async function(unit,index){
   const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q){console.warn('Report question not found',unit,index);return;}
   const btn=[...document.querySelectorAll('.revision-question-actions button')].find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));
