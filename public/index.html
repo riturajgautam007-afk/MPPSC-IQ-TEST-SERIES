@@ -42,96 +42,72 @@ function mountNativeRevisionQuiz(){
  const host=$('revisionQuizNative');
  if(!host||nativeRevisionQuizReady)return;
  nativeRevisionQuizReady=true;
- const frame=document.createElement('iframe');
- frame.title='MPPSC IQ Revision Quiz';
- frame.src='/pre2027-revision-quiz.html?v=20261123-three-step-v28';
- frame.addEventListener('load',()=>{
+ (async()=>{
   try{
-   const d=frame.contentDocument;
-   const header=d&&d.querySelector('.topsticky > .header');
-   if(header)header.style.setProperty('display','none','important');
-   if(d&&!d.getElementById('mppsc-three-step-flow')){
-    const flow=d.createElement('style');flow.id='mppsc-three-step-flow';
-    flow.textContent='.langbar,#stickyMeta,.wrap,.bottom{display:none!important}';
-    (d.head||d.documentElement).appendChild(flow);
-    const unitNav=d.getElementById('unitbar');
-    const back=d.createElement('button');back.id='mppsc-back-to-units';back.type='button';back.textContent='← सभी यूनिट / टेस्ट';
-    back.style.cssText='display:none;margin:8px 10px;padding:8px 13px;border:1px solid #64748b;border-radius:8px;background:#1e3552;color:#fff;font-weight:700;font-size:13px';
-    unitNav?.parentNode?.insertBefore(back,unitNav);
-    const showUnits=()=>{flow.textContent='.langbar,#stickyMeta,.wrap,.bottom{display:none!important}';if(unitNav)unitNav.style.display='grid';back.style.display='none';};
-    const showQuestions=()=>{flow.textContent='';if(unitNav)unitNav.style.display='none';back.style.display='inline-block';};
-    back.addEventListener('click',showUnits);
-    unitNav?.addEventListener('click',ev=>{
-     const btn=ev.target.closest('button');if(!btn)return;
-     setTimeout(showQuestions,80);
-    },true);
-    showUnits();
-   }
-   if(d&&!d.getElementById('mppsc-compact-unit-buttons')){
-    const style=d.createElement('style');
-    style.id='mppsc-compact-unit-buttons';
-    style.textContent=`
-     .unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:5px!important;padding:7px 9px!important;align-items:center!important}
-     .unitbar button{height:32px!important;min-height:32px!important;padding:4px 2px!important;font-size:11px!important;line-height:1!important;letter-spacing:0!important;border-radius:7px!important;box-shadow:0 1px 3px rgba(0,0,0,.16)!important}
-     .unitbar button.active{transform:none!important}
-     @media(max-width:600px){.unitbar{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;padding:6px 7px!important}.unitbar button{height:29px!important;min-height:29px!important;padding:3px 2px!important;font-size:10px!important;border-radius:6px!important}}
-    `;
-    (d.head||d.documentElement).appendChild(style);
-   }
-  }catch(e){console.warn('Quiz header cleanup:',e);}
- });
- frame.loading='eager';
- frame.style.cssText='display:block;width:100%;height:calc(100dvh - 112px);min-height:720px;border:0;margin:0;padding:0;background:#171a20;border-radius:0;overflow:auto';
- frame.addEventListener('load',()=>{
-  try{
-   frame.contentWindow.eval("UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);UNIT3_DATA[448].answer=0;UNIT3_DATA[462].answer=1;render();");
-   frame.contentWindow.eval(String.raw`
-(async()=>{
- if(window.__mppscRevisionSyncInstalled)return;window.__mppscRevisionSyncInstalled=true;
- const api=async(path,options={})=>{const r=await fetch('/api'+path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'API request failed');return d};
- let saveTimer=null,answerTimer=null;
- const session=()=>({activeUnit:Number(activeUnit)||2,isMixedMode:!!isMixedMode,isUnitShuffled:!!isUnitShuffled,questionOrder:(DATA||[]).map((q,i)=>String(q.__qid||i)),answers:{...(answers||{})},currentIndex:Number(currentIndex)||0,savedAt:Date.now()});
- const saveNow=async()=>{try{await api('/revision-progress',{method:'PUT',body:JSON.stringify({performance:performanceData,session:session()})})}catch(e){console.warn('Revision progress sync:',e.message)}};
- const queueSave=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,500)};
- const oldSavePerformance=savePerformance;
- savePerformance=function(){oldSavePerformance();queueSave()};
- const oldChoose=choose;
- choose=function(i,k){oldChoose(i,k);try{const q=DATA[i],unit=Number(q?.__unit||activeUnit);if(q&&unit>=1&&unit<=10)api('/revision-answers',{method:'POST',body:JSON.stringify({unit,index:Number(i),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer),selected:Number(k)})}).catch(e=>console.warn('Revision answer sync:',e.message));}catch(e){}queueSave();clearTimeout(answerTimer);answerTimer=setTimeout(queueSave,900)};
- for(const fn of ['setUnit','setPYQs','showAnalysis','shuffleCurrentUnit','mixAllUnits','changePage']){try{const original=window[fn];if(typeof original==='function')window[fn]=function(...args){const out=original.apply(this,args);queueSave();return out}}catch(e){}}
- window.addEventListener('beforeunload',()=>{try{saveNow()}catch(e){}});
- // The restored v91 quiz has no legacy toggleRevisionBookmark global.
- // Avoid aborting the progress/report integration on an undefined legacy handler.
- window.reportRevisionQuestion=async function(unit,index){
-  const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q){console.warn('Report question not found',unit,index);return;}
-  const btn=[...document.querySelectorAll('.revision-question-actions button')].find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));
-  if(btn&&btn.dataset.reported==='1')return;
-  if(btn){btn.disabled=true;btn.textContent='… भेज रहे हैं';}
-  try{
-   await api('/revision-question-reports',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:'प्रश्न में त्रुटि'})});
-   if(btn){btn.dataset.reported='1';btn.textContent='✓ रिपोर्ट हो गई';}
-  }catch(e){if(btn){btn.disabled=false;btn.textContent='⚑ रिपोर्ट';}alert(e.message||'रिपोर्ट भेजने में समस्या हुई।');}
- };
- document.addEventListener('click',function(ev){
-  const btn=ev.target&&ev.target.closest?ev.target.closest('button[onclick*="reportRevisionQuestion"]'):null;
-  if(!btn)return;
-  const raw=btn.getAttribute('onclick')||'';
-  const match=raw.match(/reportRevisionQuestion\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)/);
-  if(!match)return;
-  ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
-  window.reportRevisionQuestion(Number(match[1]),Number(match[2]));
- },true);
- try{
-  const saved=await api('/revision-progress');
-  const p=saved.performance_json||{},s=saved.session_json||{};
-  if(p&&p.questions&&Object.keys(p.questions).length){performanceData=p;try{localStorage.setItem(PERFORMANCE_KEY,JSON.stringify(p))}catch(e){}}
-  if(Number(s.activeUnit)>=1&&Number(s.activeUnit)<=10){setUnit(Number(s.activeUnit));if(s.answers&&typeof s.answers==='object')answers={...s.answers};currentIndex=Math.max(0,Math.min(DATA.length-1,Number(s.currentIndex)||0));render();}
-  else if(Number(s.activeUnit)===11)setPYQs();else if(Number(s.activeUnit)===12)showAnalysis();
- }catch(e){console.warn('Revision progress restore:',e.message)}
- queueSave();
-})();`);
-  }catch(error){console.error('Revision quiz integration failed',error);}
- });
- host.replaceChildren(frame);
+   const response=await fetch('/pre2027-revision-quiz.html?v=20261123-inline-v29',{credentials:'same-origin',cache:'no-store'});
+   if(!response.ok)throw new Error('Quiz source load failed: '+response.status);
+   const html=await response.text();
+   const parsed=new DOMParser().parseFromString(html,'text/html');
+   const sourceScript=parsed.querySelector('body script');
+   if(!sourceScript)throw new Error('Quiz script not found');
+   const sourceStyles=[...parsed.querySelectorAll('style')];
+   host.replaceChildren();
+   const root=document.createElement('div');root.id='revisionQuizRoot';root.style.cssText='width:100%;min-width:0;position:relative';
+   const bodyNodes=[...parsed.body.childNodes].filter(n=>!(n.nodeType===1&&n.tagName==='SCRIPT'));
+   bodyNodes.forEach(n=>root.appendChild(document.importNode(n,true)));
+   host.appendChild(root);
+   const scopeCss=(css)=>{
+    const temp=document.createElement('style');temp.textContent=css;document.head.appendChild(temp);
+    const sheet=temp.sheet;
+    const walk=(rules)=>{
+     let out='';
+     for(const rule of [...rules]){
+      if(rule.type===1){
+       const selectors=rule.selectorText.split(',').map(x=>{let q=x.trim();q=q.replace(/(^|\\s)(html|body)(?=\\b|\\s|$)/g,'$1#revisionQuizRoot').replace(/:root/g,'#revisionQuizRoot');return '#revisionQuizRoot '+q.replace(/^#revisionQuizRoot\\s*/, '')});
+       out+=selectors.join(',')+'{'+rule.style.cssText+'}';
+      }else if(rule.type===4||rule.type===12){
+       out+=rule.cssText.slice(0,rule.cssText.indexOf('{')+1)+walk(rule.cssRules)+'}';
+      }else if(rule.type===7||rule.type===8||rule.type===10||rule.type===5||rule.type===6){
+       out+=rule.cssText;
+      }else if(rule.cssText&&rule.cssText.includes('{'))out+=rule.cssText;
+     }
+     return out;
+    };
+    let scoped='';try{scoped=walk(sheet.cssRules)}catch(e){scoped=css}
+    temp.remove();return scoped;
+   };
+   sourceStyles.forEach((el,i)=>{const st=document.createElement('style');st.dataset.quizStyle=String(i);st.textContent=scopeCss(el.textContent||'');document.head.appendChild(st)});
+   const header=root.querySelector('.topsticky > .header');if(header)header.style.display='none';
+   const unitNav=root.querySelector('#unitbar');
+   const back=document.createElement('button');back.type='button';back.textContent='← सभी यूनिट / टेस्ट';back.style.cssText='display:none;margin:8px 10px;padding:8px 13px;border:1px solid #64748b;border-radius:8px;background:#1e3552;color:#fff;font-weight:700;font-size:13px';
+   unitNav?.parentNode?.insertBefore(back,unitNav);
+   const setStage=(stage)=>{
+    const hide=stage==='units';
+    ['.langbar','#stickyMeta','.wrap','.bottom'].forEach(sel=>root.querySelectorAll(sel).forEach(el=>el.style.display=hide?'none':''));
+    if(unitNav)unitNav.style.display=hide?'grid':'none';
+    back.style.display=hide?'none':'inline-block';
+   };
+   back.addEventListener('click',()=>setStage('units'));
+   unitNav?.addEventListener('click',ev=>{if(ev.target.closest('button'))setTimeout(()=>setStage('questions'),80)},true);
+   setStage('units');
+   const raw=sourceScript.textContent;
+   const patched=raw
+    .replace("document.body.classList.toggle('dark',theme==='dark')","document.getElementById('revisionQuizRoot').classList.toggle('dark',theme==='dark')")
+    .replace("UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);","UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);");
+   const runner=document.createElement('script');
+   runner.textContent='(function(){\\n'+patched+'\\n'+
+    "UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);UNIT3_DATA[448].answer=0;UNIT3_DATA[462].answer=1;render();\\n"+
+    "window.setUnit=setUnit;window.setPYQs=setPYQs;window.showAnalysis=showAnalysis;window.setLang=setLang;window.toggleTheme=toggleTheme;window.changePage=changePage;window.showWrong=showWrong;window.refreshAll=refreshAll;window.shuffleCurrentUnit=shuffleCurrentUnit;window.mixAllUnits=mixAllUnits;window.reviewAllRecordedWrong=reviewAllRecordedWrong;window.downloadMistakesCSV=downloadMistakesCSV;window.setAnalysisTab=setAnalysisTab;window.printPerformanceReport=printPerformanceReport;window.choose=choose;window.editQuestion=editQuestion;\\n"+
+    "(async()=>{\n if(window.__mppscRevisionSyncInstalled)return;window.__mppscRevisionSyncInstalled=true;\n const api=async(path,options={})=>{const r=await fetch('/api'+path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'API request failed');return d};\n let saveTimer=null,answerTimer=null;\n const session=()=>({activeUnit:Number(activeUnit)||2,isMixedMode:!!isMixedMode,isUnitShuffled:!!isUnitShuffled,questionOrder:(DATA||[]).map((q,i)=>String(q.__qid||i)),answers:{...(answers||{})},currentIndex:Number(currentIndex)||0,savedAt:Date.now()});\n const saveNow=async()=>{try{await api('/revision-progress',{method:'PUT',body:JSON.stringify({performance:performanceData,session:session()})})}catch(e){console.warn('Revision progress sync:',e.message)}};\n const queueSave=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,500)};\n const oldSavePerformance=savePerformance;\n savePerformance=function(){oldSavePerformance();queueSave()};\n const oldChoose=choose;\n choose=function(i,k){oldChoose(i,k);try{const q=DATA[i],unit=Number(q?.__unit||activeUnit);if(q&&unit>=1&&unit<=10)api('/revision-answers',{method:'POST',body:JSON.stringify({unit,index:Number(i),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer),selected:Number(k)})}).catch(e=>console.warn('Revision answer sync:',e.message));}catch(e){}queueSave();clearTimeout(answerTimer);answerTimer=setTimeout(queueSave,900)};\n for(const fn of ['setUnit','setPYQs','showAnalysis','shuffleCurrentUnit','mixAllUnits','changePage']){try{const original=window[fn];if(typeof original==='function')window[fn]=function(...args){const out=original.apply(this,args);queueSave();return out}}catch(e){}}\n window.addEventListener('beforeunload',()=>{try{saveNow()}catch(e){}});\n // The restored v91 quiz has no legacy toggleRevisionBookmark global.\n // Avoid aborting the progress/report integration on an undefined legacy handler.\n window.reportRevisionQuestion=async function(unit,index){\n  const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q){console.warn('Report question not found',unit,index);return;}\n  const btn=[...document.querySelectorAll('.revision-question-actions button')].find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));\n  if(btn&&btn.dataset.reported==='1')return;\n  if(btn){btn.disabled=true;btn.textContent='… भेज रहे हैं';}\n  try{\n   await api('/revision-question-reports',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:'प्रश्न में त्रुटि'})});\n   if(btn){btn.dataset.reported='1';btn.textContent='✓ रिपोर्ट हो गई';}\n  }catch(e){if(btn){btn.disabled=false;btn.textContent='⚑ रिपोर्ट';}alert(e.message||'रिपोर्ट भेजने में समस्या हुई।');}\n };\n document.addEventListener('click',function(ev){\n  const btn=ev.target&&ev.target.closest?ev.target.closest('button[onclick*=\"reportRevisionQuestion\"]'):null;\n  if(!btn)return;\n  const raw=btn.getAttribute('onclick')||'';\n  const match=raw.match(/reportRevisionQuestion\\\\s*\\\\(\\\\s*(\\\\d+)\\\\s*,\\\\s*(\\\\d+)/);\n  if(!match)return;\n  ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();\n  window.reportRevisionQuestion(Number(match[1]),Number(match[2]));\n },true);\n try{\n  const saved=await api('/revision-progress');\n  const p=saved.performance_json||{},s=saved.session_json||{};\n  if(p&&p.questions&&Object.keys(p.questions).length){performanceData=p;try{localStorage.setItem(PERFORMANCE_KEY,JSON.stringify(p))}catch(e){}}\n  if(Number(s.activeUnit)>=1&&Number(s.activeUnit)<=10){setUnit(Number(s.activeUnit));if(s.answers&&typeof s.answers==='object')answers={...s.answers};currentIndex=Math.max(0,Math.min(DATA.length-1,Number(s.currentIndex)||0));render();}\n  else if(Number(s.activeUnit)===11)setPYQs();else if(Number(s.activeUnit)===12)showAnalysis();\n }catch(e){console.warn('Revision progress restore:',e.message)}\n queueSave();\n})();"+
+    '\\n})();';
+   root.appendChild(runner);
+   setStage('units');
+  }catch(error){
+   nativeRevisionQuizReady=false;
+   host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(error.message||'त्रुटि')+'</div>';
+   console.error('Inline revision quiz integration failed',error);
+  }
+ })();
 }
 function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='tests'){backToQuizStart();}if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
