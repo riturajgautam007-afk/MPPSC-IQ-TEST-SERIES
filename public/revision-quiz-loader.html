@@ -1,1 +1,22 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><p style="font:16px system-ui;padding:20px">MPPSC IQ Quiz लोड हो रहा है…</p><script>(async()=>{try{const version='20261122-test-quiz-buttons-v8';const paths=['/revision-quiz-part1.txt','/revision-quiz-part2.txt','/revision-quiz-part3.txt','/revision-quiz.html','/data/revision-bank.json'].map(p=>p+'?v='+version);const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable');return r.text()}));const html=parts.join('');if(!html.includes('UNIT1_DATA')||!html.includes('</body>'))throw Error('Quiz source validation failed');document.open();document.write(html);document.close()}catch(e){document.body.innerHTML='<p style="font:16px system-ui;padding:20px;color:#b00">Quiz लोड नहीं हुआ। कृपया Refresh करें।</p>'}})();</script></body></html>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><p style="font:16px system-ui;padding:20px">MPPSC IQ Quiz लोड हो रहा है…</p><script>(async()=>{try{const version='20261122-test-quiz-buttons-v8';const paths=['/revision-quiz-part1.txt','/revision-quiz-part2.txt','/revision-quiz-part3.txt','/revision-quiz.html','/data/revision-bank.json'].map(p=>p+'?v='+version);const parts=await Promise.all(paths.map(async p=>{const r=await fetch(p,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw Error('Quiz source unavailable');return r.text()}));const html=parts.join('');if(!html.includes('UNIT1_DATA')||!html.includes('</body>'))throw Error('Quiz source validation failed');const reportStart=html.indexOf('async function reportRevisionQuestion(unit,index)');
+const reportEnd=html.indexOf('render();</script>',reportStart);
+if(reportStart<0||reportEnd<0)throw Error('Report function location not found');
+const reportFix=String.raw\`async function reportRevisionQuestion(unit,index,button){
+ const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;
+ if(button&&button.disabled)return;
+ if(button){button.disabled=true;button.textContent='भेज रहे हैं…';}
+ try{
+  const response=await fetch('/api/revision-question-reports',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:Array.isArray(q.options)?q.options:[],answer:Number(q.answer)},reason:'प्रश्न में त्रुटि'})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||'रिपोर्ट भेजी नहीं जा सकी');
+  if(button){button.textContent='✓ रिपोर्ट हो गई';button.disabled=true;}
+  else alert('प्रश्न रिपोर्ट भेज दी गई है।');
+ }catch(error){
+  if(button){button.disabled=false;button.textContent='⚑ प्रश्न रिपोर्ट करें';}
+  alert(error.message||'रिपोर्ट भेजने में समस्या हुई।');
+ }
+}\`;
+html=html.slice(0,reportStart)+reportFix+html.slice(reportEnd);
+html=html.replace('onclick="reportRevisionQuestion(\${sourceUnit},\${sourceIndex})"','onclick="reportRevisionQuestion(\${sourceUnit},\${sourceIndex},this)"');
+if(!html.includes('reportRevisionQuestion(\${sourceUnit},\${sourceIndex},this)'))throw Error('Report button wiring not found');
+document.open();document.write(html);document.close()}catch(e){document.body.innerHTML='<p style="font:16px system-ui;padding:20px;color:#b00">Quiz लोड नहीं हुआ। कृपया Refresh करें।</p>'}})();</script></body></html>
