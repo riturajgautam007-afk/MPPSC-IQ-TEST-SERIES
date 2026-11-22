@@ -67,6 +67,14 @@ function mountNativeRevisionQuiz(){
  try{const rows=await api('/revision-bookmarks');for(const row of rows){const k=bookmarkKey(row.unit,row.question_index);window.__revisionBookmarkKeys[k]=row.question_key;}}catch(e){console.warn('Revision bookmarks load:',e.message)}
  const oldToggleBookmark=toggleRevisionBookmark;
  toggleRevisionBookmark=function(unit,index,button){const before=revisionBookmarks().some(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));oldToggleBookmark(unit,index,button);const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const key=bookmarkKey(unit,index);if(before){const serverKey=window.__revisionBookmarkKeys[key];if(serverKey)api('/revision-bookmarks/'+encodeURIComponent(serverKey),{method:'DELETE'}).then(()=>delete window.__revisionBookmarkKeys[key]).catch(e=>console.warn('Bookmark delete:',e.message));}else{api('/revision-bookmarks',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)})}).then(d=>window.__revisionBookmarkKeys[key]=d.question_key).catch(e=>console.warn('Bookmark save:',e.message));}};
+ document.addEventListener('click',function(ev){
+  const btn=ev.target&&ev.target.closest?ev.target.closest('.revision-question-actions button'):null;
+  if(!btn||!((btn.textContent||'').includes('रिपोर्ट')))return;
+  const raw=btn.getAttribute('onclick')||'',m=raw.match(/reportRevisionQuestion\\((\\d+)\\s*,\\s*(\\d+)\\)/);
+  if(!m)return;
+  ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
+  try{window.reportRevisionQuestion(Number(m[1]),Number(m[2]));}catch(err){console.error('Report button:',err);alert('Report फॉर्म खोलने में समस्या: '+(err.message||err));}
+ },true);
  window.reportRevisionQuestion=function(unit,index){
   const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;
   let modal=document.getElementById('mppscRevisionReportModal');
