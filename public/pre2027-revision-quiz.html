@@ -508,7 +508,7 @@ function mixAllUnits(){const available=Object.entries(UNIT_DATA_MAP).filter(([,i
 function cleanLang(s,l){let v=String(s??'');if(l==='hi'){v=v.replace(/\s*\/\s*[^/\n]+/g,'');v=v.replace(/Correct answer:/gi,'सही उत्तर:');}else{v=v.replace(/सही उत्तर:/g,'Correct answer:');v=v.replace(/([^\n/]+)\s*\/\s*/g,'');}return v.trim()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function setLang(l){lang=l;document.getElementById('hiBtn').classList.toggle('active',l==='hi');document.getElementById('enBtn').classList.toggle('active',l==='en');render()}
-function choose(i,k){if(answers[i]!==undefined||reviewMode)return;currentIndex=i;answers[i]=k;recordPerformance(DATA[i],i,k);queueRevisionProgressSave();render();clearTimeout(autoTimer);autoTimer=setTimeout(()=>{const pageEnd=unitWrongMode?DATA.length:Math.min(Math.floor(i/PER)*PER+PER,DATA.length);if(i+1<pageEnd){currentIndex=i+1;queueRevisionProgressSave();render();const next=document.getElementById('qcard-'+currentIndex);if(next)next.scrollIntoView({behavior:'smooth',block:'start');}},750)}
+function choose(i,k){if(answers[i]!==undefined||reviewMode)return;currentIndex=i;answers[i]=k;recordPerformance(DATA[i],i,k);queueRevisionProgressSave();render();clearTimeout(autoTimer);autoTimer=setTimeout(()=>{const pageEnd=unitWrongMode?DATA.length:Math.min(Math.floor(i/PER)*PER+PER,DATA.length);if(i+1<pageEnd){currentIndex=i+1;queueRevisionProgressSave();render();const next=document.getElementById('qcard-'+currentIndex);if(next)next.scrollIntoView({behavior:'smooth',block:'start'});}},750)}
 
 function matchTable(q, questionIndex){
  const special={
