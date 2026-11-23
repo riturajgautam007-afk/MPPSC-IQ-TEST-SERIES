@@ -201,6 +201,29 @@ function mountNativeRevisionQuiz(){
    setStage('questions');
    window.scrollTo(0,0);
   },true);
+  // Analysis is also a content view: reveal the quiz content area before rendering it.
+  root.addEventListener('click',ev=>{
+   const button=ev.target.closest('#analysisBtn');
+   if(!button)return;
+   ev.preventDefault();
+   ev.stopPropagation();
+   const action=window.__mppscQuizActions&&window.__mppscQuizActions.showAnalysis;
+   if(typeof action!=='function'){
+    const diag=root.querySelector('#quizClickDiagnostic');
+    if(diag)diag.textContent='ANALYSIS ERROR: showAnalysis उपलब्ध नहीं है';
+    console.error('Analysis action is unavailable');
+    return;
+   }
+   try{
+    action();
+    setStage('questions');
+    window.scrollTo(0,0);
+   }catch(error){
+    const diag=root.querySelector('#quizClickDiagnostic');
+    if(diag)diag.textContent='ANALYSIS ERROR: '+(error&&error.message||String(error));
+    console.error('Analysis render failed',error);
+   }
+  },true);
   window.__mppscSetNativeQuizStage=()=>setStage('questions');
   setStage('units');
  }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(error.message||'त्रुटि')+'</div>';console.error('Native quiz build failed',error);}})();
