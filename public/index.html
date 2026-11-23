@@ -118,21 +118,25 @@ function mountNativeRevisionQuiz(){
   document.addEventListener('click',ev=>{
    const button=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button[id^="unit"][id$="Btn"]');
    if(!button)return;
+   ev.preventDefault();ev.stopImmediatePropagation();
    const unitNumber=Number(button.id.substring(4,button.id.length-3));
-   const pageInfo=root.querySelector('#pageInfo');
    const action=window.__mppscQuizActions&&window.__mppscQuizActions.setUnit;
-   if(pageInfo)pageInfo.textContent='DEBUG: tapped '+button.id+' → parsed unit '+unitNumber+' → handler '+typeof action;
+   const diag=root.querySelector('#quizClickDiagnostic');
+   const report=msg=>{if(diag)diag.textContent=msg;console.log('[MPPSC unit diagnostic]',msg);};
+   report('यूनिट क्लिक मिला: '+button.id+' | नंबर: '+unitNumber+' | setUnit: '+typeof action);
    if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
-    console.error('Document unit handler failed',button.id,unitNumber,typeof action);
+    report('ERROR: setUnit उपलब्ध नहीं है या यूनिट नंबर गलत है।');
     return;
    }
-   ev.preventDefault();
-   action(unitNumber);
-   setStage('questions');
-   window.scrollTo(0,0);
-   setTimeout(()=>{
-    if(pageInfo)pageInfo.textContent='DEBUG: tapped '+button.id+' → requested '+unitNumber+' → '+(pageInfo.textContent||'');
-   },50);
+   try{
+    action(unitNumber);
+    setStage('questions');
+    window.scrollTo(0,0);
+    const q=root.querySelector('#questions');
+    report('setUnit('+unitNumber+') चला | प्रश्न क्षेत्र: '+(q?q.innerText.trim().slice(0,180):'नहीं मिला')+' | stage: '+root.dataset.quizStage);
+   }catch(error){
+    report('setUnit('+unitNumber+') ERROR: '+(error&&error.message||String(error)));
+   }
   },true);
   root.appendChild(runner);
   // Unit selection: use one delegated handler and parse the numeric ID without regex.
