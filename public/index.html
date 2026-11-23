@@ -100,7 +100,7 @@ function mountNativeRevisionQuiz(){
    button.removeAttribute('onclick');
    button.addEventListener('click',ev=>{
     ev.preventDefault();
-    const match=button.id.match(/^unit(\\d+)Btn$/);
+    const match=button.id.match(/^unit(\d+)Btn$/);
     const unitNumber=match?Number(match[1]):NaN;
     const action=window.__mppscQuizActions?.setUnit;
     if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
