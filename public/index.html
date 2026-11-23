@@ -71,7 +71,8 @@ function mountNativeRevisionQuiz(){
   host.replaceChildren();const root=document.createElement('div');root.id='revisionQuizRoot';root.className='mppsc-native-quiz';
   root.innerHTML=`
    <div class="native-quiz-heading"><div><span class="native-quiz-kicker">MPPSC IQ · PRE 2027</span><h2 class="title">Quiz / Test</h2></div><span class="native-quiz-tag">महाअभ्यास 2.0</span></div>
-   <nav class="unitbar" id="unitbar" aria-label="यूनिट चुनें">${Array.from({length:10},(_,i)=>`<button type="button" id="unit${i+1}Btn" onclick="setUnit(${i+1})"><span class="native-unit-icon">▦</span><span>यूनिट ${String(i+1).padStart(2,'0')}</span></button>`).join('')}<button type="button" id="pyqBtn" onclick="setPYQs()"><span class="native-unit-icon">📚</span><span>PYQ टेस्ट</span></button><button type="button" id="analysisBtn" onclick="showAnalysis()"><span class="native-unit-icon">▤</span><span>एनालिसिस</span></button></nav>
+   <div id="quizClickDiagnostic" role="status" aria-live="polite" style="margin:8px 0;padding:9px 11px;border:1px dashed #b58b2b;border-radius:10px;color:var(--muted);font-size:11px;line-height:1.5">जाँच तैयार है — किसी यूनिट पर टैप करें</div>
+  <nav class="unitbar" id="unitbar" aria-label="यूनिट चुनें">${Array.from({length:10},(_,i)=>`<button type="button" id="unit${i+1}Btn" onclick="setUnit(${i+1})"><span class="native-unit-icon">▦</span><span>यूनिट ${String(i+1).padStart(2,'0')}</span></button>`).join('')}<button type="button" id="pyqBtn" onclick="setPYQs()"><span class="native-unit-icon">📚</span><span>PYQ टेस्ट</span></button><button type="button" id="analysisBtn" onclick="showAnalysis()"><span class="native-unit-icon">▤</span><span>एनालिसिस</span></button></nav>
    <button type="button" id="nativeQuizBack" class="native-quiz-back" hidden>← सभी यूनिट / टेस्ट</button>
    <div class="native-quiz-language" id="nativeQuizLanguage"><div class="native-language-switch"><button type="button" id="hiBtn" class="active" onclick="setLang('hi')">हिंदी</button><button type="button" id="enBtn" onclick="setLang('en')">English</button></div><span class="native-language-note">अपनी भाषा चुनें</span></div>
    <div class="meta" id="stickyMeta"><span id="pageInfo">यूनिट चुनें</span><span id="score">Attempted: 0 · Correct: 0</span></div>
@@ -92,6 +93,27 @@ function mountNativeRevisionQuiz(){
   `;document.head.appendChild(st);
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\n})();';
+  // Temporary tap-path diagnostic: records the actual element receiving pointer/click events.
+  const clickDiag=root.querySelector('#quizClickDiagnostic');
+  const describeTarget=el=>{
+   if(!el)return 'unknown';
+   const tag=(el.tagName||'node').toLowerCase();
+   const id=el.id?'#'+el.id:'';
+   const cls=typeof el.className==='string'&&el.className.trim()?'.'+el.className.trim().split(/\\s+/).slice(0,2).join('.'):'';
+   return tag+id+cls;
+  };
+  document.addEventListener('pointerdown',ev=>{
+   if(!root.isConnected||!$('revisionQuizWrap')||$('revisionQuizWrap').hidden)return;
+   const target=ev.target;
+   const unit=target&&target.closest&&target.closest('#revisionQuizRoot #unitbar button');
+   if(clickDiag)clickDiag.textContent='TAP मिला: '+describeTarget(target)+' | यूनिट बटन: '+(unit?unit.id:'नहीं')+' | pointer='+ev.pointerType;
+  },true);
+  document.addEventListener('click',ev=>{
+   if(!root.isConnected||!$('revisionQuizWrap')||$('revisionQuizWrap').hidden)return;
+   const target=ev.target;
+   const unit=target&&target.closest&&target.closest('#revisionQuizRoot #unitbar button');
+   if(clickDiag)clickDiag.textContent='CLICK मिला: '+describeTarget(target)+' | यूनिट बटन: '+(unit?unit.id:'नहीं');
+  },true);
   // Temporary visible diagnostic: show the exact unit tap and the quiz state after selection.
   document.addEventListener('click',ev=>{
    const button=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button[id^="unit"][id$="Btn"]');
