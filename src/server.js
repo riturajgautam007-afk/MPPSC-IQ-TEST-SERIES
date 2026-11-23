@@ -2,6 +2,7 @@ require("dotenv").config();
 const express=require("express"),helmet=require("helmet"),bcrypt=require("bcryptjs"),multer=require("multer"),XLSX=require("xlsx"),path=require("node:path"),crypto=require("node:crypto"),{createClient}=require("@supabase/supabase-js");
 const db=require("./db"),{verifyTelegramInitData,issueToken,requireAuth,requireAdmin}=require("./auth");
 const membership=require("./membership");
+const {registerTelegramBot}=require("./telegram-bot");
 const app=express(),port=process.env.PORT||3000,secret=process.env.JWT_SECRET;
 function isTelegramAdmin(id){const ids=(process.env.ADMIN_TELEGRAM_IDS||process.env.ADMIN_TELEGRAM_ID||"").split(",").map(x=>x.trim()).filter(Boolean);return ids.includes(String(id));}
 let dbReady=false,dbLastError="Database connection is not ready";
@@ -251,6 +252,7 @@ app.get("/pre2027-revision-quiz.html",(q,s)=>{s.set("Cache-Control","no-store, n
 app.use(express.static(path.join(__dirname,"..","public")));app.get("*",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use((e,_q,s,_n)=>{console.error(e);s.status(400).json({error:e.message||"Request failed"});});
 async function connectDatabase(){try{await db.init();await membership.ensureSchema(db);dbReady=true;dbLastError="";console.log("Database connected and schema ready");const {error}=await supabase.storage.createBucket(bucket,{public:false,fileSizeLimit:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024});if(error&&!String(error.message).toLowerCase().includes("already"))console.warn("Storage bucket setup:",error.message);}catch(e){dbReady=false;dbLastError=e.message||"Database connection failed";console.error("Database unavailable; web server remains online:",dbLastError);}}
-app.listen(port,()=>console.log("MPPSC IQ server listening on "+port));
+const telegramBot=registerTelegramBot(app);
+app.listen(port,()=>{console.log("MPPSC IQ server listening on "+port);telegramBot.configure();});
 connectDatabase();
 setInterval(()=>{if(!dbReady)connectDatabase();},30000).unref();
