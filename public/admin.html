@@ -162,7 +162,7 @@ function parseQuestionText(raw){
  const clean=String(raw||"").replace(new RegExp("\\r","g"),"").replace(new RegExp("\\*\\*","g"),"").trim();
  const blocks=clean.split(new RegExp("(?=^\\s*प्रश्न\\s*\\d+\\s*[.):])","mi")).filter(x=>x.trim());
  const valid=[],invalid=[],duplicates=[],seen=new Set();
- const ansRe=new RegExp("(?:उत्तर|सही\\s*उत्तर|Answer|Correct\\s*Answer)\\s*[:：-]?\\s*\\(?\\s*([A-D])\\s*\\)?","i");
+ const ansRe=new RegExp("(?:उत्तर|सही\\s*उत्तर|Answer|Correct\\s*Answer)\\s*[:：–—-]?\\s*\\(?\\s*([A-D])\\s*\\)?","i");
  const markRe=new RegExp("\\(\\s*([A-D])\\s*\\)|(?:^|\\n)\\s*([A-D])\\s*[).:-]\\s*","gim");
  blocks.forEach((source,index)=>{
   const number=(source.match(new RegExp("^\\s*प्रश्न\\s*(\\d+)","i"))||[])[1]||String(index+1);
