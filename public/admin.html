@@ -165,7 +165,7 @@ function parseQuestionText(raw){
  const blocks=clean.split(starts).filter(x=>x.trim());
  const valid=[],invalid=[],duplicates=[],seen=new Set();
  const answerRe=/(?:उत्तर|सही\s*(?:उत्तर|विकल्प)|उत्तर\s*कुंजी|ans(?:wer)?|correct\s*(?:answer|option)|सही\s*जवाब)\s*(?:(?:है|होगा)\s*)?(?:[:：=–—\-]\s*)?(?:विकल्प\s*)?[\(\[]?\s*([A-D])\s*[\)\]]?/i;
- const optionRe=/(?:\(\s*([A-D])\s*\)|(?:^|\n)\s*([A-D])\s*[).:：\-])\s*/gim;
+ const optionRe=/(?:\(\s*([A-D])\s*\)|(?:^|[\s])([A-D])\s*[).:：\-])\s*/gim;
  blocks.forEach((source,index)=>{
   const head=source.match(/^\s*(?:(?:प्रश्न|question|q)\s*#?\s*(\d+)|(\d+)\s*[.)])/i);
   const number=(head&&(head[1]||head[2]))||String(index+1);
