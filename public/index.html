@@ -7,7 +7,7 @@
 /* Keep hidden app steps hidden even when card styles define display */
 #testStepStart[hidden],#revisionQuizWrap[hidden]{display:none!important}
 #revisionQuizRoot #unitbar{display:grid!important;visibility:visible!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:15px;margin:10px 0}
-#revisionQuizRoot #unitbar button{display:block!important;visibility:visible!important;min-width:0;min-height:42px;padding:8px 4px;border-radius:10px}
+#revisionQuizRoot #unitbar button{display:block!important;visibility:visible!important;min-width:0;min-height:42px;padding:8px 4px;border-radius:10px}#revisionQuizRoot #unitbar,#revisionQuizRoot #unitbar button{pointer-events:auto!important;position:relative!important;z-index:9999!important;touch-action:manipulation!important}#revisionQuizRoot #unitbar button{cursor:pointer!important}
 .revision-quiz-native{display:block;width:100%;min-width:0;max-width:100%;margin:0;padding:0;overflow:visible}
 #revisionQuizNative{display:block;width:100%;min-width:0;max-width:100%}
 #revisionQuizRoot{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;overflow:visible!important}
