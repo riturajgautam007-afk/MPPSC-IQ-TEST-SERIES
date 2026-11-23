@@ -40,7 +40,7 @@ async function handleUpdate(update){
 function registerTelegramBot(app){
  app.post("/telegram/webhook",async(req,res)=>{
   const expected=webhookSecret(),received=String(req.get("x-telegram-bot-api-secret-token")||"");
-  if(!received||!crypto.timingSafeEqual(Buffer.from(received),Buffer.from(expected)))return res.sendStatus(401);
+  if(received.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(received),Buffer.from(expected)))return res.sendStatus(401);
   res.sendStatus(200);
   try{await handleUpdate(req.body);}catch(e){console.error("Telegram update failed:",e.message);}
  });
