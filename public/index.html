@@ -94,12 +94,23 @@ function mountNativeRevisionQuiz(){
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\n})();';
   document.addEventListener('click',ev=>{const unitButton=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button');if(unitButton)setStage('questions');},true);
   root.appendChild(runner);
+  // Native delegated unit handling: works even when WebView blocks inline onclick attributes.
+  root.addEventListener('click',ev=>{
+   const unitButton=ev.target.closest('#unitbar button[id^="unit"][id$="Btn"]');
+   if(!unitButton)return;
+   const unitMatch=unitButton.id.match(/^unit(\d+)Btn$/);
+   const unitNumber=unitMatch?Number(unitMatch[1]):0;
+   const action=window.__mppscQuizActions&&window.__mppscQuizActions.setUnit;
+   if(!unitNumber||typeof action!=='function')return;
+   ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+   action(unitNumber);setStage('questions');window.scrollTo({top:0,behavior:'smooth'});
+  },true);
   // Reliable delegated option handling: do not depend on inline HTML onclick scope.
   root.addEventListener('click',ev=>{
    const option=ev.target.closest('#questions button.option');
    if(!option)return;
    const handler=option.getAttribute('onclick')||'';
-   const match=handler.match(/choose\\((\\d+)\\s*,\\s*(\\d+)\\)/);
+   const match=handler.match(/choose\((\d+)\s*,\s*(\d+)\)/);
    if(!match)return;
    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
    const chooseFn=window.__mppscQuizActions&&window.__mppscQuizActions.choose;
