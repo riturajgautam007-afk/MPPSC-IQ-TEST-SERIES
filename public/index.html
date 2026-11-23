@@ -94,23 +94,8 @@ function mountNativeRevisionQuiz(){
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\n})();';
   document.addEventListener('click',ev=>{const unitButton=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button');if(unitButton)setStage('questions');},true);
   root.appendChild(runner);
-  // Bind each unit button directly. This avoids Android WebView inline-handler
-  // scope issues and prevents any stale/global click delegation from selecting Unit 2.
-  root.querySelectorAll('#unitbar button[id^="unit"][id$="Btn"]').forEach(button=>{
-   button.removeAttribute('onclick');
-   button.addEventListener('click',ev=>{
-    ev.preventDefault();
-    const match=button.id.match(/^unit(\d+)Btn$/);
-    const unitNumber=match?Number(match[1]):NaN;
-    const action=window.__mppscQuizActions?.setUnit;
-    if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
-     console.error('Unit click binding failed',button.id,typeof action);return;
-    }
-    action(unitNumber);
-    setStage('questions');
-    window.scrollTo({top:0,behavior:'smooth'});
-   },{capture:true});
-  });
+  // Unit selection is handled at the quiz root in capture phase so Android WebView
+  // reliably routes taps to the matching unit before any generic stage handler.
   // Capture option taps and invoke the quiz function directly; inline onclick is not relied on.
   root.addEventListener('click',ev=>{
    const option=ev.target.closest('#revisionQuizRoot #questions button.option');
@@ -138,7 +123,17 @@ function mountNativeRevisionQuiz(){
   root.querySelector('#nativeQuizBack').addEventListener('click',()=>{setStage('units');window.scrollTo({top:0,behavior:'smooth'});});
   root.addEventListener('click',ev=>{
    const btn=ev.target.closest('button');if(!btn)return;
-   if(btn.closest('#unitbar')){setStage('questions');setTimeout(()=>{setStage('questions');window.scrollTo({top:0,behavior:'smooth'});},0);}
+   const unitButton=btn.closest('#unitbar button[id^="unit"][id$="Btn"]');
+   if(unitButton){
+    const match=unitButton.id.match(/^unit(\\d+)Btn$/);
+    const unitNumber=match?Number(match[1]):NaN;
+    if(Number.isInteger(unitNumber)&&unitNumber>=1&&unitNumber<=10&&typeof window.setUnit==='function'){
+     ev.preventDefault();ev.stopPropagation();
+     window.setUnit(unitNumber);
+     setStage('questions');
+     window.scrollTo({top:0,behavior:'smooth'});
+    }
+   }else if(btn.closest('#unitbar')){setStage('questions');}
    else if(btn.closest('.analysis-panel')&&btn.matches('button[onclick*="setUnit"]')){setStage('questions');}
   },true);
   window.__mppscSetNativeQuizStage=()=>setStage('questions');
