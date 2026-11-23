@@ -123,6 +123,7 @@ function mountNativeRevisionQuiz(){
    if(btn.closest('#unitbar')){setStage('questions');setTimeout(()=>{setStage('questions');window.scrollTo({top:0,behavior:'smooth'});},0);}
    else if(btn.closest('.analysis-panel')&&btn.matches('button[onclick*="setUnit"]')){setStage('questions');}
   },true);
+  window.__mppscSetNativeQuizStage=()=>setStage('questions');
   setStage('units');
  }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(error.message||'त्रुटि')+'</div>';console.error('Native quiz build failed',error);}})();
 }
