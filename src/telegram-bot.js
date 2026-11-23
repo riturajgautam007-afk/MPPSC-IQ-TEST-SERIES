@@ -16,7 +16,7 @@ async function sendDailyPolls(chatId,count,db){
  if(activeRuns.has(String(chatId)))return telegram("sendMessage",{chat_id:chatId,text:"इस ग्रुप में एक Revision Quiz पहले से चल रही है।"});
  activeRuns.add(String(chatId));
  try{
-  const result=await db.query("SELECT q.id,q.question_hi,q.options_json,q.correct_index,q.explanation FROM questions q JOIN tests t ON t.id=q.test_id WHERE t.published=TRUE ORDER BY random() LIMIT $1",[count]);
+  const result=await db.query("WITH pool AS (SELECT q.id::text AS id,q.question_hi,q.options_json,q.correct_index,q.explanation FROM questions q JOIN tests t ON t.id=q.test_id WHERE t.published=TRUE UNION ALL SELECT (qa.id+1000000000)::text AS id,qa.question_json->>'q' AS question_hi,qa.question_json->'options' AS options_json,(qa.question_json->>'answer')::int AS correct_index,COALESCE(qa.question_json->>'explanation','') AS explanation FROM question_bank_additions qa), unique_pool AS (SELECT DISTINCT ON (question_hi) id,question_hi,options_json,correct_index,explanation FROM pool WHERE question_hi IS NOT NULL ORDER BY question_hi,id) SELECT * FROM unique_pool ORDER BY random() LIMIT $1",[count]);
   const rows=result.rows||[];
   if(!rows.length)return telegram("sendMessage",{chat_id:chatId,text:"अभी प्रकाशित Question Bank में प्रश्न उपलब्ध नहीं हैं। Admin से टेस्ट Publish करवाएँ।"});
   const eligible=rows.filter(q=>{const opts=jsonOptions(q.options_json);return String(q.question_hi||"").trim().length>0&&String(q.question_hi).length<=300&&opts.length===4&&opts.every(x=>String(x||"").trim().length>0&&String(x).length<=100)&&Number.isInteger(Number(q.correct_index))&&Number(q.correct_index)>=0&&Number(q.correct_index)<=3;});
