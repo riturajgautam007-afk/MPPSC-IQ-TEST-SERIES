@@ -93,6 +93,18 @@ function mountNativeRevisionQuiz(){
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\n})();';
   root.appendChild(runner);
+  // Reliable delegated option handling: do not depend on inline HTML onclick scope.
+  root.addEventListener('click',ev=>{
+   const option=ev.target.closest('#questions button.option');
+   if(!option)return;
+   const handler=option.getAttribute('onclick')||'';
+   const match=handler.match(/choose\\((\\d+)\\s*,\\s*(\\d+)\\)/);
+   if(!match)return;
+   ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+   const chooseFn=window.__mppscQuizActions&&window.__mppscQuizActions.choose;
+   if(typeof chooseFn==='function')chooseFn(Number(match[1]),Number(match[2]));
+   else{console.error('Quiz choose handler is unavailable',handler);option.blur();}
+  },true);
   const actions=root.querySelector('.native-quiz-actions');
   const setDisplay=(el,value)=>{el.style.setProperty('display',value,'important');};
   const setStage=stage=>{
