@@ -159,29 +159,35 @@ async function importExcel(){try{if(!excelRows.length)throw Error("पहले 
 
 let parsedTextQuestions=[],parsedTextInvalid=[],parsedTextDuplicates=[],parsedTextSnapshot="";
 function parseQuestionText(raw){
- const clean=String(raw||"").replace(new RegExp("\\r","g"),"").replace(new RegExp("\\*\\*","g"),"").trim();
- const blocks=clean.split(new RegExp("(?=^\\s*प्रश्न\\s*\\d+\\s*[.):])","mi")).filter(x=>x.trim());
+ const clean=String(raw||"").replace(/\r/g,"").replace(/\u00a0/g," ").replace(/\*\*/g,"").trim();
+ // Accept numbered Hindi/English question headings and plain numbered lists.
+ const starts=/(?=^\s*(?:(?:प्रश्न|question|q)\s*#?\s*\d+\s*[.):\-]|(?:प्रश्न\s*संख्या)\s*\d+|\d+\s*[.)]))/gim;
+ const blocks=clean.split(starts).filter(x=>x.trim());
  const valid=[],invalid=[],duplicates=[],seen=new Set();
- const ansRe=new RegExp("(?:उत्तर|सही\\s*उत्तर|Answer|Correct\\s*Answer)\\s*[:：–—-]?\\s*\\(?\\s*([A-D])\\s*\\)?","i");
- const markRe=new RegExp("\\(\\s*([A-D])\\s*\\)|(?:^|\\n)\\s*([A-D])\\s*[).:-]\\s*","gim");
+ const answerRe=/(?:उत्तर|सही\s*(?:उत्तर|विकल्प)|उत्तर\s*कुंजी|ans(?:wer)?|correct\s*(?:answer|option)|सही\s*जवाब)\s*(?:(?:है|होगा)\s*)?(?:[:：=–—\-]\s*)?(?:विकल्प\s*)?[\(\[]?\s*([A-D])\s*[\)\]]?/i;
+ const optionRe=/(?:\(\s*([A-D])\s*\)|(?:^|\n)\s*([A-D])\s*[).:：\-])\s*/gim;
  blocks.forEach((source,index)=>{
-  const number=(source.match(new RegExp("^\\s*प्रश्न\\s*(\\d+)","i"))||[])[1]||String(index+1);
-  const block=source.replace(new RegExp("^(?:\\s*प्रश्न\\s*\\d+\\s*[.):]\\s*)+","i"),"").trim();
-  const answer=ansRe.exec(block);
-  if(!answer){invalid.push({number,reason:"सही उत्तर नहीं मिला"});return;}
-  const optionArea=block.slice(0,answer.index),marks=[...optionArea.matchAll(markRe)];
-  const getLetter=m=>(m[1]||m[2]||"").toUpperCase();
-  const question=(marks.length?optionArea.slice(0,marks[0].index):"").trim();
-  const options=["A","B","C","D"].map(letter=>{
-   const idx=marks.findIndex(m=>getLetter(m)===letter);if(idx<0)return "";
-   const mark=marks[idx],next=marks[idx+1];
-   return optionArea.slice(mark.index+mark[0].length,next?next.index:optionArea.length).replace(new RegExp("\\s+","g")," ").trim();
+  const head=source.match(/^\s*(?:(?:प्रश्न|question|q)\s*#?\s*(\d+)|(\d+)\s*[.)])/i);
+  const number=(head&&(head[1]||head[2]))||String(index+1);
+  const block=source.replace(/^\s*(?:(?:प्रश्न|question|q)\s*#?\s*\d+\s*[.):\-]|प्रश्न\s*संख्या\s*\d+|\d+\s*[.)])\s*/i,"").trim();
+  const answer=answerRe.exec(block);
+  if(!answer){invalid.push({number,reason:"सही उत्तर नहीं मिला (A/B/C/D या विकल्प का अक्षर लिखें)"});return;}
+  const optionArea=block.slice(0,answer.index);
+  const marks=[...optionArea.matchAll(optionRe)];
+  const letter=m=>(m[1]||m[2]||"").toUpperCase();
+  const question=(marks.length?optionArea.slice(0,marks[0].index):"").replace(/^\s+/,"").trim();
+  const options=["A","B","C","D"].map(ch=>{
+   const idx=marks.findIndex(m=>letter(m)===ch);if(idx<0)return "";
+   const m=marks[idx],next=marks[idx+1];
+   return optionArea.slice(m.index+m[0].length,next?next.index:optionArea.length).replace(/\s+/g," ").replace(/[;,\s]+$/,"").trim();
   });
   if(!question){invalid.push({number,reason:"प्रश्न का टेक्स्ट नहीं मिला"});return;}
-  if(marks.length!==4||options.some(x=>!x)||["A","B","C","D"].some(letter=>marks.filter(m=>getLetter(m)===letter).length!==1)){invalid.push({number,reason:"चारों विकल्प A, B, C, D सही फॉर्मेट में नहीं मिले"});return;}
-  const key=question.normalize("NFKC").toLocaleLowerCase("hi").replace(new RegExp("[\\s\\p{P}]+","gu")," ").trim();
+  if(marks.length!==4||options.some(x=>!x)||["A","B","C","D"].some(ch=>marks.filter(m=>letter(m)===ch).length!==1)){
+   invalid.push({number,reason:"चारों विकल्प A, B, C, D नहीं मिले। (a), a), A., A: जैसे फॉर्मेट मान्य हैं"});return;
+  }
+  const key=question.normalize("NFKC").toLocaleLowerCase("hi").replace(/[\s\p{P}]+/gu," ").trim();
   if(seen.has(key)){duplicates.push({number,question});return;}seen.add(key);
-  const explanation=block.slice(answer.index+answer[0].length).replace(new RegExp("^\\s*(?:व्याख्या|Explanation)?\\s*[:：-]?\\s*","i"),"").trim();
+  const explanation=block.slice(answer.index+answer[0].length).replace(/^\s*(?:(?:व्याख्या|स्पष्टीकरण|explanation)\s*[:：\-]?\s*)?/i,"").trim();
   valid.push({question_hi:question,question_en:"",options,correct_index:"ABCD".indexOf(answer[1].toUpperCase()),explanation});
  });
  return {valid,invalid,duplicates,total:blocks.length};
