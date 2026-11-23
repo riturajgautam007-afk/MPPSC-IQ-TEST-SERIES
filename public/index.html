@@ -92,7 +92,21 @@ function mountNativeRevisionQuiz(){
   `;document.head.appendChild(st);
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\n})();';
-  document.addEventListener('click',ev=>{const unitButton=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button');if(unitButton)setStage('questions');},true);
+  // Handle unit taps at document capture level (the same path already detecting taps on Android).
+  document.addEventListener('click',ev=>{
+   const button=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button[id^="unit"][id$="Btn"]');
+   if(!button)return;
+   const unitNumber=Number(button.id.substring(4,button.id.length-3));
+   const action=window.__mppscQuizActions&&window.__mppscQuizActions.setUnit;
+   if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
+    console.error('Document unit handler failed',button.id,unitNumber,typeof action);
+    return;
+   }
+   ev.preventDefault();
+   action(unitNumber);
+   setStage('questions');
+   window.scrollTo(0,0);
+  },true);
   root.appendChild(runner);
   // Unit selection: use one delegated handler and parse the numeric ID without regex.
   // Capture option taps and invoke the quiz function directly; inline onclick is not relied on.
