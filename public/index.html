@@ -92,12 +92,14 @@ function mountNativeRevisionQuiz(){
   `;document.head.appendChild(st);
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\n})();';
-  // Handle unit taps at document capture level (the same path already detecting taps on Android).
+  // Temporary visible diagnostic: show the exact unit tap and the quiz state after selection.
   document.addEventListener('click',ev=>{
    const button=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button[id^="unit"][id$="Btn"]');
    if(!button)return;
    const unitNumber=Number(button.id.substring(4,button.id.length-3));
+   const pageInfo=root.querySelector('#pageInfo');
    const action=window.__mppscQuizActions&&window.__mppscQuizActions.setUnit;
+   if(pageInfo)pageInfo.textContent='DEBUG: tapped '+button.id+' → parsed unit '+unitNumber+' → handler '+typeof action;
    if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
     console.error('Document unit handler failed',button.id,unitNumber,typeof action);
     return;
@@ -106,6 +108,9 @@ function mountNativeRevisionQuiz(){
    action(unitNumber);
    setStage('questions');
    window.scrollTo(0,0);
+   setTimeout(()=>{
+    if(pageInfo)pageInfo.textContent='DEBUG: tapped '+button.id+' → requested '+unitNumber+' → '+(pageInfo.textContent||'');
+   },50);
   },true);
   root.appendChild(runner);
   // Unit selection: use one delegated handler and parse the numeric ID without regex.
