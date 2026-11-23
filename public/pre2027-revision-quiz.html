@@ -730,19 +730,30 @@ function revisionBookmarkExists(unit,index){return revisionBookmarks().some(x=>N
 function toggleRevisionBookmark(unit,index,button){const rows=revisionBookmarks(),pos=rows.findIndex(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));if(pos>=0)rows.splice(pos,1);else{const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;rows.unshift({unit,index,question:q.q||'',english:q.en||'',options:q.options||[],answer:q.answer,savedAt:new Date().toISOString()});}try{localStorage.setItem(REVISION_BOOKMARK_KEY,JSON.stringify(rows));}catch(e){alert('बुकमार्क सेव नहीं हो सका।');return;}const active=pos<0;button.classList.toggle('saved',active);button.textContent=active?'🔖✓ बुकमार्क किया':'🔖 बुकमार्क';}
 async function reportRevisionQuestion(unit,index){const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const reason=prompt('इस प्रश्न में क्या समस्या है?\nगलत उत्तर / प्रश्न / विकल्प / भाषा');if(!reason||!reason.trim())return;const message=`MPPSC IQ Revision Quiz · UNIT ${String(unit).padStart(2,'0')} · प्रश्न ${index+1}\nसमस्या: ${reason.trim()}\nप्रश्न: ${q.q||''}\nविकल्प: ${(q.options||[]).join(' | ')}\nउत्तर कुंजी: ${Number(q.answer)+1}`;try{const response=await fetch('/api/support',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:'Quiz Question Report',message})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'रिपोर्ट भेजी नहीं जा सकी');alert('प्रश्न रिपोर्ट भेज दी गई है।');}catch(error){alert(error.message||'रिपोर्ट भेजने में समस्या हुई।');}}
 render();
-/* Mobile/WebView-safe option click handling: capture option taps before inline handlers */
+/* Mobile/WebView-safe delegated controls: Unit and answer buttons */
 document.addEventListener('click',function(event){
- const button=event.target&&event.target.closest?event.target.closest('#questions button.option'):null;
- if(!button||button.disabled)return;
- const handler=button.getAttribute('onclick')||'';
- const match=handler.match(/choose\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)/);
- if(!match)return;
- event.preventDefault();
- event.stopImmediatePropagation();
- choose(Number(match[1]),Number(match[2]));
+ const target=event.target;
+ if(!target||!target.closest)return;
+ const unitButton=target.closest('#unitbar button');
+ if(unitButton){
+  const unitMatch=(unitButton.id||'').match(/^unit(\d+)Btn$/);
+  event.preventDefault();event.stopImmediatePropagation();
+  if(unitMatch){setUnit(Number(unitMatch[1]));return;}
+  if(unitButton.id==='pyqBtn'){setPYQs();return;}
+  if(unitButton.id==='analysisBtn'){showAnalysis();return;}
+ }
+ const optionButton=target.closest('#questions button.option');
+ if(!optionButton||optionButton.disabled)return;
+ const handler=optionButton.getAttribute('onclick')||'';
+ const optionMatch=handler.match(/choose\((\d+)\s*,\s*(\d+)\)/);
+ if(!optionMatch)return;
+ event.preventDefault();event.stopImmediatePropagation();
+ choose(Number(optionMatch[1]),Number(optionMatch[2]));
 },true);
 </script>
 <style id="mppsc-option-tap-fix">
+#unitbar{position:relative;z-index:1000;pointer-events:auto!important}
+#unitbar button{position:relative;z-index:1001;pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer}
 #questions button.option{pointer-events:auto!important;touch-action:manipulation!important;position:relative;z-index:2;-webkit-tap-highlight-color:rgba(20,59,112,.16)}
 #questions .card{position:relative;isolation:isolate}
 </style>
