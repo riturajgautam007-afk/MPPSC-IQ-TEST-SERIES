@@ -138,7 +138,25 @@ function mountNativeRevisionQuiz(){
     report('setUnit('+unitNumber+') ERROR: '+(error&&error.message||String(error)));
    }
   },true);
+  // Capture script parse/runtime errors before appending the quiz runner.
+  const quizScriptErrorHandler=ev=>{
+   if(!root.isConnected)return;
+   const box=root.querySelector('#quizClickDiagnostic');
+   const detail=ev&&ev.message?ev.message:(ev&&ev.reason&&ev.reason.message?ev.reason.message:String(ev.reason||'unknown'));
+   if(box)box.textContent='QUIZ SCRIPT ERROR: '+detail+' | line: '+(ev.lineno||'—');
+   console.error('MPPSC quiz script error',ev);
+  };
+  window.addEventListener('error',quizScriptErrorHandler,true);
+  window.addEventListener('unhandledrejection',quizScriptErrorHandler,true);
+  runner.addEventListener('error',()=>{const box=root.querySelector('#quizClickDiagnostic');if(box)box.textContent='QUIZ SCRIPT LOAD ERROR: runner execute नहीं हुआ';});
   root.appendChild(runner);
+  setTimeout(()=>{
+   if(!root.isConnected)return;
+   const box=root.querySelector('#quizClickDiagnostic');
+   if(box&&typeof window.__mppscQuizActions?.setUnit!=='function'&&!box.textContent.startsWith('QUIZ SCRIPT ERROR:')&&!box.textContent.startsWith('QUIZ SCRIPT LOAD ERROR:')){
+    box.textContent='QUIZ SCRIPT CHECK: setUnit export नहीं हुआ | runner script execute/parse जाँचें';
+   }
+  },0);
   // Unit selection: use one delegated handler and parse the numeric ID without regex.
   // Capture option taps and invoke the quiz function directly; inline onclick is not relied on.
   root.addEventListener('click',ev=>{
