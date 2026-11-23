@@ -64,129 +64,39 @@ function openQuizUnitStep(){$('testStepStart').hidden=true;$('revisionQuizWrap')
 function backToQuizStart(){$('revisionQuizWrap').hidden=true;$('testStepStart').hidden=false;}
 let nativeRevisionQuizReady=false;
 function mountNativeRevisionQuiz(){
- const host=$('revisionQuizNative');
- if(!host||nativeRevisionQuizReady)return;
- nativeRevisionQuizReady=true;
- (async()=>{
-  try{
-   const response=await fetch('/pre2027-revision-quiz.html?v=20261123-inline-v29',{credentials:'same-origin',cache:'no-store'});
-   if(!response.ok)throw new Error('Quiz source load failed: '+response.status);
-   const html=await response.text();
-   const parsed=new DOMParser().parseFromString(html,'text/html');
-   const sourceScript=parsed.querySelector('body script');
-   if(!sourceScript)throw new Error('Quiz script not found');
-   const sourceStyles=[...parsed.querySelectorAll('style')];
-   host.replaceChildren();
-   const root=document.createElement('div');root.id='revisionQuizRoot';root.style.cssText='width:100%;min-width:0;position:relative';
-   const bodyNodes=[...parsed.body.childNodes].filter(n=>!(n.nodeType===1&&n.tagName==='SCRIPT'));
-   bodyNodes.forEach(n=>root.appendChild(document.importNode(n,true)));
-   host.appendChild(root);
-   const scopeCss=(css)=>{
-    const temp=document.createElement('style');temp.textContent=css;document.head.appendChild(temp);
-    const sheet=temp.sheet;
-    const walk=(rules)=>{
-     let out='';
-     for(const rule of [...rules]){
-      if(rule.type===1){
-       const selectors=rule.selectorText.split(',').map(x=>{let q=x.trim();q=q.replace(/(^|\s)(html|body)(?=\b|\s|$)/g,'$1#revisionQuizRoot').replace(/:root/g,'#revisionQuizRoot');return '#revisionQuizRoot '+q.replace(/^#revisionQuizRoot\s*/, '')});
-       out+=selectors.join(',')+'{'+rule.style.cssText+'}';
-      }else if(rule.type===4||rule.type===12){
-       out+=rule.cssText.slice(0,rule.cssText.indexOf('{')+1)+walk(rule.cssRules)+'}';
-      }else if(rule.type===7||rule.type===8||rule.type===10||rule.type===5||rule.type===6){
-       out+=rule.cssText;
-      }else if(rule.cssText&&rule.cssText.includes('{'))out+=rule.cssText;
-     }
-     return out;
-    };
-    let scoped='';try{scoped=walk(sheet.cssRules)}catch(e){scoped=css}
-    temp.remove();return scoped;
-   };
-   sourceStyles.forEach((el,i)=>{const st=document.createElement('style');st.dataset.quizStyle=String(i);st.textContent=scopeCss(el.textContent||'');document.head.appendChild(st)});
-   const appFit=document.createElement('style');appFit.textContent=`
-/* MPPSC IQ native tile/button language */
-#revisionQuizRoot{width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;background:transparent!important;color:var(--ink)!important;font:inherit!important}
-#revisionQuizRoot .header,#revisionQuizRoot .langbar,#revisionQuizRoot #stickyMeta,#revisionQuizRoot .bottom,#revisionQuizRoot .topsticky{display:none!important}
-#revisionQuizRoot #unitbar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;margin:14px 0 18px!important;padding:0!important;background:transparent!important;border:0!important}
-#revisionQuizRoot #unitbar button{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;min-width:0!important;min-height:92px!important;padding:16px!important;border:1px solid var(--line)!important;border-radius:24px!important;background:var(--panel)!important;color:var(--ink)!important;font:800 15px/1.3 inherit!important;box-shadow:none!important;text-align:left!important;white-space:normal!important}
-#revisionQuizRoot #unitbar button:before{content:'▦';flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 25%,#55565c,#202228 70%);border:1px solid #55565c;color:var(--gold);font-size:22px}
-#revisionQuizRoot #unitbar button.active{border:2px solid var(--gold)!important;background:var(--panel)!important;color:var(--ink)!important;padding:15px!important}
-#revisionQuizRoot .wrap{width:100%!important;max-width:none!important;margin:12px 0!important;padding:0 0 12px!important;background:transparent!important}
-#revisionQuizRoot .progress-track{height:6px!important;margin:0 0 12px!important;background:var(--panel2)!important;border-radius:99px!important}
-#revisionQuizRoot #progressFill{background:var(--gold)!important}
-#revisionQuizRoot .card{width:100%!important;background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:24px!important;box-shadow:none!important;padding:17px!important}
-#revisionQuizRoot .qtext{color:var(--ink)!important}
-#revisionQuizRoot .option{min-height:48px!important;background:var(--panel2)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:14px!important;padding:14px!important}
-#revisionQuizRoot .option.correct{background:#164b35!important;color:#eafff1!important}
-#revisionQuizRoot .option.wrong{background:#542b30!important;color:#fff0f0!important}
-#revisionQuizRoot .feedback{background:var(--panel2)!important;color:var(--ink)!important;border-radius:14px!important}
-#revisionQuizRoot .sticky-tools{display:none!important}
-#revisionQuizNative .quiz-native-toolbar{display:none!important}
-#revisionQuizNative .quiz-native-controls{display:none;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin:14px 0 18px!important;padding:0!important;background:transparent!important;border:0!important}
-#revisionQuizNative .quiz-native-controls button{min-height:52px!important;padding:12px!important;border:1px solid var(--line)!important;border-radius:15px!important;background:var(--panel)!important;color:var(--ink)!important;font:800 14px inherit!important;box-shadow:none!important}
-#revisionQuizNative .quiz-native-controls button:first-child{grid-column:1/-1}
-#revisionQuizNative .quiz-native-controls button:active,#revisionQuizRoot #unitbar button:active{transform:scale(.985)}
-#revisionQuizRoot .unit-empty{min-height:0!important;padding:16px!important;background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:14px!important}
-@media(max-width:600px){#revisionQuizRoot #unitbar{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#revisionQuizRoot #unitbar button{font-size:13px!important;min-height:86px!important;padding:13px!important;border-radius:22px!important}#revisionQuizRoot #unitbar button.active{padding:12px!important}#revisionQuizNative .quiz-native-controls button{font-size:12px!important}}
-
-#revisionQuizRoot #unitbar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;margin:14px 0 18px!important;padding:0!important;background:transparent!important;border:0!important}
-#revisionQuizRoot #unitbar button{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;width:100%!important;min-width:0!important;min-height:92px!important;height:auto!important;padding:16px!important;margin:0!important;border:1px solid var(--line)!important;border-radius:24px!important;background:var(--panel)!important;color:var(--ink)!important;font-size:15px!important;font-weight:800!important;line-height:1.3!important;box-shadow:none!important;text-align:left!important;white-space:normal!important}
-#revisionQuizRoot #unitbar button:before{content:'▦';flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 25%,#55565c,#202228 70%);border:1px solid #55565c;color:var(--gold);font-size:22px}
-#revisionQuizRoot #unitbar button.active{border:2px solid var(--gold)!important;background:var(--panel)!important;color:var(--ink)!important;padding:15px!important}
-@media(max-width:600px){#revisionQuizRoot #unitbar{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#revisionQuizRoot #unitbar button{min-height:86px!important;padding:13px!important;border-radius:22px!important;font-size:13px!important}#revisionQuizRoot #unitbar button.active{padding:12px!important}}
-`;
-document.head.appendChild(appFit);   const header=root.querySelector('.topsticky > .header');if(header)header.style.display='none';
-   const unitNav=root.querySelector('#unitbar');
-   const back=document.createElement('button');back.type='button';back.textContent='← सभी यूनिट / टेस्ट';back.style.cssText='display:none;margin:8px 10px;padding:8px 13px;border:1px solid #64748b;border-radius:8px;background:#1e3552;color:#fff;font-weight:700;font-size:13px';
-   unitNav?.parentNode?.insertBefore(back,unitNav);
-   const nativeToolbar=document.createElement('div');nativeToolbar.className='quiz-native-toolbar';
-   nativeToolbar.innerHTML='<button type="button" id="nativeQuizHindi" class="active">हिंदी</button><button type="button" id="nativeQuizEnglish">English</button><span class="quiz-native-status" id="nativeQuizStatus">यूनिट चुनें</span>';
-   const nativeControls=document.createElement('div');nativeControls.className='quiz-native-controls';
-   nativeControls.innerHTML='<button type="button" data-old="backBtn">← पिछला पेज</button><button type="button" data-old="nextBtn">अगला पेज →</button><button type="button" data-old="wrong">गलत प्रश्न</button><button type="button" data-old="refresh">↻ Refresh</button><button type="button" data-old="shuffle">↻ इस यूनिट के प्रश्न Shuffle</button><button type="button" data-old="mix">⇄ सभी यूनिट मिक्स</button>';
-   const quizWrap=root.querySelector('.wrap');unitNav?.parentNode?.insertBefore(nativeToolbar,unitNav);if(quizWrap)quizWrap.after(nativeControls);
-   nativeControls.querySelector('[data-old="backBtn"]').onclick=()=>root.querySelector('#backBtn')?.click();
-   nativeControls.querySelector('[data-old="nextBtn"]').onclick=()=>root.querySelector('#nextBtn')?.click();
-   nativeControls.querySelector('[data-old="wrong"]').onclick=()=>root.querySelector('.bottom button:nth-of-type(3)')?.click();
-   nativeControls.querySelector('[data-old="refresh"]').onclick=()=>root.querySelector('.bottom button:nth-of-type(4)')?.click();
-   nativeControls.querySelector('[data-old="shuffle"]').onclick=()=>root.querySelector('#shuffleUnitBtn')?.click();
-   nativeControls.querySelector('[data-old="mix"]').onclick=()=>root.querySelector('#mixAllBtn')?.click();
-   nativeToolbar.querySelector('#nativeQuizHindi').onclick=()=>root.querySelector('#hiBtn')?.click();
-   nativeToolbar.querySelector('#nativeQuizEnglish').onclick=()=>root.querySelector('#enBtn')?.click();
-   const setStage=(stage)=>{
-    const hide=stage==='units';
-    ['.wrap','.langbar','#stickyMeta','.bottom'].forEach(sel=>root.querySelectorAll(sel).forEach(el=>el.style.setProperty('display',hide?'none':'','important')));
-    if(unitNav)unitNav.style.setProperty('display',hide?'grid':'none','important');
-    nativeToolbar.style.setProperty('display','none','important');nativeControls.style.setProperty('display',hide?'none':'grid','important');
-    back.style.display=hide?'none':'inline-block';
-    root.classList.toggle('dark',!document.body.classList.contains('light'));
-   };
-   back.addEventListener('click',()=>setStage('units'));
-   unitNav?.addEventListener('click',ev=>{if(ev.target.closest('button'))setTimeout(()=>setStage('questions'),80)},true);
-   setStage('units');
-   // Unit actions are bound inside the quiz script's own lexical scope below.
-   const raw=sourceScript.textContent;
-   const patched=raw
-    .replace("document.body.classList.toggle('dark',theme==='dark')","document.getElementById('revisionQuizRoot').classList.toggle('dark',theme==='dark')")
-    .replace("UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);","UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);");
-   const runner=document.createElement('script');
-   runner.textContent='(function(){\n const document=new Proxy(window.document,{get(target,prop){if(prop===\"body\")return documentRoot;if(prop===\"getElementById\")return id=>documentRoot.querySelector(\"#\"+CSS.escape(id));if(prop===\"querySelector\")return sel=>documentRoot.querySelector(sel);if(prop===\"querySelectorAll\")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value===\"function\"?value.bind(target):value;}});\n const documentRoot=window.document.getElementById(\"revisionQuizRoot\");\n'+patched+'\n'+
-    "UNIT3_DATA[323].options=UNIT3_DATA[323].options.slice(0,4);UNIT3_DATA[448].answer=0;UNIT3_DATA[462].answer=1;\n"+
-    "const unitButtons=document.querySelectorAll('#unitbar button');unitButtons.forEach((button,index)=>{button.removeAttribute('onclick');button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();if(index<10)setUnit(index+1);else if(button.id==='pyqBtn')setPYQs();else if(button.id==='analysisBtn')showAnalysis();});});\n"+
-    "window.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion};window.setUnit=setUnit;window.setPYQs=setPYQs;window.showAnalysis=showAnalysis;window.setLang=setLang;window.toggleTheme=toggleTheme;window.changePage=changePage;window.showWrong=showWrong;window.refreshAll=refreshAll;window.shuffleCurrentUnit=shuffleCurrentUnit;window.mixAllUnits= mixAllUnits;window.reviewAllRecordedWrong=reviewAllRecordedWrong;window.downloadMistakesCSV=downloadMistakesCSV;window.setAnalysisTab=setAnalysisTab;window.printPerformanceReport=printPerformanceReport;window.choose=choose;window.editQuestion=editQuestion;\n"+
-    "render();\n"+
-    "function updateNativeQuizStatus(){const el=documentRoot.querySelector('#nativeQuizStatus');if(!el)return;const count=(DATA||[]).length;el.textContent=count?('UNIT '+String(activeUnit).padStart(2,'0')+' · '+count.toLocaleString('en-IN')+' प्रश्न'):(activeUnit===12?'परफॉर्मेंस रिपोर्ट':('UNIT '+String(activeUnit).padStart(2,'0')+' · प्रश्न उपलब्ध नहीं'));}\nupdateNativeQuizStatus();\n"+
-    "for(const fn of ['setUnit','setPYQs','showAnalysis','shuffleCurrentUnit','mixAllUnits','changePage','showWrong','refreshAll']){const original=window[fn];if(typeof original==='function')window[fn]=function(...args){const out=original.apply(this,args);updateNativeQuizStatus();return out;}}\n"+
-
-    "(async()=>{\n if(window.__mppscRevisionSyncInstalled)return;window.__mppscRevisionSyncInstalled=true;\n const api=async(path,options={})=>{const r=await fetch('/api'+path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'API request failed');return d};\n let saveTimer=null,answerTimer=null;\n const session=()=>({activeUnit:Number(activeUnit)||2,isMixedMode:!!isMixedMode,isUnitShuffled:!!isUnitShuffled,questionOrder:(DATA||[]).map((q,i)=>String(q.__qid||i)),answers:{...(answers||{})},currentIndex:Number(currentIndex)||0,savedAt:Date.now()});\n const saveNow=async()=>{try{await api('/revision-progress',{method:'PUT',body:JSON.stringify({performance:performanceData,session:session()})})}catch(e){console.warn('Revision progress sync:',e.message)}};\n const queueSave=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,500)};\n const oldSavePerformance=savePerformance;\n savePerformance=function(){oldSavePerformance();queueSave()};\n const oldChoose=choose;\n choose=function(i,k){oldChoose(i,k);try{const q=DATA[i],unit=Number(q?.__unit||activeUnit);if(q&&unit>=1&&unit<=10)api('/revision-answers',{method:'POST',body:JSON.stringify({unit,index:Number(i),question:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer),selected:Number(k)})}).catch(e=>console.warn('Revision answer sync:',e.message));}catch(e){}queueSave();clearTimeout(answerTimer);answerTimer=setTimeout(queueSave,900)};\n"+
-" window.choose=choose;\n for(const fn of ['setUnit','setPYQs','showAnalysis','shuffleCurrentUnit','mixAllUnits','changePage']){try{const original=window[fn];if(typeof original==='function')window[fn]=function(...args){const out=original.apply(this,args);queueSave();return out}}catch(e){}}\n window.addEventListener('beforeunload',()=>{try{saveNow()}catch(e){}});\n // The restored v91 quiz has no legacy toggleRevisionBookmark global.\n // Avoid aborting the progress/report integration on an undefined legacy handler.\n window.reportRevisionQuestion=async function(unit,index){\n  const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q){console.warn('Report question not found',unit,index);return;}\n  const btn=[...document.querySelectorAll('.revision-question-actions button')].find(b=>(b.getAttribute('onclick')||'').includes('reportRevisionQuestion('+unit+','+index+')'));\n  if(btn&&btn.dataset.reported==='1')return;\n  if(btn){btn.disabled=true;btn.textContent='… भेज रहे हैं';}\n  try{\n   await api('/revision-question-reports',{method:'POST',body:JSON.stringify({unit:Number(unit),index:Number(index),question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:Number(q.answer)},reason:'प्रश्न में त्रुटि'})});\n   if(btn){btn.dataset.reported='1';btn.textContent='✓ रिपोर्ट हो गई';}\n  }catch(e){if(btn){btn.disabled=false;btn.textContent='⚑ रिपोर्ट';}alert(e.message||'रिपोर्ट भेजने में समस्या हुई।');}\n };\n document.addEventListener('click',function(ev){\n  const btn=ev.target&&ev.target.closest?ev.target.closest('button[onclick*=\"reportRevisionQuestion\"]'):null;\n  if(!btn)return;\n  const raw=btn.getAttribute('onclick')||'';\n  const match=raw.match(/reportRevisionQuestion\\\\s*\\\\(\\\\s*(\\\\d+)\\\\s*,\\\\s*(\\\\d+)/);\n  if(!match)return;\n  ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();\n  window.reportRevisionQuestion(Number(match[1]),Number(match[2]));\n },true);\n try{\n  const saved=await api('/revision-progress');\n  const p=saved.performance_json||{},s=saved.session_json||{};\n  if(p&&p.questions&&Object.keys(p.questions).length){performanceData=p;try{localStorage.setItem(PERFORMANCE_KEY,JSON.stringify(p))}catch(e){}}\n  if(Number(s.activeUnit)>=1&&Number(s.activeUnit)<=10){setUnit(Number(s.activeUnit));if(s.answers&&typeof s.answers==='object')answers={...s.answers};currentIndex=Math.max(0,Math.min(DATA.length-1,Number(s.currentIndex)||0));render();}\n  else if(Number(s.activeUnit)===11)setPYQs();else if(Number(s.activeUnit)===12)showAnalysis();\n }catch(e){console.warn('Revision progress restore:',e.message)}\n queueSave();\n})();"+
-    '\n})();';
-   root.appendChild(runner);
-   setStage('units');
-  }catch(error){
-   nativeRevisionQuizReady=false;
-   host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(error.message||'त्रुटि')+'</div>';
-   console.error('Inline revision quiz integration failed',error);
-  }
- })();
+ const host=$('revisionQuizNative');if(!host||nativeRevisionQuizReady)return;nativeRevisionQuizReady=true;
+ (async()=>{try{
+  const response=await fetch('/pre2027-revision-quiz.html?v=20261123-native-v1',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw new Error('Quiz source load failed: '+response.status);
+  const parsed=new DOMParser().parseFromString(await response.text(),'text/html'),sourceScript=parsed.querySelector('body script');if(!sourceScript)throw new Error('Quiz script not found');
+  host.replaceChildren();const root=document.createElement('div');root.id='revisionQuizRoot';root.className='mppsc-native-quiz';
+  root.innerHTML=\`
+   <div class="native-quiz-heading"><div><span class="native-quiz-kicker">MPPSC IQ · PRE 2027</span><h2 class="title">Quiz / Test</h2></div><span class="native-quiz-tag">महाअभ्यास 2.0</span></div>
+   <nav class="unitbar" id="unitbar" aria-label="यूनिट चुनें">\${Array.from({length:10},(_,i)=>\`<button type="button" id="unit\${i+1}Btn" onclick="setUnit(\${i+1})"><span class="native-unit-icon">▦</span><span>यूनिट \${String(i+1).padStart(2,'0')}</span></button>\`).join('')}<button type="button" id="pyqBtn" onclick="setPYQs()"><span class="native-unit-icon">📚</span><span>PYQ टेस्ट</span></button><button type="button" id="analysisBtn" onclick="showAnalysis()"><span class="native-unit-icon">▤</span><span>एनालिसिस</span></button></nav>
+   <div class="native-quiz-language" id="nativeQuizLanguage"><div class="native-language-switch"><button type="button" id="hiBtn" class="active" onclick="setLang('hi')">हिंदी</button><button type="button" id="enBtn" onclick="setLang('en')">English</button></div><span class="native-language-note">अपनी भाषा चुनें</span></div>
+   <div class="meta" id="stickyMeta"><span id="pageInfo">यूनिट चुनें</span><span id="score">Attempted: 0 · Correct: 0</span></div>
+   <main class="wrap"><div class="progress-track"><div id="progressFill" class="progress-fill"></div></div><div id="reviewNote" class="review-note"></div><div id="questions"><div class="native-quiz-placeholder"><b>अपनी यूनिट चुनें</b><small>अभ्यास शुरू करने के लिए ऊपर से यूनिट चुनें</small></div></div></main>
+   <div class="bottom native-quiz-actions"><div class="native-score" id="bottomScore">Score: 0</div><button type="button" id="backBtn" onclick="changePage(-1)">← पिछला पेज</button><button type="button" id="nextBtn" onclick="changePage(1)">अगला पेज →</button><button type="button" onclick="showWrong()">गलत प्रश्न</button><button type="button" onclick="refreshAll()">↻ Refresh</button><div class="mixbar"><button type="button" id="shuffleUnitBtn" onclick="shuffleCurrentUnit()">↻ इस यूनिट के प्रश्न Shuffle</button><button type="button" id="mixAllBtn" onclick="mixAllUnits()">⇄ सभी यूनिट मिक्स</button></div></div>\`;
+  host.appendChild(root);
+  const st=document.createElement('style');st.textContent=\`
+  #revisionQuizRoot.mppsc-native-quiz{width:100%;margin:0;padding:0;background:transparent;color:var(--ink);font-family:inherit;box-sizing:border-box}#revisionQuizRoot *{box-sizing:border-box}
+  #revisionQuizRoot .native-quiz-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0 16px}#revisionQuizRoot .native-quiz-kicker{font-size:10px;letter-spacing:1.4px;font-weight:900;color:var(--gold)}#revisionQuizRoot .native-quiz-heading h2{font-size:22px;margin:5px 0 0;color:var(--ink)}#revisionQuizRoot .native-quiz-tag{padding:7px 10px;border:1px solid var(--line);border-radius:30px;background:var(--panel);color:var(--muted);font-size:10px}
+  #revisionQuizRoot .unitbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:12px 0 18px;padding:0;background:transparent;border:0}#revisionQuizRoot .unitbar button{display:flex;align-items:center;gap:11px;min-width:0;min-height:84px;padding:13px;border:1px solid var(--line);border-radius:23px;background:var(--panel);color:var(--ink);font:800 14px/1.25 inherit;text-align:left}#revisionQuizRoot .native-unit-icon{flex:none;width:43px;height:43px;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 35% 25%,#55565c,#202228 70%);border:1px solid #55565c;color:var(--gold);font-size:22px}#revisionQuizRoot .unitbar button.active{border:2px solid var(--gold);padding:12px}
+  #revisionQuizRoot .native-quiz-language{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}#revisionQuizRoot .native-language-switch{display:flex;gap:7px}#revisionQuizRoot .native-language-switch button{border:1px solid var(--line);border-radius:11px;padding:9px 15px;background:var(--panel2);color:var(--ink);font:700 13px inherit}#revisionQuizRoot .native-language-switch button.active{background:var(--gold);color:#171717;border-color:var(--gold)}#revisionQuizRoot .native-language-note{font-size:11px;color:var(--muted)}
+  #revisionQuizRoot .meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 2px;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)}#revisionQuizRoot .wrap{width:100%;margin:12px 0;padding:0 0 12px;background:transparent}#revisionQuizRoot .progress-track{height:6px;margin:0 0 12px;background:var(--panel2);border-radius:99px;overflow:hidden}#revisionQuizRoot .progress-fill{height:100%;width:0;background:var(--gold)}#revisionQuizRoot .review-note{font-size:12px;color:var(--muted);margin:7px 0}
+  #revisionQuizRoot .card{width:100%;margin:11px 0;padding:17px;border:1px solid var(--line);border-radius:23px;background:var(--panel);color:var(--ink);box-shadow:none}#revisionQuizRoot .qtext{font-size:17px;line-height:1.65;font-weight:800;color:var(--ink);margin:0 0 12px}#revisionQuizRoot .option{display:flex;gap:9px;width:100%;min-height:47px;margin:9px 0;padding:13px;text-align:left;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--ink);font:500 14px/1.5 inherit}#revisionQuizRoot .option .letter{flex:none;font-weight:900;color:var(--gold)}#revisionQuizRoot .option.correct{background:#164b35;color:#eafff1;border-color:#2c9b68}#revisionQuizRoot .option.wrong{background:#542b30;color:#fff0f0;border-color:#b65a62}#revisionQuizRoot .option:disabled{opacity:1}
+  #revisionQuizRoot .revision-question-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}#revisionQuizRoot .revision-q-action{border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:var(--panel2);color:var(--muted);font:700 11px inherit}#revisionQuizRoot .revision-q-action.saved{border-color:var(--gold);color:var(--gold)}#revisionQuizRoot .feedback,#revisionQuizRoot .unit-empty{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--ink);line-height:1.6}
+  #revisionQuizRoot .bottom.native-quiz-actions{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0 18px;padding:12px;border:1px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:none}#revisionQuizRoot .native-score{grid-column:1/-1;padding:9px;border-radius:11px;background:var(--panel2);color:var(--gold);font-size:12px;font-weight:900;text-align:center}#revisionQuizRoot .native-quiz-actions>button,#revisionQuizRoot .mixbar button{min-width:0;min-height:46px;padding:10px 8px;border:1px solid var(--line);border-radius:13px;background:var(--panel2);color:var(--ink);font:800 12px/1.3 inherit}#revisionQuizRoot .mixbar{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}#revisionQuizRoot .native-quiz-placeholder{display:flex;flex-direction:column;align-items:center;gap:7px;padding:28px 16px;border:1px dashed var(--line);border-radius:20px;background:var(--panel);color:var(--ink);text-align:center}#revisionQuizRoot .native-quiz-placeholder small{color:var(--muted);font-size:11px}
+  #revisionQuizRoot .analysis-table-wrap{width:100%;overflow:auto}#revisionQuizRoot .analysis-table{min-width:520px;border-collapse:collapse;color:var(--ink);font-size:12px}#revisionQuizRoot .analysis-table th,#revisionQuizRoot .analysis-table td{padding:9px;border-bottom:1px solid var(--line)}#revisionQuizRoot .analysis-table th{background:var(--panel2)}#revisionQuizRoot .analysis-panel{padding:15px;border:1px solid var(--line);border-radius:20px;background:var(--panel);color:var(--ink)}#revisionQuizRoot .analysis-tabs{display:flex;gap:6px;overflow:auto;padding:8px 0}#revisionQuizRoot .analysis-tab{flex:none;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel2);color:var(--ink)}#revisionQuizRoot .analysis-tab.active{border-color:var(--gold);color:var(--gold)}#revisionQuizRoot .analysis-pane{display:none}#revisionQuizRoot .analysis-pane.active{display:block}#revisionQuizRoot .unit-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#revisionQuizRoot .unit-quick-card{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--ink)}#revisionQuizRoot .unit-quick-card button{width:100%;padding:8px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink)}#revisionQuizRoot .program-analysis{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:20px!important}#revisionQuizRoot .program-analysis h2,#revisionQuizRoot .program-analysis h3{color:var(--ink)!important}#revisionQuizRoot .program-summary>div,#revisionQuizRoot .program-unit{background:var(--panel2)!important;border-color:var(--line)!important}#revisionQuizRoot .program-analysis p{color:var(--muted)!important}
+  @media(max-width:480px){#revisionQuizRoot .unitbar{gap:8px}#revisionQuizRoot .unitbar button{min-height:78px;padding:10px;border-radius:19px;font-size:12px}#revisionQuizRoot .native-unit-icon{width:37px;height:37px;font-size:19px}#revisionQuizRoot .native-quiz-actions{padding:9px}#revisionQuizRoot .native-quiz-actions>button,#revisionQuizRoot .mixbar button{font-size:11px}}
+  \`;document.head.appendChild(st);
+  const runner=document.createElement('script');
+  runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion};\n})();';
+  root.appendChild(runner);
+  const actions=root.querySelector('.native-quiz-actions');
+  const setStage=stage=>{const unit=stage==='units';root.querySelector('#unitbar').style.display=unit?'grid':'none';root.querySelector('#nativeQuizLanguage').style.display=unit?'none':'flex';root.querySelector('#stickyMeta').style.display=unit?'none':'flex';root.querySelector('.wrap').style.display=unit?'none':'block';actions.style.display=unit?'none':'grid';};
+  root.querySelector('#unitbar').addEventListener('click',ev=>{if(ev.target.closest('button'))setTimeout(()=>setStage('questions'),50)},true);
+  setStage('units');
+ }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(error.message||'त्रुटि')+'</div>';console.error('Native quiz build failed',error);}})();
 }
 function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='tests'){backToQuizStart();}if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
