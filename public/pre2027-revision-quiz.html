@@ -738,7 +738,7 @@ document.addEventListener('click',function(event){
  if(unitButton){
   const unitMatch=(unitButton.id||'').match(/^unit(\d+)Btn$/);
   event.preventDefault();event.stopImmediatePropagation();
-  if(unitMatch){setUnit(Number(unitMatch[1]));return;}
+  if(unitMatch){if(typeof window.__mppscSetNativeQuizStage==='function')window.__mppscSetNativeQuizStage();setUnit(Number(unitMatch[1]));return;}
   if(unitButton.id==='pyqBtn'){setPYQs();return;}
   if(unitButton.id==='analysisBtn'){showAnalysis();return;}
  }
