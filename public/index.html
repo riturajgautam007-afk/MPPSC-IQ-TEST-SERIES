@@ -94,8 +94,23 @@ function mountNativeRevisionQuiz(){
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+sourceScript.textContent+'\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,editQuestion,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\n})();';
   document.addEventListener('click',ev=>{const unitButton=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button');if(unitButton)setStage('questions');},true);
   root.appendChild(runner);
-  // Unit selection is handled at the quiz root in capture phase so Android WebView
-  // reliably routes taps to the matching unit before any generic stage handler.
+  // Bind each unit card with a direct property handler after quiz functions exist.
+  root.querySelectorAll('#unitbar button[id^="unit"][id$="Btn"]').forEach(button=>{
+   const unitNumber=Number(button.id.slice(4,-3));
+   button.removeAttribute('onclick');
+   button.onclick=function(ev){
+    ev.preventDefault();
+    ev.stopPropagation();
+    const action=window.__mppscQuizActions&&window.__mppscQuizActions.setUnit;
+    if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
+     console.error('Unit action unavailable',button.id,typeof action);
+     return;
+    }
+    action(unitNumber);
+    setStage('questions');
+    window.scrollTo(0,0);
+   };
+  });
   // Capture option taps and invoke the quiz function directly; inline onclick is not relied on.
   root.addEventListener('click',ev=>{
    const option=ev.target.closest('#revisionQuizRoot #questions button.option');
