@@ -1,1 +1,0 @@
-Run one immediate protected Supabase backup. Trigger created 2026-11-24.
