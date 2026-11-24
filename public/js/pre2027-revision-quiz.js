@@ -23,10 +23,17 @@ function loadQuestionBankAdditions(){
    }
   }
   questionBankAdditionsLoaded=true;
- })().catch(error=>{questionBankAdditionsPromise=null;console.warn('MPPSC IQ additional question bank:',error);throw error;});
+ })().catch(error=>{
+  questionBankAdditionsPromise=null;
+  const note=document.getElementById('reviewNote');
+  if(note)note.textContent='नए प्रश्न Sync नहीं हो पाए: '+(error&&error.message?error.message:'Login / Membership जाँचें।');
+  console.warn('MPPSC IQ additional question bank sync failed:',error);
+  throw error;
+ });
  return questionBankAdditionsPromise;
 }
 let activeUnit=2,isMixedMode=false,isUnitShuffled=false,unitWrongMode=false;let page=0,lang='hi',answers={},currentIndex=0,reviewMode=false,reviewIds=[],reviewPos=0,autoTimer=null;
+setTimeout(()=>{loadQuestionBankAdditions().catch(()=>{});},0);
 const PERFORMANCE_KEY='mppscIqCandidatePerformance_v1';
 function loadPerformance(){try{const x=JSON.parse(localStorage.getItem(PERFORMANCE_KEY)||'{}');return x&&x.questions&&typeof x.questions==='object'?x:{questions:{},recent:[]};}catch(e){return {questions:{},recent:[]};}}
 let performanceData=loadPerformance();
