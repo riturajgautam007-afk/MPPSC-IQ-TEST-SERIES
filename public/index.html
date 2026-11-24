@@ -491,6 +491,20 @@ function mountNativeRevisionQuiz(){
    #revisionQuizRoot .unitbar{gap:8px!important;padding:8px!important}
    #revisionQuizRoot .unitbar button{min-height:72px!important;font-size:12px!important;border-radius:13px!important}
   }
+
+  /* Compact serial-number columns across all question tables */
+  #revisionQuizRoot .match-table:not(.answer-match-table){table-layout:fixed!important;width:100%!important}
+  #revisionQuizRoot .match-table:not(.answer-match-table) th:first-child,
+  #revisionQuizRoot .match-table:not(.answer-match-table) td:first-child{width:12%!important;min-width:48px!important;padding-left:9px!important;padding-right:7px!important}
+  #revisionQuizRoot .match-table:not(.answer-match-table) th:nth-child(2),
+  #revisionQuizRoot .match-table:not(.answer-match-table) td:nth-child(2){width:88%!important}
+  #revisionQuizRoot .match-table:not(.answer-match-table) td:first-child{white-space:nowrap!important}
+  @media(max-width:480px){
+   #revisionQuizRoot .match-table:not(.answer-match-table) th:first-child,
+   #revisionQuizRoot .match-table:not(.answer-match-table) td:first-child{width:11%!important;min-width:42px!important;padding-left:7px!important;padding-right:5px!important}
+   #revisionQuizRoot .match-table:not(.answer-match-table) th:nth-child(2),
+   #revisionQuizRoot .match-table:not(.answer-match-table) td:nth-child(2){width:89%!important}
+  }
   `;document.head.appendChild(st);
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+quizSource+'\nwindow.addEventListener("pagehide",()=>{try{const session=revisionSessionSnapshot();const payload=JSON.stringify({performance:performanceData,session});fetch(REVISION_API_ORIGIN+"/api/revision-progress",{method:"PUT",credentials:"include",keepalive:true,headers:{"Content-Type":"application/json"},body:payload}).catch(()=>{});}catch(e){}});\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\ndocument.addEventListener("mppsc:languagechange",ev=>{const next=ev&&ev.detail&&ev.detail.language;if((next==="hi"||next==="en")&&next!==lang)setLang(next);});\nconst savedLanguage=localStorage.getItem("mppsc_iq_ui_language")==="en"?"en":"hi";\nif(savedLanguage!==lang)setLang(savedLanguage);\n})();';
