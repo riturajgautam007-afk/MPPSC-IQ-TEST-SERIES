@@ -93,7 +93,8 @@ const crypto = require("node:crypto");
     object: path,
     bytes: Buffer.byteLength(raw, "utf8"),
     created_at: backup.created_at || null,
-    table_counts: counts,\n    assets: [...assets.values()]
+    table_counts: counts,
+    assets: [...assets.values()]
   }, null, 2));
 })().catch(error => {
   console.error("BACKUP_VERIFY_FAILED:", error.message);
