@@ -1,16 +1,23 @@
 "use strict";
 require("dotenv").config();
 const {Pool}=require("pg");
+const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {createClient}=require("@supabase/supabase-js");
 const dns=require("node:dns");dns.setDefaultResultOrder("ipv4first");
 const pool=new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:1,connectionTimeoutMillis:15000});
 const supabase=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}});
 const bucket=process.env.SUPABASE_STORAGE_BUCKET||"mppsc-resources";
-const tables=["students","tests","questions","attempts","wrong_questions","resources","question_bank_edits","question_bank_additions","student_memberships","membership_payment_requests"];
+const tables=["students","tests","questions","attempts","wrong_questions","resources","question_bank_edits","question_bank_additions","student_memberships","membership_payment_requests","announcements","support_tickets","question_bookmarks","question_reports","revision_quiz_bookmarks","revision_quiz_reports","revision_quiz_progress","revision_quiz_answers"];
 const keepDays=Math.max(7,Number(process.env.BACKUP_RETENTION_DAYS)||30);
 (async()=>{
  if(!process.env.DATABASE_URL||!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw Error("DATABASE_URL, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
- const backup={app:"MPPSC IQ",format_version:1,created_at:new Date().toISOString(),tables:{}};
+ const backup={app:"MPPSC IQ",format_version:1,created_at:new Date().toISOString(),tables:{},assets:{question_bank_files:[]}};
+ for(const relativePath of ["public/js/pre2027-revision-quiz.js","public/pre2027-revision-quiz.html"]){
+  const absolutePath=path.join(__dirname,"..",relativePath);
+  const content=fs.readFileSync(absolutePath,"utf8");
+  if(!content.trim())throw new Error("Question Bank asset is empty: "+relativePath);
+  backup.assets.question_bank_files.push({path:relativePath,bytes:Buffer.byteLength(content),sha256:crypto.createHash("sha256").update(content).digest("hex"),content});
+ }
  for(const table of tables){const r=await pool.query('SELECT * FROM "'+table+'" ORDER BY 1');backup.tables[table]=r.rows;}
  const bytes=Buffer.from(JSON.stringify(backup));
  const name="daily/"+new Date().toISOString().replace(/[:.]/g,"-")+".json";
