@@ -624,7 +624,7 @@ const observer=new MutationObserver(records=>{
  if(busy)return;
  for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(!originalText.has(n))originalText.set(n,n.nodeValue);if(language==='en'){const v=translated(n.nodeValue.trim());if(v!==n.nodeValue.trim())n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),v)}}else if(n.nodeType===Node.ELEMENT_NODE)walk(n)});else if(r.type==='characterData'){const n=r.target;if(language==='en'){originalText.set(n,n.nodeValue);const v=translated(n.nodeValue.trim());if(v!==n.nodeValue.trim())n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),v)}else originalText.set(n,n.nodeValue)}}
 });
-observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+observer.observe(document.body,{subtree:true,childList:true});
 document.addEventListener('click',e=>{const a=e.target.closest('a,button');if(a&&language==='en'&&a.id==='studentLogout')a.textContent='Logout'});
 })();
 </script>
