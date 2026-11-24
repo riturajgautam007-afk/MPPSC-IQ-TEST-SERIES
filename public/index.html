@@ -326,7 +326,7 @@ function mountNativeRevisionQuiz(){
    ev.preventDefault();
    ev.stopPropagation();
    const unitNumber=Number(button.id.substring(4,button.id.length-3));
-   const action=window.__mppscQuizActions&&window.__mppscQuizActions.setUnit;
+   const action=(window.__mppscQuizActions&&window.__mppscQuizActions.setUnit)||window.setUnit;
    if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
     console.error('Unit selection failed',button.id,unitNumber,typeof action);
     return;
@@ -366,7 +366,7 @@ function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
 document.querySelectorAll('#examSeg button').forEach(b=>b.onclick=()=>{exam=b.dataset.exam;document.querySelectorAll('#examSeg button').forEach(x=>x.classList.toggle('active',x===b));loadTests()});
 $('themeBtn').onclick=()=>document.body.classList.toggle('light');
-$('langBtn').onclick=()=>alert('हिंदी इंटरफेस सक्रिय है। English विकल्प अगली अपडेट में जोड़ा जाएगा।');
+$('langBtn').onclick=()=>setLanguage(language==='hi'?'en':'hi');
 let deferredInstall=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e});$('installBtn').onclick=async()=>{if(deferredInstall){deferredInstall.prompt();deferredInstall=null}else alert('ब्राउज़र मेन्यू से “Add to Home Screen” चुनें।')};
 async function loadMembership(){mem=await api('/membership/me');const m=mem.membership||{};$('homeMembership').textContent=paid()?'Paid Access सक्रिय · '+(m.batch||'MPPSC PRE 2027'):'Paid Access सक्रिय करने के लिए यहाँ जाएँ'}
 function renderBatch(){const active=paid(),price=Number(mem?.payment?.amount||300);if(batchTab==='mine'){$('batchContent').innerHTML=active?'<div class="row between"><b>MPPSC PRE 2027 · महाअभ्यास 2.0</b><span class="pill active">ACTIVE</span></div><p class="muted">आपका बैच सक्रिय है। उपलब्ध टेस्ट और अध्ययन सामग्री का उपयोग करें।</p><div class="row"><button class="btn full" onclick="go(&quot;tests&quot;)">मेरे टेस्ट खोलें</button><button class="btn dark full" onclick="go(&quot;library&quot;)">मेरी Library</button></div>':'<div class="empty">अभी आपका कोई सक्रिय बैच नहीं है।</div><button class="btn full" onclick="switchBatch(&quot;buy&quot;)">उपलब्ध बैच देखें</button>'}else{$('batchContent').innerHTML='<div class="batch-feature"><div class="eyebrow">MPPSC IQ · ENROLLMENT OPEN</div><h2>MPPSC PRE 2027</h2><p>महाअभ्यास 2.0 · Prelims Test Series</p></div><div class="row between"><b>MPPSC PRE 2027 Paid Batch</b><strong style="color:var(--gold);font-size:24px">₹'+price+'</strong></div><ul class="muted"><li>Topic-wise Tests और Full Length Tests</li><li>प्रश्नों का अभ्यास और परिणाम विश्लेषण</li><li>Paid Members के लिए सुरक्षित Study Library</li></ul><button class="btn full" onclick="go(&quot;membership&quot;)">'+(active?'Membership विवरण देखें':'बैच खरीदें / Access सक्रिय करें')+'</button>'}}
