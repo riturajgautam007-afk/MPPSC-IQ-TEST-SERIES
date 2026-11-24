@@ -557,6 +557,10 @@ function mountNativeRevisionQuiz(){
    #revisionQuizRoot .native-language-switch button{height:40px!important;min-height:40px!important;font-size:13px!important}
    #revisionQuizRoot .native-quiz-refresh{flex-basis:40px!important;width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important}
   }
+
+  /* Skip the redundant Quiz/Test intro card; enter the unit selector directly */
+  #testStepStart{display:none!important}
+  #revisionQuizWrap>.back{display:none!important}
   `;document.head.appendChild(st);
   // Prevent unit changes from forcibly jumping the page to the top.
   quizSource=quizSource.replaceAll("window.scrollTo({top:0,behavior:'smooth'});","");
@@ -632,7 +636,7 @@ function mountNativeRevisionQuiz(){
   setStage('units');
  }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice" role="alert"><strong>क्विज़ लोड नहीं हो सका।</strong><p>'+esc(error.message||'कृपया इंटरनेट कनेक्शन जाँचें।')+'</p><button type="button" class="quiz-load-retry" onclick="mountNativeRevisionQuiz()">↻ दोबारा प्रयास करें</button></div>';console.error('Native quiz build failed',error);}})();
 }
-function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='generalstudies')loadGeneralStudies();if(id==='currentaffairs')loadCurrentAffairs();if(id==='tests'){backToQuizStart();}if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
+function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='generalstudies')loadGeneralStudies();if(id==='currentaffairs')loadCurrentAffairs();if(id==='tests'){openQuizUnitStep();}if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
 document.querySelectorAll('#examSeg button').forEach(b=>b.onclick=()=>{exam=b.dataset.exam;document.querySelectorAll('#examSeg button').forEach(x=>x.classList.toggle('active',x===b));loadTests()});
 function applyTheme(mode){
