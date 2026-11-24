@@ -580,7 +580,7 @@ function setLanguage(next){
 const langBtn=document.getElementById('langBtn');
 if(langBtn)langBtn.onclick=()=>setLanguage(language==='hi'?'en':'hi');
 try{language=localStorage.getItem('mppsc_iq_ui_language')==='en'?'en':'hi'}catch(e){language='hi'}
-if(language==='en')setLanguage('en');
+setLanguage(language);
 const observer=new MutationObserver(records=>{
  if(busy)return;
  for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(!originalText.has(n))originalText.set(n,n.nodeValue);{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}else if(n.nodeType===Node.ELEMENT_NODE)walk(n)});else if(r.type==='characterData'){const n=r.target;{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}}
