@@ -74,7 +74,6 @@ function mountNativeRevisionQuiz(){
   host.replaceChildren();const root=document.createElement('div');root.id='revisionQuizRoot';root.className='mppsc-native-quiz';
   root.innerHTML=`
    <div class="native-quiz-heading"><div><span class="native-quiz-kicker">MPPSC IQ · PRE 2027</span><h2 class="title">Quiz / Test</h2></div><span class="native-quiz-tag">महाअभ्यास 2.0</span></div>
-   <div id="quizClickDiagnostic" role="status" aria-live="polite" style="margin:8px 0;padding:9px 11px;border:1px dashed #b58b2b;border-radius:10px;color:var(--muted);font-size:11px;line-height:1.5">जाँच तैयार है — किसी यूनिट पर टैप करें</div>
   <nav class="unitbar" id="unitbar" aria-label="यूनिट चुनें">${Array.from({length:10},(_,i)=>`<button type="button" id="unit${i+1}Btn" onclick="setUnit(${i+1})"><span class="native-unit-icon">▦</span><span>यूनिट ${String(i+1).padStart(2,'0')}</span></button>`).join('')}<button type="button" id="pyqBtn" onclick="setPYQs()"><span class="native-unit-icon">📚</span><span>PYQ टेस्ट</span></button><button type="button" id="analysisBtn" onclick="showAnalysis()"><span class="native-unit-icon">▤</span><span>एनालिसिस</span></button></nav>
    <button type="button" id="nativeQuizBack" class="native-quiz-back" hidden>← सभी यूनिट / टेस्ट</button>
    <div class="native-quiz-language" id="nativeQuizLanguage"><div class="native-language-switch"><button type="button" id="hiBtn" class="active" onclick="setLang('hi')">हिंदी</button><button type="button" id="enBtn" onclick="setLang('en')">English</button></div><span class="native-language-note">अपनी भाषा चुनें</span></div>
@@ -295,70 +294,6 @@ function mountNativeRevisionQuiz(){
   `;document.head.appendChild(st);
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+quizSource+'\nwindow.addEventListener("pagehide",()=>{try{const session=revisionSessionSnapshot();const payload=JSON.stringify({performance:performanceData,session});fetch(REVISION_API_ORIGIN+"/api/revision-progress",{method:"PUT",credentials:"include",keepalive:true,headers:{"Content-Type":"application/json"},body:payload}).catch(()=>{});}catch(e){}});\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\ndocument.addEventListener("mppsc:languagechange",ev=>{const next=ev&&ev.detail&&ev.detail.language;if((next==="hi"||next==="en")&&next!==lang)setLang(next);});\nconst savedLanguage=localStorage.getItem("mppsc_iq_ui_language")==="en"?"en":"hi";\nif(savedLanguage!==lang)setLang(savedLanguage);\n})();';
-  // Temporary tap-path diagnostic: records the actual element receiving pointer/click events.
-  const clickDiag=root.querySelector('#quizClickDiagnostic');
-  const describeTarget=el=>{
-   if(!el)return 'unknown';
-   const tag=(el.tagName||'node').toLowerCase();
-   const id=el.id?'#'+el.id:'';
-   const cls=typeof el.className==='string'&&el.className.trim()?'.'+el.className.trim().split(/\\s+/).slice(0,2).join('.'):'';
-   return tag+id+cls;
-  };
-  document.addEventListener('pointerdown',ev=>{
-   if(!root.isConnected||!$('revisionQuizWrap')||$('revisionQuizWrap').hidden)return;
-   const target=ev.target;
-   const unit=target&&target.closest&&target.closest('#revisionQuizRoot #unitbar button');
-   if(clickDiag)clickDiag.textContent='TAP मिला: '+describeTarget(target)+' | यूनिट बटन: '+(unit?unit.id:'नहीं')+' | pointer='+ev.pointerType;
-  },true);
-  document.addEventListener('click',ev=>{
-   if(!root.isConnected||!$('revisionQuizWrap')||$('revisionQuizWrap').hidden)return;
-   const target=ev.target;
-   const unit=target&&target.closest&&target.closest('#revisionQuizRoot #unitbar button');
-   if(clickDiag)clickDiag.textContent='CLICK मिला: '+describeTarget(target)+' | यूनिट बटन: '+(unit?unit.id:'नहीं');
-  },true);
-  // Temporary visible diagnostic: show the exact unit tap and the quiz state after selection.
-  document.addEventListener('click',ev=>{
-   const button=ev.target&&ev.target.closest&&ev.target.closest('#revisionQuizRoot #unitbar button[id^="unit"][id$="Btn"]');
-   if(!button)return;
-   ev.preventDefault();ev.stopImmediatePropagation();
-   const unitNumber=Number(button.id.substring(4,button.id.length-3));
-   const action=window.__mppscQuizActions&&window.__mppscQuizActions.setUnit;
-   const diag=root.querySelector('#quizClickDiagnostic');
-   const report=msg=>{if(diag)diag.textContent=msg;console.log('[MPPSC unit diagnostic]',msg);};
-   report('यूनिट क्लिक मिला: '+button.id+' | नंबर: '+unitNumber+' | setUnit: '+typeof action);
-   if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
-    report('ERROR: setUnit उपलब्ध नहीं है या यूनिट नंबर गलत है।');
-    return;
-   }
-   try{
-    action(unitNumber);
-    setStage('questions');
-    window.scrollTo(0,0);
-    const q=root.querySelector('#questions');
-    report('setUnit('+unitNumber+') चला | प्रश्न क्षेत्र: '+(q?q.innerText.trim().slice(0,180):'नहीं मिला')+' | stage: '+root.dataset.quizStage);
-   }catch(error){
-    report('setUnit('+unitNumber+') ERROR: '+(error&&error.message||String(error)));
-   }
-  },true);
-  // Capture script parse/runtime errors before appending the quiz runner.
-  const quizScriptErrorHandler=ev=>{
-   if(!root.isConnected)return;
-   const box=root.querySelector('#quizClickDiagnostic');
-   const detail=ev&&ev.message?ev.message:(ev&&ev.reason&&ev.reason.message?ev.reason.message:String(ev.reason||'unknown'));
-   if(box)box.textContent='QUIZ SCRIPT ERROR: '+detail+' | line: '+(ev.lineno||'—');
-   console.error('MPPSC quiz script error',ev);
-  };
-  window.addEventListener('error',quizScriptErrorHandler,true);
-  window.addEventListener('unhandledrejection',quizScriptErrorHandler,true);
-  runner.addEventListener('error',()=>{const box=root.querySelector('#quizClickDiagnostic');if(box)box.textContent='QUIZ SCRIPT LOAD ERROR: runner execute नहीं हुआ';});
-  root.appendChild(runner);
-  setTimeout(()=>{
-   if(!root.isConnected)return;
-   const box=root.querySelector('#quizClickDiagnostic');
-   if(box&&typeof window.__mppscQuizActions?.setUnit!=='function'&&!box.textContent.startsWith('QUIZ SCRIPT ERROR:')&&!box.textContent.startsWith('QUIZ SCRIPT LOAD ERROR:')){
-    box.textContent='QUIZ SCRIPT CHECK: setUnit export नहीं हुआ | runner script execute/parse जाँचें';
-   }
-  },0);
   // Unit selection: use one delegated handler and parse the numeric ID without regex.
   // Capture option taps and invoke the quiz function directly; inline onclick is not relied on.
   root.addEventListener('click',ev=>{
@@ -585,6 +520,32 @@ function translated(str){
  out=out.replace(/(\d+) सही उत्तर/g,'$1 correct answers').replace(/(\d+) टेस्ट/g,'$1 tests').replace(/टेस्ट क्रम: पुराने से नए · 1 से (\d+)/g,'Test order: oldest to newest · 1 to $1');
  return out;
 }
+const HI_UI={
+ 'All Units / Tests':'सभी यूनिट / टेस्ट','Choose your language':'अपनी भाषा चुनें',
+ 'Choose Your Unit':'अपनी यूनिट चुनें','Select a Unit':'यूनिट चुनें',
+ 'Hindi':'हिंदी','Quiz / Test':'क्विज़ / टेस्ट','Logout':'लॉगआउट',
+ 'Attempted':'प्रयास','Correct':'सही','Wrong':'गलत','Score':'अंक',
+ 'Questions':'प्रश्न','Question':'प्रश्न','UNIT':'यूनिट','Unit':'यूनिट',
+ 'Page':'पृष्ठ','Previous Page':'पिछला पेज','Next Page':'अगला पेज',
+ 'Total Score':'कुल अंक','Wrong Questions':'गलत प्रश्न',
+ 'PYQs':'पूर्व वर्षों के प्रश्न','ANALYSIS':'विश्लेषण',
+ 'Choose your language':'अपनी भाषा चुनें'
+};
+function translatedHindi(str){
+ if(HI_UI[str]!==undefined)return HI_UI[str];
+ let out=str;
+ out=out.replace(/\bAttempted\b/g,'प्रयास').replace(/\bCorrect\b/g,'सही').replace(/\bWrong\b/g,'गलत').replace(/\bScore\b/g,'अंक');
+ out=out.replace(/\bQuestions\b/g,'प्रश्न').replace(/\bQuestion\b/g,'प्रश्न').replace(/\bUNIT\b/g,'यूनिट').replace(/\bUnit\b/g,'यूनिट').replace(/\bPage\b/g,'पृष्ठ');
+ out=out.replace(/\bAll Units\b/g,'सभी यूनिट').replace(/\bTests\b/g,'टेस्ट').replace(/\bChoose your language\b/g,'अपनी भाषा चुनें');
+ out=out.replace(/\bQuestion\s+(\d+)/g,'प्रश्न $1').replace(/\bUNIT\s+(\d+)/g,'यूनिट $1');
+ out=out.replace(/\bPrevious Page\b/g,'पिछला पेज').replace(/\bNext Page\b/g,'अगला पेज');
+ return out;
+}
+function convertText(value){
+ const clean=value.trim();
+ const converted=language==='en'?translated(clean):translatedHindi(clean);
+ return converted===clean?value:value.replace(clean,converted);
+}
 function walk(root){
  if(!root||busy)return;busy=true;
  try{
@@ -593,8 +554,8 @@ function walk(root){
   if(!n.nodeValue.trim())continue;
   if(!originalText.has(n))originalText.set(n,n.nodeValue);
   const orig=originalText.get(n);
-  if(language==='en'){const v=translated(orig.trim());if(v!==orig.trim()){englishText.set(n,v);n.nodeValue=orig.replace(orig.trim(),v)}}
-  else if(englishText.has(n)){n.nodeValue=orig;englishText.delete(n)}
+  const v=convertText(orig);
+  if(v!==orig)n.nodeValue=v;
  }
  const els=root.querySelectorAll?root.querySelectorAll('input,textarea,button,a,[title],[aria-label]'):[];
  els.forEach(el=>['placeholder','title','aria-label'].forEach(a=>{
@@ -622,7 +583,7 @@ try{language=localStorage.getItem('mppsc_iq_ui_language')==='en'?'en':'hi'}catch
 if(language==='en')setLanguage('en');
 const observer=new MutationObserver(records=>{
  if(busy)return;
- for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(!originalText.has(n))originalText.set(n,n.nodeValue);if(language==='en'){const v=translated(n.nodeValue.trim());if(v!==n.nodeValue.trim())n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),v)}}else if(n.nodeType===Node.ELEMENT_NODE)walk(n)});else if(r.type==='characterData'){const n=r.target;if(language==='en'){originalText.set(n,n.nodeValue);const v=translated(n.nodeValue.trim());if(v!==n.nodeValue.trim())n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),v)}else originalText.set(n,n.nodeValue)}}
+ for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(!originalText.has(n))originalText.set(n,n.nodeValue);{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}else if(n.nodeType===Node.ELEMENT_NODE)walk(n)});else if(r.type==='characterData'){const n=r.target;{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}}
 });
 observer.observe(document.body,{subtree:true,childList:true});
 document.addEventListener('click',e=>{const a=e.target.closest('a,button');if(a&&language==='en'&&a.id==='studentLogout')a.textContent='Logout'});
