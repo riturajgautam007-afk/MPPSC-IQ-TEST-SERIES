@@ -27,6 +27,71 @@
  #revisionQuizRoot .bottom{bottom:calc(64px + env(safe-area-inset-bottom))!important;gap:4px!important;padding-left:5px!important;padding-right:5px!important}
  #revisionQuizRoot .bottom button{min-width:0!important;white-space:normal!important;font-size:10px!important;padding:7px 4px!important}
 }
+
+/* MPPSC IQ polish: consistent spacing, touch feedback, focus and mobile readability */
+:root{
+ --gold:#f6cc58;--gold2:#e8b83f;--panel:#171b23;--panel2:#202631;
+ --line:#303846;--muted:#aab2bf;--soft:#252c37;
+ --ease:cubic-bezier(.2,.75,.25,1);
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{overscroll-behavior-y:contain}
+button,a,.tile,.pill,.nav,.option{-webkit-tap-highlight-color:transparent}
+button,.tile,.pill,.nav,.option{transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease),transform .16s var(--ease),box-shadow .16s var(--ease)}
+button{font:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+ outline:2px solid var(--gold);outline-offset:3px
+}
+button:disabled{opacity:.55;cursor:not-allowed}
+.content{padding-top:16px}
+.hero{box-shadow:0 12px 30px #0002}
+.hero h1{line-height:1.25;letter-spacing:-.35px}
+.sectionhead{gap:10px}
+.sectionhead h2,.viewtitle{letter-spacing:-.25px}
+.card,.tile,.noticebox{box-shadow:0 5px 18px rgba(0,0,0,.12)}
+.tile{border-radius:22px;min-height:142px}
+.tile:active,.pill:active,.nav:active,.btn:active,.install:active{transform:scale(.975)}
+.tile b{line-height:1.35}
+.ico{flex:0 0 auto}
+.btn,.install{min-height:42px;cursor:pointer}
+.btn{box-shadow:0 3px 10px #0002}
+.search,input,textarea,select{min-height:46px}
+.option{line-height:1.55;min-height:48px}
+.option:active{transform:scale(.992)}
+.bottom{padding-top:8px}
+.nav{min-height:62px}
+.nav .navico{width:38px;height:38px}
+.empty{line-height:1.65}
+.muted,.sub{line-height:1.6}
+#revisionQuizRoot .card{box-shadow:0 5px 18px rgba(0,0,0,.10)!important}
+#revisionQuizRoot .option{min-height:48px!important;line-height:1.55!important}
+#revisionQuizRoot button{min-height:40px}
+#revisionQuizRoot .bottom{backdrop-filter:none!important}
+@media(max-width:480px){
+ .top{height:66px;padding:8px 12px;gap:9px}
+ .logo{width:42px;height:42px;font-size:14px}
+ .brand{font-size:18px}
+ .brand small{font-size:11px}
+ .topbtn{padding:8px 10px;border-radius:12px}
+ .content{padding:13px 12px 20px}
+ .hero{padding:18px;border-radius:21px;margin-bottom:17px}
+ .hero h1{font-size:24px}
+ .sectionhead{margin:18px 0 10px}
+ .sectionhead h2,.viewtitle{font-size:20px}
+ .grid{gap:9px}
+ .tile{min-height:128px;padding:14px 12px;border-radius:19px}
+ .ico{width:48px;height:48px;font-size:23px}
+ .tile b{font-size:15px}
+ .tile small{font-size:11px}
+ .card{padding:14px;border-radius:18px}
+ .bottom{padding-left:5px;padding-right:5px}
+ .nav{font-size:10px;min-height:58px}
+ .nav .navico{width:35px;height:35px;font-size:18px}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
 </style></head><body><div class="app">
 <header class="top"><div class="logo">MP<br>IQ</div><div class="brand">MPPSC IQ<small>PRE 2027 · महाअभ्यास 2.0</small></div><button class="topbtn" id="themeBtn" title="Theme">☾</button><button class="topbtn" id="langBtn" title="Language">अ / A</button><a class="topbtn" id="studentLogout" href="/api/auth/logout" style="text-decoration:none;font-size:13px">Logout</a></header>
 <main class="content">
