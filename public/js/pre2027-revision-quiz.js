@@ -299,14 +299,14 @@ function render(){
   const q=DATA[idx],chosen=answers[idx],opts=q.options||[];
   const separateLang=(isMixedMode?q.__unit===6:activeUnit===6)||idx>=1400;
   const cachedEnglish=englishTranslationCache[translationKey(q,idx)];
-  const questionSource=lang==='hi'?(q.q||q.en):(q.en||cachedEnglish?.q||'');
+  const questionSource=lang==='hi'?(q.q||q.en):(q.en||q.q||'');
   const questionParts=String(questionSource??'').split(/\s*\/\s*/);
-  let questionText=lang==='hi'?(questionParts[0]||questionSource):(q.en?(questionParts.length>1?questionParts.slice(1).join(' / '):questionSource):(cachedEnglish?.q||'Translating question…'));
+  let questionText=lang==='hi'?(questionParts[0]||questionSource):(q.en?(questionParts.length>1?questionParts.slice(1).join(' / '):questionSource):(q.q||''));
   questionText=String(questionText).replace(/^(?:प्रश्न|Question)\s*\d+\.\s*/i,'');
   const isPairQuestion=/(युग्म|सुमेलित|मिलान|match(?:ing)?|correctly matched|incorrectly matched)/i.test(questionText);
   const optionRows=opts.map((o,k)=>{
    const raw=String(o??''),parts=raw.split(/\s*\/\s*/);
-   const shown=lang==='hi'?(parts[0]||raw):(parts.length>1?parts.slice(1).join(' / '):(cachedEnglish?.options?.[k]||'Translating option…'));
+   const shown=lang==='hi'?(parts[0]||raw):(parts.length>1?parts.slice(1).join(' / '):raw);
    let cls=chosen!==undefined&&k===q.answer?'correct':'';
    if(chosen===k&&k!==q.answer)cls='wrong';
    return {k,shown,cls};
@@ -322,7 +322,6 @@ function render(){
   return `<section class="card" id="qcard-${idx}"><div class="qtext">${cardTitle}. ${esc(visibleQuestion)}</div>${structured.table||legacyMatch}${options}${actions}</section>`;
  }).join('');
  const wrongBtn=document.querySelector('.bottom button[onclick="showWrong()"]');if(wrongBtn){wrongBtn.textContent=reviewMode?`Next Wrong ${reviewPos+1}/${reviewIds.length}`:`Wrong (${wrong})`;wrongBtn.style.display=unitWrongMode?'none':'';}if(unitWrongMode){['backBtn','nextBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.display='none';});const mb=document.querySelector('.mixbar');if(mb)mb.style.display='none';}
- if(lang==='en')translateVisiblePage();
 }
 
 function changePage(d){clearTimeout(autoTimer);if(reviewMode){reviewPos=Math.max(0,Math.min(reviewIds.length-1,reviewPos+d));currentIndex=reviewIds[reviewPos];page=Math.floor(currentIndex/PER);render();scheduleRevisionProgressSync();window.scrollTo({top:0,behavior:'smooth'});return;}const totalPages=Math.ceil(DATA.length/PER);const targetPage=Math.max(0,Math.min(totalPages-1,Math.floor(currentIndex/PER)+d));currentIndex=targetPage*PER;page=targetPage;render();scheduleRevisionProgressSync();window.scrollTo({top:0,behavior:'smooth'});}
