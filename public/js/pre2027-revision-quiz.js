@@ -298,9 +298,19 @@ function render(){
  document.getElementById('questions').innerHTML=indices.map(idx=>{
   const q=DATA[idx],chosen=answers[idx],opts=q.options||[];
   const separateLang=(isMixedMode?q.__unit===6:activeUnit===6)||idx>=1400;
-  const cachedEnglish=englishTranslationCache[translationKey(q,idx)];const questionSource=lang==='hi'?(q.q||q.en):(q.en||cachedEnglish?.q||q.q);const questionParts=String(questionSource??'').split(/\s*\/\s*/);let questionText=lang==='hi'?(questionParts[0]||questionSource):(q.en?(questionParts.length>1?questionParts.slice(1).join(' / '):questionSource):(cachedEnglish?.q||questionSource));questionText=String(questionText).replace(/^(?:प्रश्न|Question)\s*\d+\.\s*/i,'');
+  const cachedEnglish=englishTranslationCache[translationKey(q,idx)];
+  const questionSource=lang==='hi'?(q.q||q.en):(q.en||cachedEnglish?.q||'');
+  const questionParts=String(questionSource??'').split(/\s*\/\s*/);
+  let questionText=lang==='hi'?(questionParts[0]||questionSource):(q.en?(questionParts.length>1?questionParts.slice(1).join(' / '):questionSource):(cachedEnglish?.q||'Translating question…'));
+  questionText=String(questionText).replace(/^(?:प्रश्न|Question)\s*\d+\.\s*/i,'');
   const isPairQuestion=/(युग्म|सुमेलित|मिलान|match(?:ing)?|correctly matched|incorrectly matched)/i.test(questionText);
-  const optionRows=opts.map((o,k)=>{let raw=String(o??'');let parts=raw.split(/\s*\/\s*/);let shown=lang==='hi'?(parts[0]||raw):(parts.length>1?parts.slice(1).join(' / '):(q.en&&raw.includes('/')?raw:(cachedEnglish?.options?.[k]||raw)));let cls=chosen!==undefined&&k===q.answer?'correct':'';if(chosen===k&&k!==q.answer)cls='wrong';return {k,shown,cls};});
+  const optionRows=opts.map((o,k)=>{
+   const raw=String(o??''),parts=raw.split(/\s*\/\s*/);
+   const shown=lang==='hi'?(parts[0]||raw):(parts.length>1?parts.slice(1).join(' / '):(cachedEnglish?.options?.[k]||'Translating option…'));
+   let cls=chosen!==undefined&&k===q.answer?'correct':'';
+   if(chosen===k&&k!==q.answer)cls='wrong';
+   return {k,shown,cls};
+  });
   const options=isPairQuestion?`<div class="match-table-wrap statement-table-wrap"><table class="match-table statement-table answer-match-table"><thead><tr><th>${lang==='hi'?'विकल्प':'Option'}</th><th>${lang==='hi'?'युग्म / मिलान':'Pair / Match'}</th></tr></thead><tbody>${optionRows.map(({k,shown,cls})=>`<tr><td><button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}>${'ABCD'[k]||k+1}.</button></td><td><button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}>${esc(shown)}</button></td></tr>`).join('')}</tbody></table></div>`:optionRows.map(({k,shown,cls})=>`<button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}><span class="letter">${'ABCD'[k]||k+1}.</span><span>${esc(shown)}</span></button>`).join('')+'</div>';
   const structured=structuredQuestionTable(questionText);
   const legacyMatch=structured.table?'':matchTable(lang==='hi'?(q.q||''):(q.en||''),idx);
