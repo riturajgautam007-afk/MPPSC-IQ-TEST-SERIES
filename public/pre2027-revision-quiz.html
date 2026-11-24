@@ -698,4 +698,31 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
  .wrap{margin-top:9px!important;padding-left:9px!important;padding-right:9px!important}
 }
 @media(max-width:360px){.unitbar{gap:5px!important;padding:8px 6px!important}.unitbar button{font-size:11px!important}}
+
+/* Colorful unit navigation inspired by the supplied reference */
+.unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;padding:12px 14px!important;background:#0d1b30!important;border:0!important}
+.unitbar button{min-height:54px!important;border-radius:17px!important;padding:10px 4px!important;color:#fff!important;font-size:clamp(10px,2.1vw,14px)!important;font-weight:850!important;letter-spacing:.15px!important;border:1px solid rgba(255,255,255,.32)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 3px 7px rgba(0,0,0,.2)!important;position:relative!important;overflow:hidden!important}
+.unitbar button:before{display:block!important;left:10%!important;right:10%!important;height:3px!important;top:0!important;background:linear-gradient(90deg,transparent,rgba(255,224,135,.95),transparent)!important}
+.unitbar button:nth-child(1){background:linear-gradient(145deg,#3d83d0,#174b8d)!important}
+.unitbar button:nth-child(2){background:linear-gradient(145deg,#ffe78b,#d39b27)!important;color:#142b49!important}
+.unitbar button:nth-child(3){background:linear-gradient(145deg,#9a6add,#57349b)!important}
+.unitbar button:nth-child(4){background:linear-gradient(145deg,#e17b43,#a94320)!important}
+.unitbar button:nth-child(5){background:linear-gradient(145deg,#d45d8d,#8c315e)!important}
+.unitbar button:nth-child(6){background:linear-gradient(145deg,#37a2b9,#17647e)!important}
+.unitbar button:nth-child(7){background:linear-gradient(145deg,#82b94d,#477d2e)!important}
+.unitbar button:nth-child(8){background:linear-gradient(145deg,#6486db,#354d9a)!important}
+.unitbar button:nth-child(9){background:linear-gradient(145deg,#c18c36,#81551e)!important}
+.unitbar button:nth-child(10){background:linear-gradient(145deg,#71869a,#3d5268)!important}
+.unitbar button:nth-child(11){background:linear-gradient(145deg,#13a5a9,#075d6b)!important}
+.unitbar button:nth-child(12){background:linear-gradient(145deg,#8150b7,#4c267d)!important}
+.unitbar button.active{outline:3px solid rgba(255,224,135,.82)!important;outline-offset:2px!important;filter:brightness(1.13)!important;box-shadow:0 0 0 5px rgba(255,218,117,.13),inset 0 1px 0 rgba(255,255,255,.38),0 4px 10px rgba(0,0,0,.25)!important;transform:translateY(-1px)!important}
+.unitbar button:active{transform:scale(.97)!important}
+.langbar{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;padding:10px 14px!important;background:#0c1b30!important}
+.langbar button{min-height:48px!important;border-radius:15px!important;font-size:clamp(12px,2.6vw,16px)!important;font-weight:850!important;color:#fff!important;border:1px solid rgba(255,255,255,.25)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 3px 7px rgba(0,0,0,.2)!important}
+.langbar button:nth-child(1){background:linear-gradient(145deg,#16865f,#07543f)!important}
+.langbar button:nth-child(2){background:linear-gradient(145deg,#2869ad,#153e72)!important}
+.langbar #themeBtn{background:linear-gradient(145deg,#f2d16e,#bd9133)!important;color:#182a42!important;border-color:#f7df91!important}
+.langbar button.active{outline:3px solid rgba(255,224,135,.28)!important;outline-offset:1px!important;filter:brightness(1.1)!important}
+@media(max-width:600px){.unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:7px!important;padding:10px 9px!important}.unitbar button{min-height:48px!important;padding:8px 2px!important;border-radius:14px!important;font-size:11px!important}.langbar{gap:6px!important;padding:8px 9px!important}.langbar button{min-height:43px!important;border-radius:12px!important}}
+@media(max-width:370px){.unitbar{gap:5px!important;padding:8px 6px!important}.unitbar button{font-size:10px!important;min-height:43px!important;border-radius:11px!important}}
 </style>
