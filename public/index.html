@@ -161,7 +161,7 @@ img,video,canvas,svg{max-width:100%}
 <header class="top"><div class="logo">MP<br>IQ</div><div class="brand">MPPSC IQ<small>PRE 2027 · महाअभ्यास 2.0</small></div><button class="topbtn" id="themeBtn" title="Theme">☾</button><button class="topbtn" id="langBtn" title="Language">अ / A</button><a class="topbtn" id="studentLogout" href="/api/auth/logout" style="text-decoration:none;font-size:13px">Logout</a></header>
 <main class="content">
 <section class="view active" id="home"><div class="hero"><div class="eyebrow">LET'S PREPARE · MPPSC IQ</div><h1>आपकी सफलता की तैयारी</h1><p>MPPSC PRE 2027 · महाअभ्यास 2.0</p></div>
-<div class="sectionhead"><h2>EXAM COUNTDOWN</h2></div><div class="card countdown-card"><div class="row between"><div><b>MPPSC PRE 2027</b><div class="muted">लक्ष्य परीक्षा तिथि · 24 जनवरी 2027</div></div><div style="font-size:25px;color:var(--gold);font-weight:900" id="countdown">—</div></div></div>
+<div class="card countdown-card"><div class="countdown-heading"><span class="countdown-kicker">✦ MPPSC IQ · PRE 2027</span><h2>EXAM COUNTDOWN</h2></div><div class="countdown-main"><div class="countdown-info"><b>MPPSC PRE 2027</b><div class="countdown-date">लक्ष्य परीक्षा तिथि · 24 जनवरी 2027</div></div><div class="countdown-value" id="countdown">—</div></div><div class="countdown-footer"><span>महाअभ्यास 2.0</span><span>आपकी सफलता की तैयारी</span></div></div>
 <div class="seg" id="examSeg"><button class="active" data-exam="Prelims">Prelims</button><button data-exam="Mains">Mains</button></div>
 <div class="grid">
 <div class="tile" id="generalStudiesHomeTile" onclick="go('generalstudies')" hidden><div class="ico">▤</div><b>General Studies</b><small>सामान्य अध्ययन सामग्री</small></div>
@@ -592,6 +592,20 @@ function mountNativeRevisionQuiz(){
    #revisionQuizRoot .meta{font-size:11px!important}
   }
   @media(prefers-reduced-motion:reduce){#revisionQuizRoot *,#revisionQuizRoot *:before{transition:none!important;animation:none!important}}
+
+  /* Premium single-box exam countdown */
+  #home .countdown-card{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;gap:14px;margin:18px 0 20px!important;padding:18px 20px 13px!important;border:1px solid rgba(225,190,94,.78)!important;border-radius:22px!important;background:radial-gradient(circle at 92% 0%,rgba(221,179,75,.17),transparent 38%),linear-gradient(135deg,#10243c 0%,#173b5d 58%,#102a45 100%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 9px 24px rgba(0,0,0,.24)!important}
+  #home .countdown-card:before{content:"";position:absolute;inset:6px;border:1px solid rgba(231,198,119,.17);border-radius:17px;pointer-events:none;z-index:-1}
+  #home .countdown-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid rgba(225,190,94,.25)}
+  #home .countdown-kicker{font-size:11px;letter-spacing:2px;font-weight:900;color:#f1d17c}
+  #home .countdown-heading h2{margin:0!important;color:#f5d783!important;font-size:clamp(17px,4vw,22px)!important;letter-spacing:1.2px!important;font-weight:900!important}
+  #home .countdown-main{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+  #home .countdown-info{min-width:0}
+  #home .countdown-info b{display:block;color:#fff4d2;font-size:clamp(18px,4.5vw,24px);font-weight:900;line-height:1.3}
+  #home .countdown-date{margin-top:5px;color:#c4d1df;font-size:clamp(12px,3.2vw,15px);line-height:1.45}
+  #home .countdown-value{flex:0 0 auto;color:#ffda72;font-size:clamp(27px,7vw,40px)!important;font-weight:950;line-height:1;text-shadow:0 2px 12px rgba(255,204,83,.2);white-space:nowrap}
+  #home .countdown-footer{display:flex;justify-content:space-between;gap:8px;padding-top:9px;border-top:1px solid rgba(225,190,94,.18);color:#aebfd0;font-size:10px;letter-spacing:.35px}
+  @media(max-width:380px){#home .countdown-card{padding:15px 14px 11px!important;border-radius:18px!important;gap:11px}#home .countdown-kicker{font-size:9px;letter-spacing:1px}#home .countdown-heading h2{font-size:16px!important}#home .countdown-value{font-size:25px!important}#home .countdown-date{font-size:11px}}
   `;document.head.appendChild(st);
   // Prevent unit changes from forcibly jumping the page to the top.
   quizSource=quizSource.replaceAll("window.scrollTo({top:0,behavior:'smooth'});","");
