@@ -1,9 +1,6 @@
 name: MPPSC IQ Daily Database Backup
 
 on:
-  push:
-    paths:
-      - "backup-trigger/now.txt"
   schedule:
     # Daily at 02:00 AM IST (20:30 UTC)
     - cron: "30 20 * * *"
