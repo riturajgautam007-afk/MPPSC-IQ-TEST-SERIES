@@ -70,28 +70,28 @@ let englishTranslationCache={};
 try{englishTranslationCache=JSON.parse(localStorage.getItem(EN_TRANSLATION_CACHE_KEY)||'{}')||{};}catch(e){englishTranslationCache={};}
 let translationInFlight=false;
 function translationKey(q,idx){return String(q.__qid||`${q.__unit||activeUnit}:${idx}`);}
-async function translateHindiParts(parts){
- const translateOne=async value=>{const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q='+encodeURIComponent(String(value||''));const response=await fetch(url,{mode:'cors',cache:'force-cache'});if(!response.ok)throw new Error('Translation service unavailable');const data=await response.json();return (data[0]||[]).map(x=>x[0]||'').join('').trim();};
- const marker=' MPPSCQPART987654 ';
- try{
-  const response=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q='+encodeURIComponent(parts.join(marker)),{mode:'cors',cache:'force-cache'});
-  if(response.ok){const data=await response.json(),translated=(data[0]||[]).map(x=>x[0]||'').join(''),output=translated.split(marker);if(output.length===parts.length)return output.map(x=>x.trim());}
- }catch(e){console.info('Batch translation fallback:',e.message)}
- return await Promise.all(parts.map(translateOne));
-}
 async function translateVisiblePage(){
  if(lang!=='en'||translationInFlight)return;
- const start=0,end=DATA.length;
- const pending=[];for(let idx=start;idx<end;idx++){const q=DATA[idx];if(q&&(!q.en||(Array.isArray(q.options)&&q.options.some(o=>!String(o||'').includes('/'))))&&!englishTranslationCache[translationKey(q,idx)])pending.push(idx);}
+ const start=reviewMode?reviewIds[reviewPos]:unitWrongMode?currentIndex:Math.floor(currentIndex/PER)*PER;
+ const end=reviewMode||unitWrongMode?start+1:Math.min(start+PER,DATA.length);
+ const pending=[];
+ for(let idx=start;idx<end;idx++){const q=DATA[idx];if(q&&!englishTranslationCache[translationKey(q,idx)]&&((q.options||[]).some(o=>String(o||'').split(/\\s*\\/\\s*/).length<2)||!q.en))pending.push(idx);}
  if(!pending.length)return;
- translationInFlight=true;const token=String(activeUnit)+':'+String(currentIndex)+':'+String(DATA.length);
+ translationInFlight=true;
  try{
-  for(let i=0;i<pending.length;i+=3){
-   await Promise.all(pending.slice(i,i+3).map(async idx=>{try{const q=DATA[idx],parts=[String(q.q||''),...(Array.isArray(q.options)?q.options.map(x=>String(x||'')):[])];const translated=await translateHindiParts(parts);if(translated.length===5)englishTranslationCache[translationKey(q,idx)]={q:q.en||translated[0],options:(q.options||[]).map((raw,k)=>{const value=String(raw||''),parts=value.split(/\s*\/\s*/);return parts.length>1?parts.slice(1).join(' / '):translated[k+1];})};}catch(questionError){console.warn('Translation failed for one question',idx,questionError.message)}}));
+  for(let i=0;i<pending.length;i+=2){
+   await Promise.all(pending.slice(i,i+2).map(async idx=>{
+    const q=DATA[idx],rawOptions=(q.options||[]).map(o=>String(o||'').split(/\\s*\\/\\s*/)[0]);
+    try{
+     const response=await fetch(REVISION_API_ORIGIN+'/api/translate-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:String(q.q||''),options:rawOptions,explanation:String(q.explanation||'')})});
+     if(!response.ok)throw new Error('Translation API '+response.status);
+     const result=await response.json();
+     if(result.question&&Array.isArray(result.options)&&result.options.length===4)englishTranslationCache[translationKey(q,idx)]={q:result.question,options:result.options,explanation:result.explanation||''};
+    }catch(e){console.warn('English translation pending for question',idx,e.message);}
+   }));
   }
   try{localStorage.setItem(EN_TRANSLATION_CACHE_KEY,JSON.stringify(englishTranslationCache));}catch(e){}
- }catch(error){console.warn('MPPSC IQ English translation could not be completed:',error);const note=document.getElementById('reviewNote');if(note)note.textContent='English translation could not be loaded. Please check your internet connection and try again.';}
- finally{translationInFlight=false;if(lang==='en'&&token===String(activeUnit)+':'+String(currentIndex)+':'+String(DATA.length)&&pending.some(idx=>englishTranslationCache[translationKey(DATA[idx],idx)]))render();}
+ }finally{translationInFlight=false;if(lang==='en')render();}
 }
 function cleanLang(s,l){let v=String(s??'');if(l==='hi'){v=v.replace(/\s*\/\s*[^/\n]+/g,'');v=v.replace(/Correct answer:/gi,'सही उत्तर:');}else{v=v.replace(/सही उत्तर:/g,'Correct answer:');v=v.replace(/([^\n/]+)\s*\/\s*/g,'');}return v.trim()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
