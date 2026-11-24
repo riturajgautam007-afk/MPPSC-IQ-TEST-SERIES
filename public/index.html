@@ -814,49 +814,53 @@ function mountNativeRevisionQuiz(){
     }
   }
 
-  /* Final 3 x 3 equal-size sticky control grid */
+  /* MPPSC IQ: compact 3x3 controls — CSS-only, keep all existing handlers intact */
   #revisionQuizRoot .native-quiz-language{
-    position:sticky!important;top:0!important;z-index:100!important;
+    position:sticky!important;top:74px!important;z-index:100!important;
     display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    grid-template-rows:repeat(3,46px)!important;grid-auto-flow:row!important;
-    align-items:stretch!important;justify-content:stretch!important;
-    gap:8px!important;width:100%!important;min-height:0!important;
-    margin:0 0 10px!important;padding:9px!important;
-    border:1px solid #345573!important;border-radius:15px!important;
+    grid-auto-rows:42px!important;grid-auto-flow:row!important;
+    align-items:stretch!important;gap:7px!important;width:100%!important;
+    margin:0 0 9px!important;padding:8px!important;min-height:0!important;
+    border:1px solid #345573!important;border-radius:14px!important;
     background:rgba(16,36,58,.98)!important;
     box-shadow:0 5px 14px rgba(0,0,0,.22)!important;
     backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important;
   }
-  #revisionQuizRoot .native-quiz-language .native-language-switch,
+  #revisionQuizRoot .native-quiz-language .native-language-switch{display:contents!important}
   #revisionQuizRoot .native-quiz-language .native-quick-actions{
-    display:contents!important;
+    grid-column:1/-1!important;display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(2,42px)!important;gap:7px!important;
+    min-width:0!important;width:100%!important;
   }
   #revisionQuizRoot .native-quiz-language #nativeQuizBack,
   #revisionQuizRoot .native-quiz-language .native-language-switch button,
   #revisionQuizRoot .native-quiz-language .native-quick-actions button{
     display:flex!important;align-items:center!important;justify-content:center!important;
     width:100%!important;min-width:0!important;max-width:none!important;
-    height:46px!important;min-height:46px!important;max-height:46px!important;
-    margin:0!important;padding:5px 4px!important;border-radius:10px!important;
-    box-sizing:border-box!important;font-size:clamp(11px,2.8vw,14px)!important;
+    height:42px!important;min-height:42px!important;max-height:42px!important;
+    margin:0!important;padding:4px 3px!important;border-radius:9px!important;
+    box-sizing:border-box!important;font-size:clamp(10px,2.8vw,13px)!important;
     line-height:1.1!important;white-space:nowrap!important;overflow:hidden!important;
     text-overflow:clip!important;
   }
   #revisionQuizRoot .native-quiz-language #nativeQuizBack[hidden]{display:none!important}
-  #revisionQuizRoot .native-quiz-language .native-quick-actions .qa-refresh{font-size:18px!important}
+  #revisionQuizRoot .native-quiz-language .native-quick-actions .qa-refresh{font-size:17px!important}
+  #revisionQuizRoot .native-quiz-language .native-language-switch button.active{
+    border:1px solid #e7c66c!important;box-shadow:inset 0 0 0 1px rgba(231,198,108,.28)!important;
+  }
   @media(max-width:520px){
-    #revisionQuizRoot .native-quiz-language{
-      grid-template-rows:repeat(3,42px)!important;gap:6px!important;padding:7px!important;
-    }
+    #revisionQuizRoot .native-quiz-language{top:74px!important;gap:6px!important;padding:7px!important;grid-auto-rows:40px!important}
+    #revisionQuizRoot .native-quiz-language .native-quick-actions{grid-template-rows:repeat(2,40px)!important;gap:6px!important}
     #revisionQuizRoot .native-quiz-language #nativeQuizBack,
     #revisionQuizRoot .native-quiz-language .native-language-switch button,
     #revisionQuizRoot .native-quiz-language .native-quick-actions button{
-      height:42px!important;min-height:42px!important;max-height:42px!important;
+      height:40px!important;min-height:40px!important;max-height:40px!important;
       padding:4px 2px!important;font-size:11px!important;border-radius:8px!important;
     }
     #revisionQuizRoot .native-quiz-language .native-quick-actions .qa-refresh{font-size:16px!important}
   }
-  `;document.head.appendChild(st);
+;document.head.appendChild(st);
   // Prevent unit changes from forcibly jumping the page to the top.
   quizSource=quizSource.replaceAll("window.scrollTo({top:0,behavior:'smooth'});","");
   const runner=document.createElement('script');
