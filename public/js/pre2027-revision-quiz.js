@@ -71,12 +71,13 @@ try{englishTranslationCache=JSON.parse(localStorage.getItem(EN_TRANSLATION_CACHE
 let translationInFlight=false;
 function translationKey(q,idx){return String(q.__qid||`${q.__unit||activeUnit}:${idx}`);}
 async function translateHindiParts(parts){
- const marker='\n###MPPSC_IQ_PART###\n';
- const response=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q='+encodeURIComponent(parts.join(marker)),{mode:'cors',cache:'force-cache'});
- if(!response.ok)throw new Error('Translation service unavailable');
- const data=await response.json(),translated=(data[0]||[]).map(x=>x[0]||'').join(''),output=translated.split(marker);
- if(output.length!==parts.length)throw new Error('Translation response format mismatch');
- return output.map(x=>x.trim());
+ const translateOne=async value=>{const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q='+encodeURIComponent(String(value||''));const response=await fetch(url,{mode:'cors',cache:'force-cache'});if(!response.ok)throw new Error('Translation service unavailable');const data=await response.json();return (data[0]||[]).map(x=>x[0]||'').join('').trim();};
+ const marker=' MPPSCQPART987654 ';
+ try{
+  const response=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q='+encodeURIComponent(parts.join(marker)),{mode:'cors',cache:'force-cache'});
+  if(response.ok){const data=await response.json(),translated=(data[0]||[]).map(x=>x[0]||'').join(''),output=translated.split(marker);if(output.length===parts.length)return output.map(x=>x.trim());}
+ }catch(e){console.info('Batch translation fallback:',e.message)}
+ return await Promise.all(parts.map(translateOne));
 }
 async function translateVisiblePage(){
  if(lang!=='en'||translationInFlight)return;
@@ -86,7 +87,7 @@ async function translateVisiblePage(){
  translationInFlight=true;const token=String(activeUnit)+':'+String(currentIndex)+':'+String(DATA.length);
  try{
   for(let i=0;i<pending.length;i+=3){
-   await Promise.all(pending.slice(i,i+3).map(async idx=>{const q=DATA[idx],parts=[String(q.q||''),...(Array.isArray(q.options)?q.options.map(x=>String(x||'')):[])];const translated=await translateHindiParts(parts);if(translated.length===5)englishTranslationCache[translationKey(q,idx)]={q:q.en||translated[0],options:(q.options||[]).map((raw,k)=>{const value=String(raw||''),parts=value.split(/\s*\/\s*/);return parts.length>1?parts.slice(1).join(' / '):translated[k+1];})};}));
+   await Promise.all(pending.slice(i,i+3).map(async idx=>{try{const q=DATA[idx],parts=[String(q.q||''),...(Array.isArray(q.options)?q.options.map(x=>String(x||'')):[])];const translated=await translateHindiParts(parts);if(translated.length===5)englishTranslationCache[translationKey(q,idx)]={q:q.en||translated[0],options:(q.options||[]).map((raw,k)=>{const value=String(raw||''),parts=value.split(/\s*\/\s*/);return parts.length>1?parts.slice(1).join(' / '):translated[k+1];})};}catch(questionError){console.warn('Translation failed for one question',idx,questionError.message)}}));
   }
   try{localStorage.setItem(EN_TRANSLATION_CACHE_KEY,JSON.stringify(englishTranslationCache));}catch(e){}
  }catch(error){console.warn('MPPSC IQ English translation could not be completed:',error);const note=document.getElementById('reviewNote');if(note)note.textContent='English translation could not be loaded. Please check your internet connection and try again.';}
