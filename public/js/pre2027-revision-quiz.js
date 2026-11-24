@@ -65,6 +65,33 @@ function shuffleArray(items){const a=items.slice();for(let i=a.length-1;i>0;i--)
 async function shuffleCurrentUnit(){await loadQuestionBankAdditions().catch(()=>{});const base=UNIT_DATA_MAP[activeUnit]||[];if(!base.length){alert('इस यूनिट में अभी प्रश्न उपलब्ध नहीं हैं।');return;}isMixedMode=false;isUnitShuffled=true;DATA=shuffleArray(base.map((q,i)=>({...q,__unit:activeUnit,__qid:`${activeUnit}:${i}`})));resetQuizState();updateUnitButtons(activeUnit);document.querySelector('.title').textContent='MPPSC PRE 2027 | UNIT '+String(activeUnit).padStart(2,'0')+' | SHUFFLE PRACTICE';render();window.scrollTo({top:0,behavior:'smooth'});}
 async function mixAllUnits(){await loadQuestionBankAdditions().catch(()=>{});const available=Object.entries(UNIT_DATA_MAP).filter(([,items])=>Array.isArray(items)&&items.length);if(!available.length){alert('अभी किसी यूनिट में प्रश्न उपलब्ध नहीं हैं।');return;}const combined=[];for(const [unit,items] of available){for(let i=0;i<items.length;i++)combined.push({...items[i],__unit:Number(unit),__qid:`${unit}:${i}`});}DATA=shuffleArray(combined);activeUnit=0;isMixedMode=true;isUnitShuffled=false;resetQuizState();updateUnitButtons(0);document.querySelector('.title').textContent='MPPSC PRE 2027 | ALL UNITS | MIXED PRACTICE';render();window.scrollTo({top:0,behavior:'smooth'});} 
 
+const EN_TRANSLATION_CACHE_KEY='mppscIqEnglishTranslationCache_v1';
+let englishTranslationCache={};
+try{englishTranslationCache=JSON.parse(localStorage.getItem(EN_TRANSLATION_CACHE_KEY)||'{}')||{};}catch(e){englishTranslationCache={};}
+let translationInFlight=false;
+function translationKey(q,idx){return String(q.__qid||`${q.__unit||activeUnit}:${idx}`);}
+async function translateHindiParts(parts){
+ const marker='\n###MPPSC_IQ_PART###\n';
+ const response=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q='+encodeURIComponent(parts.join(marker)),{mode:'cors',cache:'force-cache'});
+ if(!response.ok)throw new Error('Translation service unavailable');
+ const data=await response.json(),translated=(data[0]||[]).map(x=>x[0]||'').join(''),output=translated.split(marker);
+ if(output.length!==parts.length)throw new Error('Translation response format mismatch');
+ return output.map(x=>x.trim());
+}
+async function translateVisiblePage(){
+ if(lang!=='en'||translationInFlight)return;
+ const start=unitWrongMode?0:Math.floor(currentIndex/PER)*PER,end=unitWrongMode?DATA.length:Math.min(start+PER,DATA.length);
+ const pending=[];for(let idx=start;idx<end;idx++){const q=DATA[idx];if(q&&!q.en&&!englishTranslationCache[translationKey(q,idx)])pending.push(idx);}
+ if(!pending.length)return;
+ translationInFlight=true;const token=String(activeUnit)+':'+String(currentIndex)+':'+String(DATA.length);
+ try{
+  for(let i=0;i<pending.length;i+=3){
+   await Promise.all(pending.slice(i,i+3).map(async idx=>{const q=DATA[idx],parts=[String(q.q||''),...(Array.isArray(q.options)?q.options.map(x=>String(x||'')):[])];const translated=await translateHindiParts(parts);if(translated.length===5)englishTranslationCache[translationKey(q,idx)]={q:translated[0],options:translated.slice(1)};}));
+  }
+  try{localStorage.setItem(EN_TRANSLATION_CACHE_KEY,JSON.stringify(englishTranslationCache));}catch(e){}
+ }catch(error){console.warn('MPPSC IQ English translation could not be completed:',error);const note=document.getElementById('reviewNote');if(note)note.textContent='English translation could not be loaded. Please check your internet connection and try again.';}
+ finally{translationInFlight=false;if(lang==='en'&&token===String(activeUnit)+':'+String(currentIndex)+':'+String(DATA.length)&&pending.some(idx=>englishTranslationCache[translationKey(DATA[idx],idx)]))render();}
+}
 function cleanLang(s,l){let v=String(s??'');if(l==='hi'){v=v.replace(/\s*\/\s*[^/\n]+/g,'');v=v.replace(/Correct answer:/gi,'सही उत्तर:');}else{v=v.replace(/सही उत्तर:/g,'Correct answer:');v=v.replace(/([^\n/]+)\s*\/\s*/g,'');}return v.trim()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function setLang(l){lang=l;document.getElementById('hiBtn').classList.toggle('active',l==='hi');document.getElementById('enBtn').classList.toggle('active',l==='en');render()}
@@ -270,9 +297,9 @@ function render(){
  document.getElementById('questions').innerHTML=indices.map(idx=>{
   const q=DATA[idx],chosen=answers[idx],opts=q.options||[];
   const separateLang=(isMixedMode?q.__unit===6:activeUnit===6)||idx>=1400;
-  const questionSource=lang==='hi'?(q.q||q.en):(q.en||q.q);const questionParts=String(questionSource??'').split(/\s*\/\s*/);let questionText=lang==='hi'?(questionParts[0]||questionSource):(questionParts.length>1?questionParts.slice(1).join(' / '):questionSource);questionText=String(questionText).replace(/^(?:प्रश्न|Question)\s*\d+\.\s*/i,'');
+  const cachedEnglish=englishTranslationCache[translationKey(q,idx)];const questionSource=lang==='hi'?(q.q||q.en):(q.en||cachedEnglish?.q||q.q);const questionParts=String(questionSource??'').split(/\s*\/\s*/);let questionText=lang==='hi'?(questionParts[0]||questionSource):(q.en?(questionParts.length>1?questionParts.slice(1).join(' / '):questionSource):(cachedEnglish?.q||questionSource));questionText=String(questionText).replace(/^(?:प्रश्न|Question)\s*\d+\.\s*/i,'');
   const isPairQuestion=/(युग्म|सुमेलित|मिलान|match(?:ing)?|correctly matched|incorrectly matched)/i.test(questionText);
-  const optionRows=opts.map((o,k)=>{let raw=String(o??'');let parts=raw.split(/\s*\/\s*/);let shown=lang==='hi'?(parts[0]||raw):(parts.length>1?parts.slice(1).join(' / '):raw);let cls=chosen!==undefined&&k===q.answer?'correct':'';if(chosen===k&&k!==q.answer)cls='wrong';return {k,shown,cls};});
+  const optionRows=opts.map((o,k)=>{let raw=String(o??'');let parts=raw.split(/\s*\/\s*/);let shown=lang==='hi'?(parts[0]||raw):(parts.length>1?parts.slice(1).join(' / '):(q.en?raw:(cachedEnglish?.options?.[k]||raw)));let cls=chosen!==undefined&&k===q.answer?'correct':'';if(chosen===k&&k!==q.answer)cls='wrong';return {k,shown,cls};});
   const options=isPairQuestion?`<div class="match-table-wrap statement-table-wrap"><table class="match-table statement-table answer-match-table"><thead><tr><th>${lang==='hi'?'विकल्प':'Option'}</th><th>${lang==='hi'?'युग्म / मिलान':'Pair / Match'}</th></tr></thead><tbody>${optionRows.map(({k,shown,cls})=>`<tr><td><button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}>${'ABCD'[k]||k+1}.</button></td><td><button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}>${esc(shown)}</button></td></tr>`).join('')}</tbody></table></div>`:optionRows.map(({k,shown,cls})=>`<button class="option ${cls}" onclick="choose(${idx},${k})" ${chosen!==undefined||reviewMode?'disabled':''}><span class="letter">${'ABCD'[k]||k+1}.</span><span>${esc(shown)}</span></button>`).join('')+'</div>';
   const structured=structuredQuestionTable(questionText);
   const legacyMatch=structured.table?'':matchTable(lang==='hi'?(q.q||''):(q.en||''),idx);
@@ -284,6 +311,7 @@ function render(){
   return `<section class="card" id="qcard-${idx}"><div class="qtext">${cardTitle}. ${esc(visibleQuestion)}</div>${structured.table||legacyMatch}${options}${actions}</section>`;
  }).join('');
  const wrongBtn=document.querySelector('.bottom button[onclick="showWrong()"]');if(wrongBtn){wrongBtn.textContent=reviewMode?`Next Wrong ${reviewPos+1}/${reviewIds.length}`:`Wrong (${wrong})`;wrongBtn.style.display=unitWrongMode?'none':'';}if(unitWrongMode){['backBtn','nextBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.display='none';});const mb=document.querySelector('.mixbar');if(mb)mb.style.display='none';}
+ if(lang==='en')translateVisiblePage();
 }
 
 function changePage(d){clearTimeout(autoTimer);if(reviewMode){reviewPos=Math.max(0,Math.min(reviewIds.length-1,reviewPos+d));currentIndex=reviewIds[reviewPos];page=Math.floor(currentIndex/PER);render();scheduleRevisionProgressSync();window.scrollTo({top:0,behavior:'smooth'});return;}const totalPages=Math.ceil(DATA.length/PER);const targetPage=Math.max(0,Math.min(totalPages-1,Math.floor(currentIndex/PER)+d));currentIndex=targetPage*PER;page=targetPage;render();scheduleRevisionProgressSync();window.scrollTo({top:0,behavior:'smooth'});}
