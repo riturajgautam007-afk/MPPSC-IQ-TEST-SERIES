@@ -575,7 +575,7 @@ function setLanguage(next){
  document.body.classList.toggle('english-ui',language==='en');
  walk(document.body);
  const btn=document.getElementById('langBtn');if(btn)btn.textContent=language==='en'?'हि / A':'अ / A';
- document.dispatchEvent(new CustomEvent('mppsc:languagechange',{detail:{language}});
+ document.dispatchEvent(new CustomEvent('mppsc:languagechange',{detail:{language}}));
  // Keep the embedded revision quiz and the whole student portal on the same language.
  try{const quizSetLang=window.__mppscQuizActions&&window.__mppscQuizActions.setLang;if(typeof quizSetLang==='function')quizSetLang(language)}catch(e){console.warn('Quiz language sync:',e)}
 }
