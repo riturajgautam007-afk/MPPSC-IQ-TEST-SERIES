@@ -476,4 +476,157 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 </script><script>
 async function loadGeneralStudies(){const host=$('generalStudiesList');if(!paid()){host.innerHTML='<div class="notice">अध्ययन सामग्री देखने के लिए सक्रिय Paid Membership आवश्यक है।</div>';return}try{if(!resources.length)resources=await api('/resources');renderGeneralStudies()}catch(e){host.textContent=e.message}}function renderGeneralStudies(){const q=($('generalStudiesSearch').value||'').trim().toLowerCase();const rows=resources.filter(x=>!/current\s*affairs|करंट\s*अफेयर्स|समसामयिकी|समसामयिक|daily\s*news/i.test(String(x.title||'')+' '+String(x.unit||''))).filter(x=>(String(x.title||'')+' '+String(x.unit||'')).toLowerCase().includes(q));$('generalStudiesList').innerHTML=rows.length?rows.map(x=>'<div class="listitem row between"><div><b>'+esc(x.title)+'</b><small>'+esc(x.unit||'General Studies')+'</small></div><a class="btn" href="/uploads/'+encodeURIComponent(x.file_path)+'" target="_blank" rel="noopener">Open</a></div>').join(''):'<div class="empty">अभी सामान्य अध्ययन की सामग्री उपलब्ध नहीं है। Admin Panel में संबंधित Notes/PDF अपलोड करें।</div>'}$('generalStudiesSearch').oninput=renderGeneralStudies;
 </script>
+
+<script id="mppsc-global-language-fix">
+(function(){
+'use strict';
+const DICT={
+'आपकी सफलता की तैयारी':'Prepare for Your Success',
+'महत्वपूर्ण सूचनाएँ यहाँ दिखाई जाएँगी।':'Important announcements will appear here.',
+'सामान्य अध्ययन सामग्री':'General Studies Resources',
+'करंट अफेयर्स सामग्री':'Current Affairs Resources',
+'टॉप विद्यार्थी रैंकिंग':'Top Student Rankings',
+'गलत प्रश्न':'Incorrect Questions',
+'अपनी गलतियों का दोबारा अभ्यास':'Practise Your Mistakes Again',
+'मेरे बुकमार्क':'My Bookmarks',
+'सेव किए गए प्रश्न':'Saved Questions',
+'अपनी समस्या भेजें':'Submit a Support Request',
+'आपकी Membership':'Your Membership',
+'लोड हो रही है…':'Loading…','लोड हो रहा है…':'Loading…','लोड हो रहे हैं…':'Loading…',
+'MPPSC IQ · विद्यार्थियों का प्रदर्शन':'MPPSC IQ · Student Performance',
+'आपकी रैंक लोड हो रही है…':'Loading your rank…',
+'रैंकिंग औसत प्रतिशत, टेस्ट प्रयासों और सही उत्तरों के आधार पर है।':'Rankings are based on average percentage, test attempts and correct answers.',
+'📕 मेरी गलत प्रश्न कॉपी':'📕 My Incorrect Questions',
+'टेस्ट में गलत हुए प्रश्नों का दोबारा अभ्यास करें। सही उत्तर देने पर प्रश्न इस सूची से हट जाएगा।':'Practise questions answered incorrectly in tests. A question is removed from this list after you answer it correctly.',
+'अभ्यास के प्रश्न':'Practice Questions','🔖 मेरे बुकमार्क':'🔖 My Bookmarks',
+'आपके सेव किए गए महत्वपूर्ण प्रश्न':'Your saved important questions',
+'टेस्ट, लॉगिन, Membership या PDF से जुड़ी समस्या भेजें।':'Report an issue related to tests, login, membership or PDFs.',
+'समस्या का प्रकार':'Issue Type','टेस्ट / प्रश्न में समस्या':'Test / Question Issue','लॉगिन / अकाउंट':'Login / Account','अन्य':'Other',
+'अपनी समस्या लिखें':'Describe your issue','समस्या भेजें':'Submit Issue','मेरे सहायता अनुरोध':'My Support Requests',
+'MPPSC PRE 2027 · समसामयिकी अध्ययन सामग्री':'MPPSC PRE 2027 · Current Affairs Resources',
+'करंट अफेयर्स सामग्री लोड हो रही है…':'Loading current affairs resources…',
+'MPPSC PRE 2027 · सामान्य अध्ययन सामग्री':'MPPSC PRE 2027 · General Studies Resources',
+'अध्ययन सामग्री लोड हो रही है…':'Loading study resources…',
+'अपनी परीक्षा और तैयारी का सेक्शन चुनें':'Choose your exam and preparation section',
+'जल्द उपलब्ध':'Coming Soon','उपलब्ध टेस्ट':'Available Tests','दिए गए टेस्ट':'Tests Attempted','औसत स्कोर':'Average Score',
+'पुराने टेस्ट और स्कोर देखें':'View previous tests and scores','टेस्ट लोड हो रहे हैं…':'Loading tests…',
+'आपके बैच और उपलब्ध अध्ययन कार्यक्रम':'Your batch and available study programmes',
+'Membership विवरण लोड हो रहा है…':'Loading membership details…',
+'आपकी तैयारी के लिए स्मार्ट सुविधाएँ और उपयोगी संसाधन':'Smart features and useful resources for your preparation',
+'लक्ष्य परीक्षा तिथि · 1 फरवरी 2027':'Target Exam Date · 1 February 2027',
+'आपका नाम':'Your Name','आपका सुझाव':'Your Suggestion','सुझाव सुविधा शीघ्र सक्रिय होगी।':'The suggestion feature will be available soon.',
+'आपके पिछले टेस्ट और प्रदर्शन का रिकॉर्ड':'Your Previous Tests and Performance Record',
+'कुल टेस्ट':'Total Tests','सर्वश्रेष्ठ':'Best','आपके पिछले 10 टेस्ट का स्कोर':'Scores in Your Last 10 Tests',
+'डेटा लोड हो रहा है…':'Loading data…','डेटा लोड हो रहे हैं…':'Loading data…','रिकॉर्ड लोड हो रहे हैं…':'Loading records…',
+'अपनी तैयारी के लिए क्विज़ या टेस्ट शुरू करें':'Start a quiz or test for your preparation',
+'Quiz / Test शुरू करें →':'Start Quiz / Test →','क्विज़ सिस्टम लोड हो रहा है…':'Loading quiz system…',
+'हल किए: 0':'Answered: 0','हरा: हल · पीला: Review':'Green: Answered · Yellow: Review',
+'← पिछला':'← Previous','अगला →':'Next →','टेस्ट सबमिट करें':'Submit Test','टेस्ट परिणाम':'Test Results',
+'महाअभ्यास 2.0':'Mega Practice 2.0','जाँच तैयार है — किसी यूनिट पर टैप करें':'Ready — tap a unit to begin',
+'PYQ टेस्ट':'PYQ Test','एनालिसिस':'Analysis','← सभी यूनिट / टेस्ट':'← All Units / Tests',
+'हिंदी':'Hindi','अपनी भाषा चुनें':'Choose your language','यूनिट चुनें':'Select a Unit',
+'अपनी यूनिट चुनें':'Choose Your Unit','अभ्यास शुरू करने के लिए ऊपर से यूनिट चुनें':'Select a unit above to start practising',
+'← पिछला पेज':'← Previous Page','अगला पेज →':'Next Page →',
+'↻ इस यूनिट के प्रश्न Shuffle':'↻ Shuffle Questions in This Unit','⇄ सभी यूनिट मिक्स':'⇄ Mix All Units',
+'आपका बैच सक्रिय है। उपलब्ध टेस्ट और अध्ययन सामग्री का उपयोग करें।':'Your batch is active. Access the available tests and study materials.',
+'मेरे टेस्ट खोलें':'Open My Tests','मेरी Library':'My Library',
+'अभी आपका कोई सक्रिय बैच नहीं है।':'You do not have an active batch yet.',
+'उपलब्ध बैच देखें':'View Available Batches','महाअभ्यास 2.0 · Prelims Test Series':'Mega Practice 2.0 · Prelims Test Series',
+'प्रश्नों का अभ्यास और परिणाम विश्लेषण':'Question practice and performance analysis',
+'Paid Members के लिए सुरक्षित Study Library':'Secure Study Library for Paid Members',
+'नोट (वैकल्पिक)':'Note (Optional)','भुगतान सत्यापन अनुरोध भेजें':'Submit Payment Verification Request',
+'टेस्ट केवल सक्रिय Paid Members के लिए उपलब्ध हैं।':'Tests are available only to active paid members.',
+'Membership देखें':'View Membership','Paid Membership सक्रिय करें।':'Activate Paid Membership.',
+'अभी कोई प्रकाशित टेस्ट नहीं है।':'No tests have been published yet.',
+'इस सूची में कोई प्रश्न नहीं है।':'There are no questions in this list.',
+'सही':'Correct','गलत / छोड़े':'Incorrect / Skipped','स्कोर':'Score',
+'प्रश्न उपलब्ध नहीं हैं।':'Questions are not available.',
+'आपकी वर्तमान रैंक':'Your Current Rank','रैंक पाने के लिए कम से कम एक टेस्ट सबमिट करें।':'Submit at least one test to receive a rank.',
+'अभी leaderboard के लिए कोई टेस्ट रिकॉर्ड नहीं है।':'There are no test records for the leaderboard yet.',
+'हल हो गया':'Resolved','जाँच में':'In Progress','नया':'New',
+'MPPSC IQ का जवाब:':'Reply from MPPSC IQ:','जवाब की प्रतीक्षा है':'Awaiting a Reply',
+'अभी कोई सहायता अनुरोध नहीं है।':'There are no support requests yet.',
+'बुकमार्क हटाएँ':'Remove Bookmark','अभी कोई प्रश्न बुकमार्क नहीं किया गया है।':'No questions have been bookmarked yet.',
+'शानदार! अभी आपकी गलत प्रश्न कॉपी खाली है। टेस्ट देते रहें और गलत प्रश्नों को यहाँ दोहराएँ।':'Great! Your incorrect-question list is empty. Keep taking tests and review any incorrect answers here.',
+'✓ सही उत्तर! प्रश्न आपकी गलत कॉपी से हटा दिया गया।':'✓ Correct answer! The question has been removed from your incorrect-question list.',
+'✗ आपका उत्तर गलत है।':'✗ Your answer is incorrect.',
+'इतिहास देखने के लिए सक्रिय Paid Membership आवश्यक है।':'An active paid membership is required to view history.',
+'टेस्ट क्रम: पुराने से नए':'Test order: Oldest to Newest',
+'प्रदर्शन ग्राफ के लिए अभी टेस्ट रिकॉर्ड नहीं हैं।':'There are no test records for the performance chart yet.',
+'Unit-wise डेटा उपलब्ध नहीं है।':'Unit-wise data is not available.',
+'तिथि उपलब्ध नहीं':'Date unavailable','पूरा Answer Review देखें':'View Complete Answer Review',
+'अभी तक कोई टेस्ट सबमिट नहीं किया गया है।':'No test has been submitted yet.',
+'कोई सामग्री नहीं मिली।':'No resources found.',
+'Telegram से Login करें':'Login with Telegram','कृपया Telegram से लॉगिन करें।':'Please log in with Telegram.',
+'अभी सामान्य अध्ययन की सामग्री उपलब्ध नहीं है। Admin Panel में संबंधित Notes/PDF अपलोड करें।':'No General Studies resources are available yet. Upload the relevant notes/PDFs in the Admin Panel.',
+'अभी सामान्य अध्ययन की सामग्री उपलब्ध नहीं है।':'No General Studies resources are available yet.',
+'अध्ययन सामग्री देखने के लिए सक्रिय Paid Membership आवश्यक है।':'An active paid membership is required to view study materials.',
+'Library केवल सक्रिय Paid Members के लिए उपलब्ध है।':'The Library is available only to active paid members.',
+'Leaderboard देखने के लिए सक्रिय Paid Membership आवश्यक है।':'An active paid membership is required to view the leaderboard.',
+'बुकमार्क देखने के लिए सक्रिय Paid Membership आवश्यक है।':'An active paid membership is required to view bookmarks.',
+'गलत प्रश्न कॉपी देखने के लिए सक्रिय Paid Membership आवश्यक है।':'An active paid membership is required to view incorrect questions.',
+'प्रश्नों का अभ्यास और परिणाम विश्लेषण':'Question practice and performance analysis'
+};
+const attrDict={
+'विषय / यूनिट / टॉपिक खोजें':'Search subject / unit / topic',
+'Search books / notes':'Search books / notes',
+'अपनी समस्या लिखें':'Describe your issue',
+'आपका नाम':'Your name',
+'आपका सुझाव':'Your suggestion',
+'Theme':'Theme','Language':'Language'
+};
+const originalText=new WeakMap(), englishText=new WeakMap(), originalAttrs=new WeakMap();
+let language='hi',busy=false;
+function translated(str){
+ if(DICT[str]!==undefined)return DICT[str];
+ let out=str;
+ out=out.replace(/यूनिट\s+(\d+)/g,'Unit $1').replace(/प्रश्न\s+(\d+)/g,'Question $1').replace(/टेस्ट\s+(\d+)/g,'Test $1');
+ out=out.replace(/आपका उत्तर:/g,'Your answer:').replace(/सही उत्तर:/g,'Correct answer:').replace(/व्याख्या:/g,'Explanation:').replace(/नहीं दिया/g,'Not answered').replace(/सही उत्तर देने पर/g,'when answered correctly');
+ out=out.replace(/(\d+) सही उत्तर/g,'$1 correct answers').replace(/(\d+) टेस्ट/g,'$1 tests').replace(/टेस्ट क्रम: पुराने से नए · 1 से (\d+)/g,'Test order: oldest to newest · 1 to $1');
+ return out;
+}
+function walk(root){
+ if(!root||busy)return;busy=true;
+ try{
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let n;while((n=walker.nextNode())){
+  if(!n.nodeValue.trim())continue;
+  if(!originalText.has(n))originalText.set(n,n.nodeValue);
+  const orig=originalText.get(n);
+  if(language==='en'){const v=translated(orig.trim());if(v!==orig.trim()){englishText.set(n,v);n.nodeValue=orig.replace(orig.trim(),v)}}
+  else if(englishText.has(n)){n.nodeValue=orig;englishText.delete(n)}
+ }
+ const els=root.querySelectorAll?root.querySelectorAll('input,textarea,button,a,[title],[aria-label]'):[];
+ els.forEach(el=>['placeholder','title','aria-label'].forEach(a=>{
+  if(!el.hasAttribute(a))return;
+  let m=originalAttrs.get(el);if(!m){m={};originalAttrs.set(el,m)}
+  if(m[a]===undefined)m[a]=el.getAttribute(a);
+  const v=m[a];
+  if(language==='en')el.setAttribute(a,attrDict[v]||translated(v));
+  else el.setAttribute(a,v);
+ }));
+ }finally{busy=false}
+}
+function setLanguage(next){
+ language=next;
+ try{localStorage.setItem('mppsc_iq_ui_language',language)}catch(e){}
+ document.documentElement.lang=language;
+ document.body.classList.toggle('english-ui',language==='en');
+ walk(document.body);
+ const btn=document.getElementById('langBtn');if(btn)btn.textContent=language==='en'?'हि / A':'अ / A';
+ document.dispatchEvent(new CustomEvent('mppsc:languagechange',{detail:{language}}));
+}
+const langBtn=document.getElementById('langBtn');
+if(langBtn)langBtn.onclick=()=>setLanguage(language==='hi'?'en':'hi');
+try{language=localStorage.getItem('mppsc_iq_ui_language')==='en'?'en':'hi'}catch(e){language='hi'}
+if(language==='en')setLanguage('en');
+const observer=new MutationObserver(records=>{
+ if(busy)return;
+ for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(!originalText.has(n))originalText.set(n,n.nodeValue);if(language==='en'){const v=translated(n.nodeValue.trim());if(v!==n.nodeValue.trim())n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),v)}}else if(n.nodeType===Node.ELEMENT_NODE)walk(n)});else if(r.type==='characterData'){const n=r.target;if(language==='en'){originalText.set(n,n.nodeValue);const v=translated(n.nodeValue.trim());if(v!==n.nodeValue.trim())n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),v)}else originalText.set(n,n.nodeValue)}}
+});
+observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+document.addEventListener('click',e=>{const a=e.target.closest('a,button');if(a&&language==='en'&&a.id==='studentLogout')a.textContent='Logout'});
+})();
+</script>
+
 </body></html>
