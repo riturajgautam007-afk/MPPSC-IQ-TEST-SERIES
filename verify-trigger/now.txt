@@ -1,1 +1,0 @@
-Retry read-only backup verification after verifier syntax fix.
