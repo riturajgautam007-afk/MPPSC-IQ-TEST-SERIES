@@ -575,7 +575,9 @@ function setLanguage(next){
  document.body.classList.toggle('english-ui',language==='en');
  walk(document.body);
  const btn=document.getElementById('langBtn');if(btn)btn.textContent=language==='en'?'हि / A':'अ / A';
- document.dispatchEvent(new CustomEvent('mppsc:languagechange',{detail:{language}}));
+ document.dispatchEvent(new CustomEvent('mppsc:languagechange',{detail:{language}});
+ // Keep the embedded revision quiz and the whole student portal on the same language.
+ try{const quizSetLang=window.__mppscQuizActions&&window.__mppscQuizActions.setLang;if(typeof quizSetLang==='function')quizSetLang(language)}catch(e){console.warn('Quiz language sync:',e)}
 }
 const langBtn=document.getElementById('langBtn');
 if(langBtn)langBtn.onclick=()=>setLanguage(language==='hi'?'en':'hi');
@@ -586,7 +588,12 @@ const observer=new MutationObserver(records=>{
  for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(!originalText.has(n))originalText.set(n,n.nodeValue);{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}else if(n.nodeType===Node.ELEMENT_NODE)walk(n)});else if(r.type==='characterData'){const n=r.target;{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}}
 });
 observer.observe(document.body,{subtree:true,childList:true});
-document.addEventListener('click',e=>{const a=e.target.closest('a,button');if(a&&language==='en'&&a.id==='studentLogout')a.textContent='Logout'});
+document.addEventListener('click',e=>{
+ const quizLanguageButton=e.target&&e.target.closest&&e.target.closest('#revisionQuizRoot #hiBtn, #revisionQuizRoot #enBtn');
+ if(quizLanguageButton)setLanguage(quizLanguageButton.id==='enBtn'?'en':'hi');
+ const a=e.target&&e.target.closest&&e.target.closest('a,button');
+ if(a&&language==='en'&&a.id==='studentLogout')a.textContent='Logout';
+});
 })();
 </script>
 
