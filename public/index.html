@@ -164,7 +164,7 @@ img,video,canvas,svg{max-width:100%}
 <div class="sectionhead"><h2>EXAM COUNTDOWN</h2></div><div class="card countdown-card"><div class="row between"><div><b>MPPSC PRE 2027</b><div class="muted">लक्ष्य परीक्षा तिथि · 24 जनवरी 2027</div></div><div style="font-size:25px;color:var(--gold);font-weight:900" id="countdown">—</div></div></div>
 <div class="seg" id="examSeg"><button class="active" data-exam="Prelims">Prelims</button><button data-exam="Mains">Mains</button></div>
 <div class="grid">
-<div class="tile" onclick="go('generalstudies')"><div class="ico">▤</div><b>General Studies</b><small>सामान्य अध्ययन सामग्री</small></div>
+<div class="tile" id="generalStudiesHomeTile" onclick="go('generalstudies')" hidden><div class="ico">▤</div><b>General Studies</b><small>सामान्य अध्ययन सामग्री</small></div>
 <div class="tile" onclick="go('currentaffairs')"><div class="ico">▣</div><b>Current Affairs</b><small>करंट अफेयर्स सामग्री</small></div>
 <div class="tile" onclick="go('tests')"><div class="ico">☑</div><b>Tests & Quizzes</b></div>
 <div class="tile" onclick="go('leaderboard')"><div class="ico">🏆</div><b>Leaderboard</b><small>टॉप विद्यार्थी रैंकिंग</small></div>
@@ -669,7 +669,9 @@ function mountNativeRevisionQuiz(){
 }
 function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='generalstudies')loadGeneralStudies();if(id==='currentaffairs')loadCurrentAffairs();if(id==='tests'){openQuizUnitStep();}if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
-document.querySelectorAll('#examSeg button').forEach(b=>b.onclick=()=>{exam=b.dataset.exam;document.querySelectorAll('#examSeg button').forEach(x=>x.classList.toggle('active',x===b));loadTests()});
+function syncExamHomeTile(){const tile=$('generalStudiesHomeTile');if(tile)tile.hidden=exam!=='Mains'}
+document.querySelectorAll('#examSeg button').forEach(b=>b.onclick=()=>{exam=b.dataset.exam;document.querySelectorAll('#examSeg button').forEach(x=>x.classList.toggle('active',x===b));syncExamHomeTile();loadTests()});
+syncExamHomeTile();
 function applyTheme(mode){
  const light=mode==='light';
  document.body.classList.toggle('light',light);
