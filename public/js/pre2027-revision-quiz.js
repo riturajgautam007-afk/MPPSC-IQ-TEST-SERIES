@@ -10,7 +10,7 @@ function loadQuestionBankAdditions(){
  if(!questionBankAdditionsPromise)questionBankAdditionsPromise=(async()=>{
   const payload=await revisionApi('/question-bank-overrides');
   const additions=payload&&payload.additions&&typeof payload.additions==='object'?payload.additions:{};
-  for(const [unitKey,items] of Object.entries(additions)){
+  for(const [qid,item] of Object.entries(payload.edits||{})){const [unitText,indexText]=String(qid).split(':');const unit=Number(unitText),index=Number(indexText);if(Number.isInteger(unit)&&Number.isInteger(index)&&UNIT_DATA_MAP[unit]?.[index]&&item&&typeof item==='object'){Object.assign(UNIT_DATA_MAP[unit][index],item);}}for(const [unitKey,items] of Object.entries(additions)){
    const unit=Number(unitKey);if(!Number.isInteger(unit)||unit<1||unit>10||!Array.isArray(items))continue;
    const base=UNIT_DATA_MAP[unit]||(UNIT_DATA_MAP[unit]=[]);
    const seen=new Set(base.map(q=>String(q.q||'').normalize('NFKC').toLocaleLowerCase('hi').replace(/[\\s\\p{P}]+/gu,' ').trim()));
@@ -19,7 +19,7 @@ function loadQuestionBankAdditions(){
     const question=String(item.q||'').trim(),options=Array.isArray(item.options)?item.options.map(v=>String(v||'').trim()):[],answer=Number(item.answer);
     if(!question||options.length!==4||options.some(v=>!v)||!Number.isInteger(answer)||answer<0||answer>3)continue;
     const key=question.normalize('NFKC').toLocaleLowerCase('hi').replace(/[\\s\\p{P}]+/gu,' ').trim();if(seen.has(key))continue;
-    seen.add(key);base.push({q:question,en:String(item.en||''),options,answer,explanation:String(item.explanation||''),__bankAddition:true});
+    seen.add(key);base.push({q:question,en:String(item.en||''),options,options_en:Array.isArray(item.options_en)?item.options_en:[],answer,explanation:String(item.explanation||''),explanation_en:String(item.explanation_en||''),translation_status:String(item.translation_status||'pending'),__bankAddition:true});
    }
   }
   questionBankAdditionsLoaded=true;
@@ -306,7 +306,7 @@ function render(){
   const isPairQuestion=/(युग्म|सुमेलित|मिलान|match(?:ing)?|correctly matched|incorrectly matched)/i.test(questionText);
   const optionRows=opts.map((o,k)=>{
    const raw=String(o??''),parts=raw.split(/\s*\/\s*/);
-   const shown=lang==='hi'?(parts[0]||raw):(parts.length>1?parts.slice(1).join(' / '):raw);
+   const translatedOption=Array.isArray(q.options_en)?String(q.options_en[k]||''):'';const shown=lang==='hi'?(parts[0]||raw):(translatedOption|| (parts.length>1?parts.slice(1).join(' / '):raw));
    let cls=chosen!==undefined&&k===q.answer?'correct':'';
    if(chosen===k&&k!==q.answer)cls='wrong';
    return {k,shown,cls};
@@ -319,7 +319,7 @@ function render(){
   const sourceUnit=Number(q.__unit||activeUnit||0),sourceIndex=Number(String(q.__qid||`${sourceUnit}:${idx}`).split(':').pop());
   const saved=revisionBookmarkExists(sourceUnit,sourceIndex);
   const actions=`<div class="revision-question-actions"><button type="button" class="revision-q-action ${saved?'saved':''}" onclick="toggleRevisionBookmark(${sourceUnit},${sourceIndex},this)">${saved?'🔖✓ बुकमार्क किया':'🔖 बुकमार्क'}</button><button type="button" class="revision-q-action" onclick="reportRevisionQuestion(${sourceUnit},${sourceIndex})">⚑ प्रश्न रिपोर्ट करें</button></div>`;
-  return `<section class="card" id="qcard-${idx}"><div class="qtext">${cardTitle}. ${esc(visibleQuestion)}</div>${structured.table||legacyMatch}${options}${actions}</section>`;
+  const explanationText=lang==='hi'?(q.explanation||''):(q.explanation_en||q.explanation||'');const explanationHTML=explanationText?`<div class="explanation-box"><b>${lang==='hi'?'व्याख्या':'Explanation'}:</b> ${esc(explanationText)}</div>`:'';return `<section class="card" id="qcard-${idx}"><div class="qtext">${cardTitle}. ${esc(visibleQuestion)}</div>${structured.table||legacyMatch}${options}${explanationHTML}${actions}</section>`;
  }).join('');
  const wrongBtn=document.querySelector('.bottom button[onclick="showWrong()"]');if(wrongBtn){wrongBtn.textContent=reviewMode?`Next Wrong ${reviewPos+1}/${reviewIds.length}`:`Wrong (${wrong})`;wrongBtn.style.display=unitWrongMode?'none':'';}if(unitWrongMode){['backBtn','nextBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.display='none';});const mb=document.querySelector('.mixbar');if(mb)mb.style.display='none';}
  if(lang==='en')translateVisiblePage();
