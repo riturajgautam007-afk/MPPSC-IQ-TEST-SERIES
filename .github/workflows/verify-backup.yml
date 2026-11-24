@@ -1,6 +1,9 @@
 name: MPPSC IQ Verify Latest Backup
 
 on:
+  push:
+    paths:
+      - "verify-trigger/now.txt"
   workflow_dispatch:
 
 permissions:
