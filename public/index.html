@@ -443,6 +443,33 @@ function mountNativeRevisionQuiz(){
   @media(prefers-reduced-motion:reduce){
    #revisionQuizRoot *,#revisionQuizRoot *::before,#revisionQuizRoot *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   }
+
+  /* Colorful compact quiz unit buttons — applied to the actual injected app */
+  #revisionQuizRoot .unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;margin:12px 0 16px!important;padding:0!important;background:#0c1b30!important;border:0!important}
+  #revisionQuizRoot .unitbar button{position:relative!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:4px!important;min-width:0!important;min-height:64px!important;padding:7px 3px!important;border-radius:15px!important;border:1px solid rgba(255,255,255,.32)!important;color:#fff!important;text-align:center!important;font:850 12px/1.2 inherit!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 3px 8px rgba(0,0,0,.22)!important;overflow:hidden!important}
+  #revisionQuizRoot .unitbar button:nth-child(1){background:linear-gradient(145deg,#3d83d0,#174b8d)!important}
+  #revisionQuizRoot .unitbar button:nth-child(2){background:linear-gradient(145deg,#ffe78b,#d39b27)!important;color:#142b49!important}
+  #revisionQuizRoot .unitbar button:nth-child(3){background:linear-gradient(145deg,#9a6add,#57349b)!important}
+  #revisionQuizRoot .unitbar button:nth-child(4){background:linear-gradient(145deg,#e17b43,#a94320)!important}
+  #revisionQuizRoot .unitbar button:nth-child(5){background:linear-gradient(145deg,#d45d8d,#8c315e)!important}
+  #revisionQuizRoot .unitbar button:nth-child(6){background:linear-gradient(145deg,#37a2b9,#17647e)!important}
+  #revisionQuizRoot .unitbar button:nth-child(7){background:linear-gradient(145deg,#82b94d,#477d2e)!important}
+  #revisionQuizRoot .unitbar button:nth-child(8){background:linear-gradient(145deg,#6486db,#354d9a)!important}
+  #revisionQuizRoot .unitbar button:nth-child(9){background:linear-gradient(145deg,#c18c36,#81551e)!important}
+  #revisionQuizRoot .unitbar button:nth-child(10){background:linear-gradient(145deg,#71869a,#3d5268)!important}
+  #revisionQuizRoot .unitbar button:nth-child(11){background:linear-gradient(145deg,#13a5a9,#075d6b)!important}
+  #revisionQuizRoot .unitbar button:nth-child(12){background:linear-gradient(145deg,#8150b7,#4c267d)!important}
+  #revisionQuizRoot .unitbar button.active{outline:3px solid #f4d779!important;outline-offset:2px!important;filter:brightness(1.12)!important;box-shadow:0 0 0 5px rgba(255,218,117,.14),inset 0 1px 0 rgba(255,255,255,.35),0 4px 10px rgba(0,0,0,.24)!important;transform:translateY(-1px)!important}
+  #revisionQuizRoot .native-unit-icon{width:25px!important;height:25px!important;border-radius:8px!important;background:rgba(255,255,255,.18)!important;border:1px solid rgba(255,255,255,.24)!important;color:inherit!important;font-size:16px!important}
+  #revisionQuizRoot .unitbar button:nth-child(2) .native-unit-icon{background:rgba(20,43,73,.12)!important;border-color:rgba(20,43,73,.18)!important}
+  #revisionQuizRoot .native-quiz-language{background:#0c1b30!important;border:0!important;border-radius:14px!important;padding:9px!important}
+  #revisionQuizRoot .native-language-switch{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important;gap:8px!important}
+  #revisionQuizRoot .native-language-switch button{min-height:44px!important;border-radius:12px!important;color:#fff!important;font-weight:850!important;border:1px solid rgba(255,255,255,.25)!important}
+  #revisionQuizRoot #hiBtn{background:linear-gradient(145deg,#16865f,#07543f)!important}
+  #revisionQuizRoot #enBtn{background:linear-gradient(145deg,#2869ad,#153e72)!important}
+  #revisionQuizRoot .native-language-switch button.active{outline:2px solid rgba(255,224,135,.5)!important;outline-offset:1px!important;filter:brightness(1.12)!important}
+  @media(max-width:600px){#revisionQuizRoot .unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:6px!important}#revisionQuizRoot .unitbar button{min-height:54px!important;padding:6px 2px!important;border-radius:12px!important;font-size:10px!important}#revisionQuizRoot .native-unit-icon{width:22px!important;height:22px!important;font-size:14px!important}}
+  @media(max-width:360px){#revisionQuizRoot .unitbar{gap:4px!important}#revisionQuizRoot .unitbar button{min-height:48px!important;font-size:9px!important;border-radius:10px!important}}
   `;document.head.appendChild(st);
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+quizSource+'\nwindow.addEventListener("pagehide",()=>{try{const session=revisionSessionSnapshot();const payload=JSON.stringify({performance:performanceData,session});fetch(REVISION_API_ORIGIN+"/api/revision-progress",{method:"PUT",credentials:"include",keepalive:true,headers:{"Content-Type":"application/json"},body:payload}).catch(()=>{});}catch(e){}});\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\ndocument.addEventListener("mppsc:languagechange",ev=>{const next=ev&&ev.detail&&ev.detail.language;if((next==="hi"||next==="en")&&next!==lang)setLang(next);});\nconst savedLanguage=localStorage.getItem("mppsc_iq_ui_language")==="en"?"en":"hi";\nif(savedLanguage!==lang)setLang(savedLanguage);\n})();';
