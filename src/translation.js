@@ -15,7 +15,7 @@ async function translateQuestion(input){
         text:{format:{type:"json_object"}}
       })
     });
-    if(!response.ok)throw new Error("OpenAI translation HTTP "+response.status);
+    if(!response.ok){const detail=(await response.text()).slice(0,1200);throw new Error("OpenAI translation HTTP "+response.status+": "+detail);}
     const data=await response.json();
     const text=(data.output||[]).flatMap(x=>x.content||[]).find(x=>x.type==="output_text")?.text;
     const result=JSON.parse(text||"{}");
