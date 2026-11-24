@@ -10,7 +10,7 @@ async function translateQuestion(input){
       signal:AbortSignal.timeout(45000),
       body:JSON.stringify({
         model:process.env.OPENAI_TRANSLATION_MODEL||"gpt-4.1-mini",
-        instructions:"Translate the Hindi exam question, all four answer options, and explanation into accurate, natural English. Preserve every fact, number, date, name, technical term, punctuation meaning, and option order. Do not answer or solve the question. Return only a JSON object with string fields question, explanation and an options array of exactly four strings.",
+        instructions:"Translate the Hindi exam question, all four answer options, and explanation into accurate, natural English. Preserve every fact, number, date, name, technical term, punctuation meaning, and option order. Do not answer or solve the question. Return only valid JSON (JavaScript Object Notation): a JSON object with string fields question, explanation and an options array of exactly four strings. Do not include markdown or text outside the JSON object.",
         input:JSON.stringify(payload),
         text:{format:{type:"json_object"}}
       })
