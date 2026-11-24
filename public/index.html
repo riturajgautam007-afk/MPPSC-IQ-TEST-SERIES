@@ -860,7 +860,7 @@ function mountNativeRevisionQuiz(){
     }
     #revisionQuizRoot .native-quiz-language .native-quick-actions .qa-refresh{font-size:16px!important}
   }
-;document.head.appendChild(st);
+  `;document.head.appendChild(st);
   // Prevent unit changes from forcibly jumping the page to the top.
   quizSource=quizSource.replaceAll("window.scrollTo({top:0,behavior:'smooth'});","");
   const runner=document.createElement('script');
