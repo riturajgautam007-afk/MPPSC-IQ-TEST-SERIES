@@ -2,9 +2,16 @@ name: MPPSC IQ Verify Latest Backup
 
 on:
   workflow_dispatch:
+  schedule:
+    # Daily at 13:00 IST, after the usual morning backup window.
+    - cron: "30 7 * * *"
 
 permissions:
   contents: read
+
+concurrency:
+  group: mppsc-iq-backup-verification
+  cancel-in-progress: false
 
 jobs:
   verify:
