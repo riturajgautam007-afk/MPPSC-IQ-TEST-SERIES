@@ -75,13 +75,13 @@ async function translateVisiblePage(){
  const start=reviewMode?reviewIds[reviewPos]:unitWrongMode?currentIndex:Math.floor(currentIndex/PER)*PER;
  const end=reviewMode||unitWrongMode?start+1:Math.min(start+PER,DATA.length);
  const pending=[];
- for(let idx=start;idx<end;idx++){const q=DATA[idx];if(q&&!englishTranslationCache[translationKey(q,idx)]&&((q.options||[]).some(o=>String(o||'').split(/\\s*\\/\\s*/).length<2)||!q.en))pending.push(idx);}
+ for(let idx=start;idx<end;idx++){const q=DATA[idx];if(q&&!englishTranslationCache[translationKey(q,idx)]&&((q.options||[]).some(o=>String(o||'').split(/\s*\/\s*/).length<2)||!q.en))pending.push(idx);}
  if(!pending.length)return;
  translationInFlight=true;
  try{
   for(let i=0;i<pending.length;i+=2){
    await Promise.all(pending.slice(i,i+2).map(async idx=>{
-    const q=DATA[idx],rawOptions=(q.options||[]).map(o=>String(o||'').split(/\\s*\\/\\s*/)[0]);
+    const q=DATA[idx],rawOptions=(q.options||[]).map(o=>String(o||'').split(/\s*\/\s*/)[0]);
     try{
      const response=await fetch(REVISION_API_ORIGIN+'/api/translate-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:String(q.q||''),options:rawOptions,explanation:String(q.explanation||'')})});
      if(!response.ok)throw new Error('Translation API '+response.status);
