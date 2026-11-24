@@ -1,1 +1,1 @@
-Run one read-only verification of latest Supabase backup.
+Retry read-only backup verification after verifier syntax fix.
