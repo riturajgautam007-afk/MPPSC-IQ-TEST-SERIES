@@ -357,6 +357,27 @@ function mountNativeRevisionQuiz(){
   #revisionQuizRoot .match-table.answer-match-table .option{width:100%!important;min-height:42px!important;margin:0!important;padding:8px!important;border-radius:9px!important;justify-content:center!important;text-align:center!important}
   #revisionQuizRoot .match-table.answer-match-table td:nth-child(2) .option{text-align:left!important;justify-content:flex-start!important}
   @media(max-width:480px){#revisionQuizRoot .match-table{font-size:13px!important;line-height:1.5!important}#revisionQuizRoot .match-table th,#revisionQuizRoot .match-table td{padding:9px 7px!important}#revisionQuizRoot .match-table.statement-table th:first-child,#revisionQuizRoot .match-table.statement-table td:first-child{width:25%!important}}
+
+  /* Accessibility and mobile interaction polish */
+  #revisionQuizRoot button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  #revisionQuizRoot button:focus-visible{outline:3px solid #e4bd55!important;outline-offset:3px!important;position:relative;z-index:2}
+  #revisionQuizRoot button:disabled{cursor:not-allowed;opacity:.55}
+  #revisionQuizRoot .option{overflow-wrap:anywhere;min-width:0}
+  #revisionQuizRoot .card,#revisionQuizRoot .analysis-panel{overflow-wrap:anywhere}
+  #revisionQuizRoot .meta{font-variant-numeric:tabular-nums}
+  #revisionQuizRoot .progress-fill{transition:width .18s ease-out}
+  #revisionQuizRoot .quiz-load-retry{min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:700 13px inherit}
+  @media(max-width:380px){
+   #revisionQuizRoot .native-quiz-heading{align-items:flex-start;flex-wrap:wrap}
+   #revisionQuizRoot .native-quiz-tag{font-size:9px;padding:6px 8px}
+   #revisionQuizRoot .native-quiz-language{align-items:flex-start;flex-wrap:wrap}
+   #revisionQuizRoot .native-language-note{width:100%}
+   #revisionQuizRoot .card{padding:12px!important}
+   #revisionQuizRoot .option{padding:10px!important;line-height:1.5}
+  }
+  @media(prefers-reduced-motion:reduce){
+   #revisionQuizRoot *,#revisionQuizRoot *::before,#revisionQuizRoot *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  }
   `;document.head.appendChild(st);
   const runner=document.createElement('script');
   runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+quizSource+'\nwindow.addEventListener("pagehide",()=>{try{const session=revisionSessionSnapshot();const payload=JSON.stringify({performance:performanceData,session});fetch(REVISION_API_ORIGIN+"/api/revision-progress",{method:"PUT",credentials:"include",keepalive:true,headers:{"Content-Type":"application/json"},body:payload}).catch(()=>{});}catch(e){}});\nwindow.__mppscQuizActions={setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG};\nObject.assign(window,{setUnit,setPYQs,showAnalysis,setLang,toggleTheme,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits,reviewAllRecordedWrong,downloadMistakesCSV,setAnalysisTab,printPerformanceReport,choose,toggleRevisionBookmark,reportRevisionQuestion,reviewWrongByUnit,downloadUltraPNG});\ndocument.addEventListener("mppsc:languagechange",ev=>{const next=ev&&ev.detail&&ev.detail.language;if((next==="hi"||next==="en")&&next!==lang)setLang(next);});\nconst savedLanguage=localStorage.getItem("mppsc_iq_ui_language")==="en"?"en":"hi";\nif(savedLanguage!==lang)setLang(savedLanguage);\n})();';
