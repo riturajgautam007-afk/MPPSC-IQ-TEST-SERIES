@@ -46,11 +46,25 @@ function atomicWrite(target,content){
  for(const t of baseTables)if(!Array.isArray(data.tables[t]))throw Error("Backup table missing or invalid: "+t);
  const tables=[...baseTables,...optionalTables.filter(t=>Array.isArray(data.tables[t]))];
  const assets=validateAssets(data);
- if(process.env.DRY_RUN==="YES"){
-  console.log("RESTORE_VALIDATION_OK",JSON.stringify({tables:Object.fromEntries(tables.map(t=>[t,data.tables[t].length])),assets:assets.files.map(x=>({path:x.path,bytes:x.bytes,sha256:x.sha256})),legacy_backup:assets.legacy,dry_run:true}));
+ const dryRun=process.env.DRY_RUN==="YES";
+ const c=await pool.connect();
+ if(dryRun){
+  try{
+   const schemaChecks={};
+   for(const t of tables){
+    const schema=await c.query("SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=$1",[t]);
+    if(!schema.rowCount)throw Error("Database table does not exist: "+t);
+    const allowed=new Set(schema.rows.map(x=>x.column_name));
+    for(const row of data.tables[t]){
+     if(!row||typeof row!=="object"||Array.isArray(row))throw Error("Invalid row in table: "+t);
+     for(const key of Object.keys(row))if(!allowed.has(key))throw Error("Unknown column in backup table "+t+": "+key);
+    }
+    schemaChecks[t]={backup_rows:data.tables[t].length,database_columns:schema.rowCount,compatible:true};
+   }
+   console.log("RESTORE_PREFLIGHT_OK",JSON.stringify({schema_compatible:true,tables:schemaChecks,assets:assets.files.map(x=>({path:x.path,bytes:x.bytes,sha256:x.sha256})),legacy_backup:assets.legacy,dry_run:true,mutations:0}));
+  }finally{c.release();}
   return;
  }
- const c=await pool.connect();
  const originals=[];
  let assetsWritten=false;
  try{
