@@ -2,6 +2,7 @@ require("dotenv").config();
 const fs=require("node:fs"),express=require("express"),helmet=require("helmet"),bcrypt=require("bcryptjs"),multer=require("multer"),XLSX=require("xlsx"),path=require("node:path"),crypto=require("node:crypto"),{createClient}=require("@supabase/supabase-js");
 const db=require("./db"),{verifyTelegramInitData,issueToken,requireAuth,requireAdmin}=require("./auth");
 const membership=require("./membership");
+const {createQuestionBankRecovery}=require("./question-bank-recovery");
 const {registerTelegramBot}=require("./telegram-bot");
 const app=express(),port=process.env.PORT||3000,secret=process.env.JWT_SECRET;
 function isTelegramAdmin(id){const ids=(process.env.ADMIN_TELEGRAM_IDS||process.env.ADMIN_TELEGRAM_ID||"").split(",").map(x=>x.trim()).filter(Boolean);return ids.includes(String(id));}
@@ -9,6 +10,8 @@ let dbReady=false,dbLastError="Database connection is not ready";
 if(!secret||secret.length<32)throw new Error("JWT_SECRET must be at least 32 characters");
 if(!process.env.DATABASE_URL||!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw new Error("DATABASE_URL, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
 const supabase=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}}),bucket=process.env.SUPABASE_STORAGE_BUCKET||"mppsc-resources";
+const questionBankRecovery=createQuestionBankRecovery({supabase,bucket,rootDir:path.join(__dirname,"..")});
+let questionBankRecoveryPromise=Promise.resolve({ok:true,restore_performed:false,restored:[],already_present:[]});
 app.get("/.well-known/web-app-origin-association",(_q,s)=>s.type("application/json").send(JSON.stringify({"https://mppsc-iq-install.onrender.com":{scope:["/"]}})));
 app.disable("x-powered-by");app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"2mb"}));const allowedOrigins=new Set(["https://mppsc-iq-quiz-miniapp.onrender.com","https://mppsc-iq-student-miniapp.onrender.com","https://mppsc-iq-install.onrender.com","https://riturajgautam007-afk.github.io"]);app.use((req,res,next)=>{const origin=req.headers.origin;if(origin&&allowedOrigins.has(origin)){res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Vary","Origin");res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");res.setHeader("Access-Control-Allow-Methods","GET, POST, PUT, OPTIONS");res.setHeader("Access-Control-Allow-Credentials","true");}if(req.method==="OPTIONS")return res.sendStatus(204);next();});
 // Keep the web app online even if the database is temporarily unreachable.
@@ -16,6 +19,7 @@ app.use("/api",(q,s,n)=>{if(q.path==="/health"||q.path==="/ready")return n();if(
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024}});
 const studentOnly=(q,s,n)=>(q.auth.role==="student"||q.auth.role==="admin")?n():s.status(403).json({error:"Student only"});
 const ar=fn=>(q,s,n)=>Promise.resolve(fn(q,s,n)).catch(n);
+app.post("/api/admin/question-bank/restore-assets",requireAuth,requireAdmin,ar(async(_q,s)=>{const result=await questionBankRecovery.restoreMissing();s.json(result);}));
 const requirePaid=membership.requirePaid(db);
 membership.register(app,{db,requireAuth,requireAdmin,ar});
 const OIDC_ISSUER="https://oauth.telegram.org",OIDC_REDIRECT=process.env.TELEGRAM_OIDC_REDIRECT_URI||"https://mppsc-iq-telegram-platform-mdri.onrender.com/api/auth/telegram/callback";
@@ -256,10 +260,11 @@ app.get("/admin.html",(q,s,n)=>{
  });
 });
 app.get("/pre2027-revision-quiz.html",(q,s)=>{s.set("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");s.set("Pragma","no-cache");s.set("Expires","0");s.sendFile(path.join(__dirname,"..","public","pre2027-revision-quiz.html"));});
+app.use(["/pre2027-revision-quiz.html","/js/pre2027-revision-quiz.js"],(_q,_s,next)=>{questionBankRecoveryPromise.then(()=>next()).catch(next);});
 app.use(express.static(path.join(__dirname,"..","public")));app.get("*",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use((e,_q,s,_n)=>{console.error(e);s.status(400).json({error:e.message||"Request failed"});});
 async function connectDatabase(){try{await db.init();await membership.ensureSchema(db);dbReady=true;dbLastError="";console.log("Database connected and schema ready");const {error}=await supabase.storage.createBucket(bucket,{public:false,fileSizeLimit:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024});if(error&&!String(error.message).toLowerCase().includes("already"))console.warn("Storage bucket setup:",error.message);}catch(e){dbReady=false;dbLastError=e.message||"Database connection failed";console.error("Database unavailable; web server remains online:",dbLastError);}}
 const telegramBot=registerTelegramBot(app,db);
-app.listen(port,()=>{console.log("MPPSC IQ server listening on "+port);telegramBot.configure();});
+app.listen(port,()=>{console.log("MPPSC IQ server listening on "+port);questionBankRecoveryPromise=questionBankRecovery.restoreMissing().catch(e=>{console.warn("Question Bank automatic recovery skipped:",e.message);return {ok:false,error:e.message,restore_performed:false};});telegramBot.configure();});
 connectDatabase();
 setInterval(()=>{if(!dbReady)connectDatabase();},30000).unref();
