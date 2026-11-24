@@ -1,5 +1,5 @@
 require("dotenv").config();
-const express=require("express"),helmet=require("helmet"),bcrypt=require("bcryptjs"),multer=require("multer"),XLSX=require("xlsx"),path=require("node:path"),crypto=require("node:crypto"),{createClient}=require("@supabase/supabase-js");
+const fs=require("node:fs"),express=require("express"),helmet=require("helmet"),bcrypt=require("bcryptjs"),multer=require("multer"),XLSX=require("xlsx"),path=require("node:path"),crypto=require("node:crypto"),{createClient}=require("@supabase/supabase-js");
 const db=require("./db"),{verifyTelegramInitData,issueToken,requireAuth,requireAdmin}=require("./auth");
 const membership=require("./membership");
 const {registerTelegramBot}=require("./telegram-bot");
@@ -55,7 +55,14 @@ app.post("/api/admin/question-bank/:unit/append",requireAuth,requireAdmin,ar(asy
 app.put("/api/admin/question-bank/:unit/:index",requireAuth,requireAdmin,ar(async(q,s)=>{const unit=Number(q.params.unit),index=Number(q.params.index),x=q.body||{};if(!Number.isInteger(unit)||unit<1||unit>10||!Number.isInteger(index)||index<0||index>10000)return s.status(400).json({error:"यूनिट या प्रश्न क्रमांक सही नहीं है"});if(typeof x.q!=="string"||!x.q.trim()||!Array.isArray(x.options)||x.options.length!==4||x.options.some(v=>typeof v!=="string"||!v.trim())||!Number.isInteger(+x.answer)||+x.answer<0||+x.answer>3)return s.status(400).json({error:"प्रश्न, चार विकल्प और सही उत्तर आवश्यक हैं"});const value={q:x.q.trim(),en:String(x.en||""),options:x.options.map(v=>String(v).trim()),answer:+x.answer,explanation:String(x.explanation||"")};await db.query("INSERT INTO question_bank_edits(unit,question_index,question_json,updated_at) VALUES($1,$2,$3,NOW()) ON CONFLICT(unit,question_index) DO UPDATE SET question_json=EXCLUDED.question_json,updated_at=NOW()",[unit,index,JSON.stringify(value)]);s.json({ok:true,unit,index});}));
 app.get("/api/admin/backup",requireAuth,requireAdmin,ar(async(_q,res)=>{
  const tables=["students","tests","questions","attempts","wrong_questions","resources","question_bank_edits","question_bank_additions","student_memberships","membership_payment_requests","announcements","support_tickets","question_bookmarks","question_reports","revision_quiz_bookmarks","revision_quiz_reports","revision_quiz_progress","revision_quiz_answers"];
- const backup={app:"MPPSC IQ",format_version:1,created_at:new Date().toISOString(),tables:{}};
+ const backup={app:"MPPSC IQ",format_version:1,created_at:new Date().toISOString(),tables:{},assets:{question_bank_files:[]}};
+ // Preserve the complete bundled revision-question source alongside database records.
+ for(const relativePath of ["public/js/pre2027-revision-quiz.js","public/pre2027-revision-quiz.html"]){
+  const absolutePath=path.join(__dirname,"..",relativePath);
+  const content=fs.readFileSync(absolutePath,"utf8");
+  if(!content.trim())throw new Error("Question Bank asset is empty: "+relativePath);
+  backup.assets.question_bank_files.push({path:relativePath,bytes:Buffer.byteLength(content),sha256:crypto.createHash("sha256").update(content).digest("hex"),content});
+ }
  for(const table of tables){
   const result=await db.query("SELECT * FROM "+table+" ORDER BY 1");
   backup.tables[table]=result.rows;
