@@ -10,6 +10,7 @@ await pool.query("CREATE TABLE IF NOT EXISTS revision_quiz_bookmarks(id BIGSERIA
 await pool.query("CREATE TABLE IF NOT EXISTS revision_quiz_progress(student_id BIGINT PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,performance_json JSONB NOT NULL DEFAULT '{}'::jsonb,session_json JSONB NOT NULL DEFAULT '{}'::jsonb,updated_at TIMESTAMPTZ DEFAULT NOW())");
 await pool.query("CREATE TABLE IF NOT EXISTS revision_quiz_answers(student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,question_key TEXT NOT NULL,unit INTEGER NOT NULL,question_index INTEGER NOT NULL,question_json JSONB NOT NULL,selected_index INTEGER NOT NULL CHECK(selected_index BETWEEN 0 AND 3),is_correct BOOLEAN NOT NULL,updated_at TIMESTAMPTZ DEFAULT NOW(),PRIMARY KEY(student_id,question_key)); CREATE INDEX IF NOT EXISTS idx_revision_quiz_answers_student_unit ON revision_quiz_answers(student_id,unit,question_index)");
 await pool.query("ALTER TABLE attempts ADD COLUMN IF NOT EXISTS review_marks_json JSONB NOT NULL DEFAULT '[]'::jsonb");
+await pool.query("ALTER TABLE questions ADD COLUMN IF NOT EXISTS options_en JSONB NOT NULL DEFAULT '[]'::jsonb; ALTER TABLE questions ADD COLUMN IF NOT EXISTS explanation_en TEXT NOT NULL DEFAULT ''; ALTER TABLE questions ADD COLUMN IF NOT EXISTS translation_status TEXT NOT NULL DEFAULT 'pending'");
 
 }
 module.exports={query:(...args)=>pool.query(...args),init,pool};
