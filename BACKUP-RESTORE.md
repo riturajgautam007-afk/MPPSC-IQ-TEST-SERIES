@@ -19,6 +19,14 @@ CONFIRM_RESTORE=YES npm run backup:restore -- ./backup.json
 ```
 Restore validates the app name, format version, and all expected tables, then replaces the application tables in one transaction. If an error occurs, the transaction rolls back. Take a fresh backup before restoring. Do not restore into a production database unless you have verified the target and backup file.
 
+### Non-destructive restore preflight
+
+Before any real restore, run the preflight against the intended target database:
+```sh
+DRY_RUN=YES CONFIRM_RESTORE=YES npm run backup:restore -- ./backup.json
+```
+Preflight connects to the configured `DATABASE_URL`, checks that every backup table exists, and verifies that every backup row contains only columns present in the target database. It also validates the Question Bank asset sizes and SHA-256 hashes. It performs **zero database or file mutations**. A successful `RESTORE_PREFLIGHT_OK` confirms schema compatibility for the backup's present columns; it is not a substitute for a staging restore rehearsal.
+
 ## Question Bank asset recovery
 
 The web service checks the latest private daily backup at startup. It validates the backup identity, both allowlisted Question Bank paths, byte sizes, and SHA-256 checksums. It restores only a missing or empty source file; it never automatically overwrites a non-empty deployed file. Requests for the quiz HTML and Question Bank JavaScript wait for this startup recovery check to finish.
