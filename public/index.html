@@ -174,7 +174,74 @@ img,video,canvas,svg{max-width:100%}
 #home .countdown-track{height:4px!important;border-radius:99px!important;background:rgba(255,255,255,.13)!important;overflow:hidden!important}
 #home .countdown-track span{display:block!important;width:100%!important;height:100%!important;border-radius:99px!important;background:linear-gradient(90deg,#e8bd55,#fff0ad)!important}
 @media(max-width:420px){#home .countdown-card{padding:15px 14px 13px!important;gap:11px!important}#home .countdown-heading h2{font-size:16px!important}#home .countdown-live{font-size:8px!important;padding:4px 7px!important}#home .countdown-number-wrap{min-width:76px!important;padding:9px 8px!important}#home .countdown-value{font-size:28px!important}#home .countdown-date{font-size:18px!important}}
-</style></head><body><div class="app">
+</style><style id="unit-screen-layout-fix">
+/* Unit selector: 12 equal tiles in a centered 3 × 4 layout.
+   CSS-only override; existing onclick handlers and quiz logic remain untouched. */
+#revisionQuizRoot #unitbar,
+#revisionQuizRoot .unitbar{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-rows:repeat(4,minmax(74px,1fr))!important;
+  grid-auto-flow:row!important;
+  grid-auto-rows:minmax(74px,1fr)!important;
+  align-content:center!important;
+  justify-content:center!important;
+  align-items:stretch!important;
+  justify-items:stretch!important;
+  width:min(100%,620px)!important;
+  max-width:620px!important;
+  margin:clamp(14px,3.5vh,30px) auto!important;
+  gap:10px!important;
+  padding:12px!important;
+  box-sizing:border-box!important;
+}
+#revisionQuizRoot #unitbar>button,
+#revisionQuizRoot .unitbar>button{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:74px!important;
+  height:100%!important;
+  margin:0!important;
+  padding:9px 5px!important;
+  box-sizing:border-box!important;
+  text-align:center!important;
+  line-height:1.2!important;
+  overflow-wrap:anywhere!important;
+}
+#revisionQuizRoot #unitbar>button .native-unit-icon,
+#revisionQuizRoot .unitbar>button .native-unit-icon{
+  flex:0 0 auto!important;
+  line-height:1!important;
+}
+#revisionQuizRoot .bottom{
+  position:sticky!important;
+  bottom:calc(64px + env(safe-area-inset-bottom))!important;
+  z-index:90!important;
+}
+@media(max-width:480px){
+  #revisionQuizRoot #unitbar,
+  #revisionQuizRoot .unitbar{
+    gap:8px!important;
+    padding:10px!important;
+    grid-template-rows:repeat(4,minmax(68px,1fr))!important;
+    grid-auto-rows:minmax(68px,1fr)!important;
+    margin:clamp(12px,3vh,22px) auto!important;
+  }
+  #revisionQuizRoot #unitbar>button,
+  #revisionQuizRoot .unitbar>button{
+    min-height:68px!important;
+    padding:8px 3px!important;
+    border-radius:13px!important;
+    font-size:clamp(11px,3.1vw,14px)!important;
+  }
+}
+</style>
+</head><body><div class="app">
 <header class="top"><div class="logo" aria-label="IQ">IQ</div><div class="brand">MPPSC IQ<small>PRE 2027 · महाअभ्यास 2.0</small></div><button class="topbtn" id="themeBtn" title="Theme">☾</button><button class="topbtn" id="langBtn" title="Language">अ / A</button><a class="topbtn" id="studentLogout" href="/api/auth/logout" style="text-decoration:none;font-size:13px">Logout</a></header>
 <main class="content">
 <section class="view active" id="home"><div class="hero"><div class="eyebrow">LET'S PREPARE · MPPSC IQ</div><h1>आपकी सफलता की तैयारी</h1><p>MPPSC PRE 2027 · महाअभ्यास 2.0</p></div>
