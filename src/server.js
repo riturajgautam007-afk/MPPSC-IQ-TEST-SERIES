@@ -4,6 +4,8 @@ const db=require("./db"),{verifyTelegramInitData,issueToken,requireAuth,requireA
 const membership=require("./membership");
 const {createQuestionBankRecovery}=require("./question-bank-recovery");
 const {registerTelegramBot}=require("./telegram-bot");
+const {translateQuestion}=require("./translation");
+async function translateMany(items){const out=new Array(items.length);let cursor=0;async function worker(){while(cursor<items.length){const i=cursor++;out[i]=await translateQuestion({question:items[i].question_hi||items[i].q,options:items[i].options,explanation:items[i].explanation||""});}}await Promise.all(Array.from({length:Math.min(4,items.length)},worker));return out;}
 const app=express(),port=process.env.PORT||3000,secret=process.env.JWT_SECRET;
 function isTelegramAdmin(id){const ids=(process.env.ADMIN_TELEGRAM_IDS||process.env.ADMIN_TELEGRAM_ID||"").split(",").map(x=>x.trim()).filter(Boolean);return ids.includes(String(id));}
 let dbReady=false,dbLastError="Database connection is not ready";
@@ -167,7 +169,8 @@ app.post("/api/tests/:id/import-text",requireAuth,requireAdmin,ar(async(q,s)=>{
   const test=await c.query("SELECT id FROM tests WHERE id=$1 FOR UPDATE",[testId]);
   if(!test.rowCount){await c.query("ROLLBACK");return s.status(404).json({error:"चुना हुआ Unit/Test नहीं मिला"});}
   const mx=await c.query("SELECT COALESCE(MAX(sort_order),0)::int AS n FROM questions WHERE test_id=$1",[testId]);startOrder=mx.rows[0].n;
-  for(let i=0;i<parsed.length;i++){const x=parsed[i];await c.query("INSERT INTO questions(test_id,question_hi,question_en,options_json,correct_index,explanation,sort_order) VALUES($1,$2,'',$3,$4,$5,$6)",[testId,x.question,JSON.stringify(x.options),x.answer,x.explanation,startOrder+i+1]);}
+  const translations=await translateMany(parsed.map(x=>({question_hi:x.question,options:x.options,explanation:x.explanation})));
+  for(let i=0;i<parsed.length;i++){const x=parsed[i],en=translations[i];await c.query("INSERT INTO questions(test_id,question_hi,question_en,options_json,options_en,correct_index,explanation,explanation_en,translation_status,sort_order) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",[testId,x.question,en?.question||"",JSON.stringify(x.options),JSON.stringify(en?.options||[]),x.answer,x.explanation,en?.explanation||"",en?"done":"pending",startOrder+i+1]);}
   const total=await c.query("SELECT COUNT(*)::int AS n FROM questions WHERE test_id=$1",[testId]);
   await c.query("COMMIT");
   s.json({imported:parsed.length,skipped:bad.length,total:total.rows[0].n,skippedDetails:bad.slice(0,30)});
@@ -180,7 +183,8 @@ app.post("/api/tests/:id/import-bulk",requireAuth,requireAdmin,ar(async(q,s)=>{
  const c=await db.pool.connect();let imported=0,duplicates=0,skipped=0;
  const norm=v=>String(v||"").normalize("NFKC").toLocaleLowerCase("hi").replace(/[\\s\\p{P}]+/gu," ").trim();
  try{await c.query("BEGIN");const test=await c.query("SELECT id FROM tests WHERE id=$1 FOR UPDATE",[testId]);if(!test.rowCount){await c.query("ROLLBACK");return s.status(404).json({error:"चुना हुआ टेस्ट नहीं मिला"});}const existing=await c.query("SELECT question_hi FROM questions WHERE test_id=$1",[testId]);const seen=new Set(existing.rows.map(x=>norm(x.question_hi)));const max=await c.query("SELECT COALESCE(MAX(sort_order),0)::int n FROM questions WHERE test_id=$1",[testId]);let order=max.rows[0].n;
- for(const x of items){if(!x||typeof x.question_hi!=="string"||!x.question_hi.trim()||!Array.isArray(x.options)||x.options.length!==4||x.options.some(v=>typeof v!=="string"||!v.trim())||!Number.isInteger(Number(x.correct_index))||Number(x.correct_index)<0||Number(x.correct_index)>3){skipped++;continue;}const key=norm(x.question_hi);if(seen.has(key)){duplicates++;continue;}seen.add(key);order++;await c.query("INSERT INTO questions(test_id,question_hi,question_en,options_json,correct_index,explanation,sort_order) VALUES($1,$2,$3,$4,$5,$6,$7)",[testId,x.question_hi.trim(),String(x.question_en||""),JSON.stringify(x.options.map(v=>String(v).trim())),Number(x.correct_index),String(x.explanation||""),order]);imported++;}
+ const fresh=[];for(const x of items){if(!x||typeof x.question_hi!=="string"||!x.question_hi.trim()||!Array.isArray(x.options)||x.options.length!==4||x.options.some(v=>typeof v!=="string"||!v.trim())||!Number.isInteger(Number(x.correct_index))||Number(x.correct_index)<0||Number(x.correct_index)>3){skipped++;continue;}const key=norm(x.question_hi);if(seen.has(key)){duplicates++;continue;}seen.add(key);fresh.push({...x,question_hi:x.question_hi.trim(),options:x.options.map(v=>String(v).trim()),explanation:String(x.explanation||"")});}const translations=await translateMany(fresh);
+ for(let i=0;i<fresh.length;i++){const x=fresh[i],en=translations[i];order++;await c.query("INSERT INTO questions(test_id,question_hi,question_en,options_json,options_en,correct_index,explanation,explanation_en,translation_status,sort_order) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",[testId,x.question_hi,en?.question||String(x.question_en||""),JSON.stringify(x.options),JSON.stringify(en?.options||[]),Number(x.correct_index),x.explanation,en?.explanation||"",(en||x.question_en)?"done":"pending",order]);imported++;}
  await c.query("COMMIT");s.json({ok:true,imported,duplicates,skipped,total:items.length});
  }catch(e){await c.query("ROLLBACK");throw e;}finally{c.release();}
 }));
