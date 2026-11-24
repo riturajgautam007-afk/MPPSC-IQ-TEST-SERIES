@@ -130,6 +130,7 @@ function backToQuizStart(){$('revisionQuizWrap').hidden=true;$('testStepStart').
 let nativeRevisionQuizReady=false;
 function mountNativeRevisionQuiz(){
  const host=$('revisionQuizNative');if(!host||nativeRevisionQuizReady)return;nativeRevisionQuizReady=true;
+ host.innerHTML='<div class="notice" role="status" aria-live="polite">क्विज़ लोड हो रहा है… कृपया प्रतीक्षा करें।</div>';
  (async()=>{try{
   const response=await fetch('/pre2027-revision-quiz.html?v=20261123-native-v1',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw new Error('Quiz source load failed: '+response.status);
   const parsed=new DOMParser().parseFromString(await response.text(),'text/html'),sourceScript=parsed.querySelector('body script[src],body script');if(!sourceScript)throw new Error('Quiz script not found');
@@ -427,7 +428,7 @@ function mountNativeRevisionQuiz(){
   },true);
   window.__mppscSetNativeQuizStage=()=>setStage('questions');
   setStage('units');
- }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice">क्विज़ लोड नहीं हो सका: '+esc(error.message||'त्रुटि')+'</div>';console.error('Native quiz build failed',error);}})();
+ }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice" role="alert"><strong>क्विज़ लोड नहीं हो सका।</strong><p>'+esc(error.message||'कृपया इंटरनेट कनेक्शन जाँचें।')+'</p><button type="button" class="quiz-load-retry" onclick="mountNativeRevisionQuiz()">↻ दोबारा प्रयास करें</button></div>';console.error('Native quiz build failed',error);}})();
 }
 function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='generalstudies')loadGeneralStudies();if(id==='currentaffairs')loadCurrentAffairs();if(id==='tests'){backToQuizStart();}if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
