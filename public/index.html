@@ -323,6 +323,12 @@ html body #revisionQuizRoot #stickyMeta{
  #home .grid>.tile:not(.wide) .ico{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;flex-basis:46px!important}
 }
 </style>
+<style id="native-analysis-toolbar-visibility-fix">
+/* Analysis screen: remove the quiz-only controls above the analysis content. */
+#revisionQuizRoot.analysis-mode #unitbar,
+#revisionQuizRoot.analysis-mode #nativeQuizLanguage,
+#revisionQuizRoot.analysis-mode #stickyMeta{display:none!important}
+</style>
 <style id="sureshot-revision-layout">
 /* SureShot: native MPPSC IQ dark-app surface */
 #currentaffairs #currentAffairsList{background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
@@ -411,6 +417,10 @@ function mountNativeRevisionQuiz(){
    <main class="wrap"><div class="progress-track"><div id="progressFill" class="progress-fill"></div></div><div id="reviewNote" class="review-note"></div><div id="questions"><div class="native-quiz-placeholder"><b>अपनी यूनिट चुनें</b><small>अभ्यास शुरू करने के लिए ऊपर से यूनिट चुनें</small></div></div></main>
    <div class="bottom native-quiz-actions"><div class="native-score" id="bottomScore">Score: 0</div><button type="button" id="backBtn" onclick="changePage(-1)">← पिछला पेज</button><button type="button" id="nextBtn" onclick="changePage(1)">अगला पेज →</button><button type="button" onclick="showWrong()">गलत प्रश्न</button><button type="button" onclick="refreshAll()">↻ Refresh</button><div class="mixbar"><button type="button" id="shuffleUnitBtn" onclick="shuffleCurrentUnit()">↻ इस यूनिट के प्रश्न Shuffle</button><button type="button" id="mixAllBtn" onclick="mixAllUnits()">⇄ सभी यूनिट मिक्स</button></div></div>`;
   host.appendChild(root);
+  const updateAnalysisToolbar=()=>{const q=root.querySelector('#questions');const active=!!(q&&q.querySelector('.program-analysis,.analysis-panel,.analysis-kicker'));root.classList.toggle('analysis-mode',active);};
+  const analysisObserver=new MutationObserver(updateAnalysisToolbar);
+  const questionArea=root.querySelector('#questions');if(questionArea)analysisObserver.observe(questionArea,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  updateAnalysisToolbar();
   // Apply the 3x3 control layout directly so inherited quiz styles cannot override it.
   const controls=root.querySelector('#nativeQuizLanguage');
   if(controls){
