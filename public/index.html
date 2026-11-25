@@ -1101,9 +1101,30 @@ function mountNativeRevisionQuiz(){
   const setDisplay=(el,value)=>{el.style.setProperty('display',value,'important');};
   const setStage=stage=>{
    const unit=stage==='units';
+   const controlGrid=root.querySelector('#nativeQuizLanguage');
+   if(controlGrid){
+    controlGrid.style.setProperty('grid-template-columns','repeat(3,minmax(0,1fr))','important');
+    controlGrid.style.setProperty('grid-template-rows','repeat(3,42px)','important');
+    controlGrid.style.setProperty('grid-auto-flow','row','important');
+    controlGrid.style.setProperty('gap','7px','important');
+    const palette={'nativeQuizBack':'#204c70','hiBtn':'#087d58','enBtn':'#20538a'};
+    const colors=['#1f65ad','#087f82','#b72f45','#536273','#7540a4','#a56a16'];
+    Array.from(controlGrid.children).forEach((b,i)=>{
+     b.style.setProperty('display',b.hidden?'none':'flex','important');
+     b.style.setProperty('width','100%','important');
+     b.style.setProperty('min-width','0','important');
+     b.style.setProperty('height','42px','important');
+     b.style.setProperty('min-height','42px','important');
+     b.style.setProperty('max-height','42px','important');
+     b.style.setProperty('margin','0','important');
+     b.style.setProperty('box-sizing','border-box','important');
+     b.style.setProperty('color',b.id==='nativeQuizBack'?'#ffe08a':'#fff','important');
+     b.style.setProperty('background',palette[b.id]||colors[i-3]||'#31516f','important');
+    });
+   }
    setDisplay(root.querySelector('#unitbar'),unit?'grid':'none');
    setDisplay(root.querySelector('#nativeQuizBack'),unit?'none':'block');
-   setDisplay(root.querySelector('#nativeQuizLanguage'),unit?'none':'flex');
+   setDisplay(root.querySelector('#nativeQuizLanguage'),unit?'none':'grid');
    setDisplay(root.querySelector('#stickyMeta'),unit?'none':'flex');
    setDisplay(root.querySelector('.wrap'),unit?'none':'block');
    setDisplay(actions,unit?'none':'grid');
