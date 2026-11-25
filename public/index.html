@@ -285,6 +285,21 @@ html body #revisionQuizRoot #nativeQuizLanguage>#nativeQuizBack[hidden]{display:
  html body #revisionQuizRoot #nativeQuizLanguage>button{height:40px!important;min-height:40px!important;max-height:40px!important;font-size:11px!important}
 }
 </style>
+<style id="mppsc-sticky-quiz-info">
+html body #revisionQuizRoot #stickyMeta{
+ position:-webkit-sticky!important;position:sticky!important;
+ top:74px!important;z-index:40!important;
+ display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:6px 12px!important;width:100%!important;box-sizing:border-box!important;
+ margin:0 0 8px!important;padding:10px 12px!important;
+ background:#142f49!important;color:#f1f5fb!important;
+ border:1px solid #58718a!important;border-radius:0 0 12px 12px!important;
+ box-shadow:0 5px 14px rgba(0,0,0,.28)!important;
+}
+@media(max-width:600px){
+ html body #revisionQuizRoot #stickyMeta{top:74px!important;padding:8px 9px!important;gap:4px 8px!important;font-size:11px!important}
+}
+</style>
 </head><body><div class="app">
 <header class="top"><div class="logo" aria-label="IQ">IQ</div><div class="brand">MPPSC IQ<small>PRE 2027 · महाअभ्यास 2.0</small></div><button class="topbtn" id="themeBtn" title="Theme">☾</button><button class="topbtn" id="langBtn" title="Language">अ / A</button><a class="topbtn" id="studentLogout" href="/api/auth/logout" style="text-decoration:none;font-size:13px">Logout</a></header>
 <main class="content">
