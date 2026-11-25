@@ -300,6 +300,29 @@ html body #revisionQuizRoot #stickyMeta{
  html body #revisionQuizRoot #stickyMeta{top:74px!important;padding:8px 9px!important;gap:4px 8px!important;font-size:11px!important}
 }
 </style>
+<style id="mppsc-home-uniform-tiles">
+#home .grid{grid-auto-rows:158px!important;align-items:stretch!important}
+#home .grid>.tile:not(.wide){
+ height:158px!important;min-height:158px!important;max-height:158px!important;
+ box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+ justify-content:space-between!important;align-items:flex-start!important;
+ padding:15px 14px!important;gap:10px!important;overflow:hidden!important;
+}
+#home .grid>.tile:not(.wide) .ico{
+ width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;
+ flex:0 0 48px!important;
+}
+#home .grid>.tile:not(.wide) b{display:block!important;min-height:2.5em!important;line-height:1.25!important}
+#home .grid>.tile:not(.wide) small{
+ display:block!important;min-height:2.8em!important;line-height:1.35!important;
+}
+#home .grid>.tile.wide{height:auto!important;max-height:none!important;grid-auto-rows:auto!important}
+@media(max-width:480px){
+ #home .grid{grid-auto-rows:150px!important}
+ #home .grid>.tile:not(.wide){height:150px!important;min-height:150px!important;max-height:150px!important;padding:13px 12px!important}
+ #home .grid>.tile:not(.wide) .ico{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;flex-basis:46px!important}
+}
+</style>
 </head><body><div class="app">
 <header class="top"><div class="logo" aria-label="IQ">IQ</div><div class="brand">MPPSC IQ<small>PRE 2027 · महाअभ्यास 2.0</small></div><button class="topbtn" id="themeBtn" title="Theme">☾</button><button class="topbtn" id="langBtn" title="Language">अ / A</button><a class="topbtn" id="studentLogout" href="/api/auth/logout" style="text-decoration:none;font-size:13px">Logout</a></header>
 <main class="content">
