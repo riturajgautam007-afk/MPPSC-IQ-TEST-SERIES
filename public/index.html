@@ -962,6 +962,40 @@ function mountNativeRevisionQuiz(){
       padding:3px!important;font-size:11px!important;
     }
   }
+  /* Explicitly place all nine quiz controls in a fixed 3x3 grid */
+  #revisionQuizRoot #nativeQuizLanguage{
+    display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,42px)!important;grid-auto-flow:row!important;
+    gap:7px!important;align-items:stretch!important;width:100%!important;
+  }
+  #revisionQuizRoot #nativeQuizLanguage > .native-language-switch,
+  #revisionQuizRoot #nativeQuizLanguage > .native-quick-actions{display:contents!important}
+  #revisionQuizRoot #nativeQuizLanguage #nativeQuizBack{grid-row:1!important;grid-column:1!important}
+  #revisionQuizRoot #nativeQuizLanguage #hiBtn{grid-row:1!important;grid-column:2!important}
+  #revisionQuizRoot #nativeQuizLanguage #enBtn{grid-row:1!important;grid-column:3!important}
+  #revisionQuizRoot #nativeQuizLanguage .qa-prev{grid-row:2!important;grid-column:1!important}
+  #revisionQuizRoot #nativeQuizLanguage .qa-next{grid-row:2!important;grid-column:2!important}
+  #revisionQuizRoot #nativeQuizLanguage .qa-wrong{grid-row:2!important;grid-column:3!important}
+  #revisionQuizRoot #nativeQuizLanguage .qa-refresh{grid-row:3!important;grid-column:1!important}
+  #revisionQuizRoot #nativeQuizLanguage .qa-shuffle{grid-row:3!important;grid-column:2!important}
+  #revisionQuizRoot #nativeQuizLanguage .qa-mix{grid-row:3!important;grid-column:3!important}
+  #revisionQuizRoot #nativeQuizLanguage #nativeQuizBack,
+  #revisionQuizRoot #nativeQuizLanguage #hiBtn,
+  #revisionQuizRoot #nativeQuizLanguage #enBtn,
+  #revisionQuizRoot #nativeQuizLanguage .native-quick-actions button{
+    width:100%!important;min-width:0!important;height:42px!important;
+    min-height:42px!important;max-height:42px!important;margin:0!important;
+    padding:4px!important;border-radius:10px!important;font-size:clamp(11px,2.8vw,14px)!important;
+  }
+  @media(max-width:520px){
+    #revisionQuizRoot #nativeQuizLanguage{grid-template-rows:repeat(3,40px)!important;gap:6px!important}
+    #revisionQuizRoot #nativeQuizLanguage #nativeQuizBack,
+    #revisionQuizRoot #nativeQuizLanguage #hiBtn,
+    #revisionQuizRoot #nativeQuizLanguage #enBtn,
+    #revisionQuizRoot #nativeQuizLanguage .native-quick-actions button{
+      height:40px!important;min-height:40px!important;max-height:40px!important;font-size:11px!important;
+    }
+  }
   `;document.head.appendChild(st);
 
   // Prevent unit changes from forcibly jumping the page to the top.
