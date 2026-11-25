@@ -1314,4 +1314,37 @@ document.addEventListener('click',e=>{
   bindDashboardControls();
 })();
 </script>
+<script id="global-tap-delegation-fix">
+(function(){
+  if(window.__mppscGlobalTapFixInstalled)return;
+  window.__mppscGlobalTapFixInstalled=true;
+  document.addEventListener('click',function(ev){
+    var target=ev.target;
+    if(!target||!target.closest)return;
+    var tile=target.closest('#home .tile');
+    var nav=target.closest('.bottom .nav, .nav[data-nav]');
+    var examButton=target.closest('#examSeg button[data-exam]');
+    if(tile){
+      var attr=tile.getAttribute('onclick')||'';
+      var m=attr.match(/go\(['"]([^'"]+)['"]\)/);
+      if(m&&typeof window.go==='function'){
+        ev.preventDefault();ev.stopImmediatePropagation();window.go(m[1]);return;
+      }
+    }
+    if(nav){
+      var dest=nav.getAttribute('data-nav');
+      if(dest&&typeof window.go==='function'){
+        ev.preventDefault();ev.stopImmediatePropagation();window.go(dest);return;
+      }
+    }
+    if(examButton){
+      ev.preventDefault();ev.stopImmediatePropagation();
+      var selected=examButton.getAttribute('data-exam')||'Prelims';
+      document.querySelectorAll('#examSeg button').forEach(function(b){b.classList.toggle('active',b===examButton);});
+      try{window.exam=selected;}catch(e){}
+      if(typeof window.loadTests==='function')window.loadTests();
+    }
+  },true);
+})();
+</script>
 </body></html>
