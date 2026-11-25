@@ -241,6 +241,19 @@ img,video,canvas,svg{max-width:100%}
   }
 }
 </style>
+<style id="dashboard-clickability-fix">
+/* Keep dashboard controls above decorative layers and reliably tappable */
+#home .seg,#home .grid,#home .tile,#home .card,
+#home .seg button,#home .tile button,
+.top,.top button,.bottom,.bottom button,.nav{
+  pointer-events:auto!important;
+}
+#home .seg,#home .grid{position:relative!important;z-index:3!important}
+#home .tile{position:relative!important;z-index:4!important;cursor:pointer!important;touch-action:manipulation!important}
+#home .tile>*{pointer-events:none!important}
+button,a,[role="button"],[onclick]{touch-action:manipulation}
+button:disabled{pointer-events:none!important}
+</style>
 </head><body><div class="app">
 <header class="top"><div class="logo" aria-label="IQ">IQ</div><div class="brand">MPPSC IQ<small>PRE 2027 · महाअभ्यास 2.0</small></div><button class="topbtn" id="themeBtn" title="Theme">☾</button><button class="topbtn" id="langBtn" title="Language">अ / A</button><a class="topbtn" id="studentLogout" href="/api/auth/logout" style="text-decoration:none;font-size:13px">Logout</a></header>
 <main class="content">
@@ -1266,6 +1279,39 @@ document.addEventListener('click',e=>{
       regs.forEach(function(reg){reg.update().catch(function(){});});
     }).catch(function(){});
   }
+})();
+</script>
+<script id="dashboard-click-handler-fix">
+(function(){
+  function bindDashboardControls(){
+    if(typeof window.go!=='function')return;
+    document.querySelectorAll('#home .tile[onclick]').forEach(function(tile){
+      var code=tile.getAttribute('onclick')||'';
+      var match=code.match(/go\(['"]([^'"]+)['"]\)/);
+      if(!match)return;
+      var destination=match[1];
+      tile.onclick=function(event){
+        if(event){event.preventDefault();event.stopPropagation();}
+        window.go(destination);
+      };
+      tile.setAttribute('role','button');
+      tile.setAttribute('tabindex','0');
+      tile.onkeydown=function(event){
+        if(event.key==='Enter'||event.key===' '){event.preventDefault();window.go(destination);}
+      };
+    });
+    document.querySelectorAll('#home .seg button[data-exam]').forEach(function(button){
+      button.onclick=function(){
+        if(typeof window.loadTests==='function'){
+          window.exam=button.getAttribute('data-exam')||'Prelims';
+          document.querySelectorAll('#home .seg button').forEach(function(x){x.classList.toggle('active',x===button);});
+          window.loadTests();
+        }
+      };
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindDashboardControls,{once:true});
+  bindDashboardControls();
 })();
 </script>
 </body></html>
