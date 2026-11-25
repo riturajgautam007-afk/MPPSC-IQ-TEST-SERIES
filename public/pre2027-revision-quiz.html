@@ -730,3 +730,22 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
 @media(max-width:600px){.unitbar{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:7px!important;padding:10px 9px!important}.unitbar button{min-height:48px!important;padding:8px 2px!important;border-radius:14px!important;font-size:11px!important}.langbar{gap:6px!important;padding:8px 9px!important}.langbar button{min-height:43px!important;border-radius:12px!important}}
 @media(max-width:370px){.unitbar{gap:5px!important;padding:8px 6px!important}.unitbar button{font-size:10px!important;min-height:43px!important;border-radius:11px!important}}
 </style>
+<style id="analysis-click-isolation">
+#analysisBtn{position:relative!important;z-index:20!important;isolation:isolate!important;touch-action:manipulation!important}
+</style>
+<script id="analysis-click-isolation-script">
+(function(){
+ if(window.__analysisClickIsolationInstalled)return;
+ window.__analysisClickIsolationInstalled=true;
+ document.addEventListener('click',function(ev){
+  var btn=ev.target&&ev.target.closest?ev.target.closest('#analysisBtn'):null;
+  if(!btn)return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.stopImmediatePropagation();
+  if(typeof window.showAnalysis==='function'){
+   window.showAnalysis();
+  }
+ },true);
+})();
+</script>
