@@ -305,15 +305,14 @@ function mountNativeRevisionQuiz(){
   <nav class="unitbar" id="unitbar" aria-label="यूनिट चुनें">${Array.from({length:10},(_,i)=>`<button type="button" id="unit${i+1}Btn" onclick="setUnit(${i+1})"><span class="native-unit-icon">▦</span><span>यूनिट ${String(i+1).padStart(2,'0')}</span></button>`).join('')}<button type="button" id="pyqBtn" onclick="setPYQs()"><span class="native-unit-icon">📚</span><span>PYQ टेस्ट</span></button><button type="button" id="analysisBtn" onclick="showAnalysis()"><span class="native-unit-icon">▤</span><span>एनालिसिस</span></button></nav>
    <div class="native-quiz-language" id="nativeQuizLanguage">
     <button type="button" id="nativeQuizBack" class="native-quiz-back" hidden>← यूनिट</button>
-    <div class="native-language-switch"><button type="button" id="hiBtn" class="active" onclick="setLang('hi')">हिंदी</button><button type="button" id="enBtn" onclick="setLang('en')">English</button></div>
-    <div class="native-quick-actions" aria-label="क्विज़ कंट्रोल">
-     <button type="button" class="qa-prev" onclick="changePage(-1)">← पिछला</button>
-     <button type="button" class="qa-next" onclick="changePage(1)">अगला →</button>
-     <button type="button" class="qa-wrong" onclick="showWrong()">गलत</button>
-     <button type="button" class="qa-refresh" onclick="refreshAll()" aria-label="Refresh">↻</button>
-     <button type="button" class="qa-shuffle" id="quickShuffleUnitBtn" onclick="shuffleCurrentUnit()">⇄ Shuffle</button>
-     <button type="button" class="qa-mix" id="quickMixAllBtn" onclick="mixAllUnits()">⇄ मिक्स</button>
-    </div>
+    <button type="button" id="hiBtn" class="active" onclick="setLang('hi')">हिंदी</button>
+    <button type="button" id="enBtn" onclick="setLang('en')">English</button>
+    <button type="button" class="qa-prev" onclick="changePage(-1)">← पिछला</button>
+    <button type="button" class="qa-next" onclick="changePage(1)">अगला →</button>
+    <button type="button" class="qa-wrong" onclick="showWrong()">गलत</button>
+    <button type="button" class="qa-refresh" onclick="refreshAll()" aria-label="Refresh">↻</button>
+    <button type="button" class="qa-shuffle" id="quickShuffleUnitBtn" onclick="shuffleCurrentUnit()">⇄ Shuffle</button>
+    <button type="button" class="qa-mix" id="quickMixAllBtn" onclick="mixAllUnits()">⇄ मिक्स</button>
    </div>
    <div class="meta" id="stickyMeta"><span id="pageInfo">यूनिट चुनें</span><span id="score">Attempted: 0 · Correct: 0</span></div>
    <main class="wrap"><div class="progress-track"><div id="progressFill" class="progress-fill"></div></div><div id="reviewNote" class="review-note"></div><div id="questions"><div class="native-quiz-placeholder"><b>अपनी यूनिट चुनें</b><small>अभ्यास शुरू करने के लिए ऊपर से यूनिट चुनें</small></div></div></main>
@@ -995,6 +994,34 @@ function mountNativeRevisionQuiz(){
     #revisionQuizRoot #nativeQuizLanguage .native-quick-actions button{
       height:40px!important;min-height:40px!important;max-height:40px!important;font-size:11px!important;
     }
+  }
+  /* 3x3: controls are direct grid children */
+  #revisionQuizRoot #nativeQuizLanguage{
+    display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,42px)!important;grid-auto-flow:row!important;
+    gap:7px!important;align-items:stretch!important;width:100%!important;
+    margin:12px 0!important;padding:9px!important;
+  }
+  #revisionQuizRoot #nativeQuizLanguage > button{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:100%!important;min-width:0!important;height:42px!important;
+    min-height:42px!important;max-height:42px!important;margin:0!important;
+    padding:4px!important;border-radius:10px!important;font-size:clamp(11px,2.8vw,14px)!important;
+    grid-column:auto!important;grid-row:auto!important;
+  }
+  #revisionQuizRoot #nativeQuizLanguage > #nativeQuizBack{grid-column:1!important;grid-row:1!important}
+  #revisionQuizRoot #nativeQuizLanguage > #hiBtn{grid-column:2!important;grid-row:1!important}
+  #revisionQuizRoot #nativeQuizLanguage > #enBtn{grid-column:3!important;grid-row:1!important}
+  #revisionQuizRoot #nativeQuizLanguage > .qa-prev{grid-column:1!important;grid-row:2!important}
+  #revisionQuizRoot #nativeQuizLanguage > .qa-next{grid-column:2!important;grid-row:2!important}
+  #revisionQuizRoot #nativeQuizLanguage > .qa-wrong{grid-column:3!important;grid-row:2!important}
+  #revisionQuizRoot #nativeQuizLanguage > .qa-refresh{grid-column:1!important;grid-row:3!important}
+  #revisionQuizRoot #nativeQuizLanguage > .qa-shuffle{grid-column:2!important;grid-row:3!important}
+  #revisionQuizRoot #nativeQuizLanguage > .qa-mix{grid-column:3!important;grid-row:3!important}
+  #revisionQuizRoot #nativeQuizLanguage > #nativeQuizBack[hidden]{display:none!important}
+  @media(max-width:520px){
+    #revisionQuizRoot #nativeQuizLanguage{grid-template-rows:repeat(3,40px)!important;gap:6px!important;padding:7px!important}
+    #revisionQuizRoot #nativeQuizLanguage > button{height:40px!important;min-height:40px!important;max-height:40px!important;font-size:11px!important}
   }
   `;document.head.appendChild(st);
 
