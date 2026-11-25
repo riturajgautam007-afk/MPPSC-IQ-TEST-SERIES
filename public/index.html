@@ -318,6 +318,28 @@ function mountNativeRevisionQuiz(){
    <main class="wrap"><div class="progress-track"><div id="progressFill" class="progress-fill"></div></div><div id="reviewNote" class="review-note"></div><div id="questions"><div class="native-quiz-placeholder"><b>अपनी यूनिट चुनें</b><small>अभ्यास शुरू करने के लिए ऊपर से यूनिट चुनें</small></div></div></main>
    <div class="bottom native-quiz-actions"><div class="native-score" id="bottomScore">Score: 0</div><button type="button" id="backBtn" onclick="changePage(-1)">← पिछला पेज</button><button type="button" id="nextBtn" onclick="changePage(1)">अगला पेज →</button><button type="button" onclick="showWrong()">गलत प्रश्न</button><button type="button" onclick="refreshAll()">↻ Refresh</button><div class="mixbar"><button type="button" id="shuffleUnitBtn" onclick="shuffleCurrentUnit()">↻ इस यूनिट के प्रश्न Shuffle</button><button type="button" id="mixAllBtn" onclick="mixAllUnits()">⇄ सभी यूनिट मिक्स</button></div></div>`;
   host.appendChild(root);
+  // Apply the 3x3 control layout directly so inherited quiz styles cannot override it.
+  const controls=root.querySelector('#nativeQuizLanguage');
+  if(controls){
+    const set=(el,k,v)=>el.style.setProperty(k,v,'important');
+    set(controls,'display','grid');set(controls,'grid-template-columns','repeat(3,minmax(0,1fr))');
+    set(controls,'grid-template-rows','repeat(3,42px)');set(controls,'grid-auto-flow','row');
+    set(controls,'gap','7px');set(controls,'width','100%');set(controls,'box-sizing','border-box');
+    const order=['nativeQuizBack','hiBtn','enBtn'];
+    const classes=['qa-prev','qa-next','qa-wrong','qa-refresh','qa-shuffle','qa-mix'];
+    const colors=['#1f65ad','#087f82','#b72f45','#536273','#7540a4','#a56a16'];
+    const buttons=Array.from(controls.children);
+    buttons.forEach((b,i)=>{
+      set(b,'display',b.hidden?'none':'flex');set(b,'align-items','center');set(b,'justify-content','center');
+      set(b,'width','100%');set(b,'min-width','0');set(b,'height','42px');set(b,'min-height','42px');
+      set(b,'max-height','42px');set(b,'margin','0');set(b,'padding','4px');set(b,'box-sizing','border-box');
+      set(b,'border-radius','10px');set(b,'font-size','clamp(11px,2.8vw,14px)');set(b,'color','#fff');
+      set(b,'background',colors[i]||'#31516f');set(b,'grid-column',String((i%3)+1));set(b,'grid-row',String(Math.floor(i/3)+1));
+      if(b.id==='hiBtn'){set(b,'background','#087d58');set(b,'color','#fff')}
+      if(b.id==='enBtn'){set(b,'background','#20538a');set(b,'color','#fff')}
+      if(b.id==='nativeQuizBack'){set(b,'background','#204c70');set(b,'color','#ffe08a')}
+    });
+  }
   const st=document.createElement('style');st.textContent=`
   #revisionQuizRoot.mppsc-native-quiz{width:100%;margin:0;padding:0;background:transparent;color:var(--ink);font-family:inherit;box-sizing:border-box}#revisionQuizRoot *{box-sizing:border-box}
   #revisionQuizRoot .native-quiz-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0 16px}#revisionQuizRoot .native-quiz-kicker{font-size:10px;letter-spacing:1.4px;font-weight:900;color:var(--gold)}#revisionQuizRoot .native-quiz-heading h2{font-size:22px;margin:5px 0 0;color:var(--ink)}#revisionQuizRoot .native-quiz-tag{padding:7px 10px;border:1px solid var(--line);border-radius:30px;background:var(--panel);color:var(--muted);font-size:10px}
