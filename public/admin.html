@@ -225,7 +225,7 @@ function parseQuestionText(raw){
  });
  if(current.join("\n").trim())blocks.push(current.join("\n"));
  const valid=[],invalid=[],duplicates=[],seen=new Set();
- const answerRe=/(?:उत्तर|सही\s*(?:उत्तर|विकल्प)|उत्तर\s*कुंजी|ans(?:wer)?|correct\s*(?:answer|option)|सही\s*जवाब)\s*(?:(?:है|होगा)\s*)?(?:[:：=–—\-]\s*)?(?:विकल्प\s*)?[\(\[]?\s*([A-D])\s*[\)\]]?/i;
+ const answerRe=/(?:उत्तर|सही\s*(?:उत्तर|विकल्प)|उत्तर\s*कुंजी|ans(?:wer)?|correct\s*(?:answer|option)|सही\s*जवाब)\s*(?:(?:है|होगा)\s*)?(?:[:：=–—−‑-]\s*)?(?:विकल्प\s*)?[\s\p{P}\p{S}]{0,24}([A-D])(?:\s*[\)\]])?/iu;
  const optionRe=/(?:\(\s*([A-D])\s*\)|(?:^|[\s])([A-D])\s*[).:：\-])\s*/gim;
  blocks.forEach((source,index)=>{
   const head=source.match(/^\s*(?:(?:प्रश्न|question|q)\s*#?\s*(\d+)|(?:प्रश्न\s*संख्या)\s*(\d+)|(\d+)\s*[.)])/i);
