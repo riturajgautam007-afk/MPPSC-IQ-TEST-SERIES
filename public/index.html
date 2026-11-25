@@ -935,6 +935,33 @@ function mountNativeRevisionQuiz(){
     }
     #revisionQuizRoot .native-quiz-language .native-quick-actions .qa-refresh{font-size:16px!important}
   }
+  /* Restore compact 3x3 quiz control layout */
+  #revisionQuizRoot .native-quiz-language{
+    display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,42px)!important;grid-auto-flow:row!important;
+    align-items:stretch!important;gap:7px!important;width:100%!important;
+    margin:12px 0!important;padding:9px!important;
+  }
+  #revisionQuizRoot .native-quiz-language .native-language-switch,
+  #revisionQuizRoot .native-quiz-language .native-quick-actions{display:contents!important}
+  #revisionQuizRoot .native-quiz-language #nativeQuizBack,
+  #revisionQuizRoot .native-quiz-language .native-language-switch button,
+  #revisionQuizRoot .native-quiz-language .native-quick-actions button{
+    grid-column:auto!important;width:100%!important;min-width:0!important;
+    height:42px!important;min-height:42px!important;max-height:42px!important;
+    margin:0!important;padding:4px!important;border-radius:10px!important;
+    font-size:clamp(11px,2.8vw,14px)!important;
+  }
+  #revisionQuizRoot .native-quiz-language #nativeQuizBack[hidden]{display:none!important}
+  @media(max-width:520px){
+    #revisionQuizRoot .native-quiz-language{grid-template-rows:repeat(3,40px)!important;gap:6px!important;padding:7px!important}
+    #revisionQuizRoot .native-quiz-language #nativeQuizBack,
+    #revisionQuizRoot .native-quiz-language .native-language-switch button,
+    #revisionQuizRoot .native-quiz-language .native-quick-actions button{
+      height:40px!important;min-height:40px!important;max-height:40px!important;
+      padding:3px!important;font-size:11px!important;
+    }
+  }
   `;document.head.appendChild(st);
 
   // Prevent unit changes from forcibly jumping the page to the top.
