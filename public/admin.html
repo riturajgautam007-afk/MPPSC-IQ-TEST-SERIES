@@ -160,18 +160,19 @@ const raw=$("ssPasteAll").value.trim();if(!raw)throw Error("पहले पू�
 const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
 const tableLines=lines.filter(x=>/^\|.*\|$/.test(x));
 const cleanTable=tableLines.filter(x=>!(/^\|[\s:|-]+\|$/.test(x)));
-if(cleanTable.length<3)throw Error("व्याख्या की Markdown टेबल नहीं मिली। | से बनी टेबल Paste करें।");
 const cells=line=>line.replace(/^\|/,"").replace(/\|$/,"").split("|").map(x=>x.trim());
-const titleCells=cells(cleanTable[0]);
-const explanationTitle=titleCells.length===1?titleCells[0]:(titleCells[0]||"महत्वपूर्ण तथ्य");
-const bodyRows=cleanTable.slice(2).map(cells).filter(x=>x.length>=2&&x[0]&&x[1]);
-if(!bodyRows.length)throw Error("टेबल में तथ्य वाली पंक्तियाँ नहीं मिलीं");
+let explanationTitle="",bodyRows=[];
+if(cleanTable.length>=2){
+ const titleCells=cells(cleanTable[0]);
+ explanationTitle=titleCells.length===1?titleCells[0]:(titleCells[0]||"");
+ bodyRows=cleanTable.slice(2).map(cells).filter(x=>x.length>=2&&x[0]&&x[1]);
+}
 const flat=lines.filter(x=>!(/^\|.*\|$/.test(x)||/^\|[\s:|-]+\|$/.test(x))).join(" ");
-const answerMatch=flat.match(/(?:उत्तर|सही\s*उत्तर)\s*[-–:：]?\s*\(?([A-D])\)?/i);
-if(!answerMatch)throw Error("उत्तर – (A) जैसे सही उत्तर की लाइन नहीं मिली");
+const answerMatch=flat.match(/(?:उत्तर|सही\s*उत्तर)\s*[-–:：]?\s*\(?([A-Da-d])\)?/i);
+if(!answerMatch)throw Error("उत्तर – (d) या उत्तर – (D) जैसी लाइन नहीं मिली");
 const questionAndOptions=flat.slice(0,answerMatch.index).trim();
-const markerRegex=/\(([A-D])\)\s*/g,markers=[...questionAndOptions.matchAll(markerRegex)];
-if(markers.length!==4||markers.map(x=>x[1]).join("")!=="ABCD")throw Error("चारों विकल्प (A), (B), (C), (D) इसी क्रम में स्पष्ट रूप से होने चाहिए।");
+const markerRegex=/\(([a-d])\)\s*/gi,markers=[...questionAndOptions.matchAll(markerRegex)];
+if(markers.length!==4||markers.map(x=>x[1].toUpperCase()).join("")!=="ABCD")throw Error("चारों विकल्प (a), (b), (c), (d) इसी क्रम में होने चाहिए।");
 const firstOption=markers[0].index;
 let questionPart=questionAndOptions.slice(0,firstOption).replace(/^प्रश्न\s*\d*\s*[.:：-]?\s*/i,"").trim();
 if(!questionPart)throw Error("प्रश्न का टेक्स्ट नहीं मिला");
@@ -181,8 +182,8 @@ $("ssQuestion").value=questionPart;["ssA","ssB","ssC","ssD"].forEach((id,i)=>$(i
 $("ssAnswer").value="ABCD".indexOf(answerMatch[1].toUpperCase());
 $("ssExplanationTitle").value=explanationTitle;
 $("ssRows").value=bodyRows.map(r=>r[0]+" | "+r.slice(1).join(" | ")).join("\n");
-if(!$("ssTitle").value)$("ssTitle").value=explanationTitle;
-$("ssParseStatus").textContent="✓ प्रश्न, चार विकल्प, सही उत्तर और "+bodyRows.length+" टेबल पंक्तियाँ पहचान ली गईं। नीचे जाँचकर SureShot प्रश्न सेव करें।";
+if(!$("ssTitle").value&&explanationTitle)$("ssTitle").value=explanationTitle;
+$("ssParseStatus").textContent="✓ प्रश्न, चार विकल्प और सही उत्तर पहचान लिए गए। "+(bodyRows.length?"व्याख्या की "+bodyRows.length+" टेबल पंक्तियाँ भी मिलीं।":"टेबल न होने पर भी प्रश्न जोड़ा जा सकता है।")+" नीचे जाँचकर सेव करें।";
 $("ssStatus").textContent="Paste से फ़ील्ड भर गए हैं।";
 $("ssQuestion").scrollIntoView({behavior:"smooth",block:"center"});
 }catch(e){$("ssParseStatus").textContent="जाँचें: "+e.message;toast(e.message)}}
