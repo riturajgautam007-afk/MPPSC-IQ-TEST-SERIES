@@ -324,27 +324,28 @@ html body #revisionQuizRoot #stickyMeta{
 }
 </style>
 <style id="sureshot-revision-layout">
-#currentaffairs .ss-card{background:#fffefa;color:#263b34;border:2px solid #b8cbbd;border-radius:22px;padding:18px 16px;margin:16px 0 22px;box-shadow:0 5px 18px rgba(24,55,42,.07)}
-#currentaffairs .ss-program{background:linear-gradient(100deg,#536f63,#789486);color:#fff;text-align:center;border-radius:12px;padding:10px 8px;font-weight:750;letter-spacing:.5px;font-size:15px;margin-bottom:14px}
-#currentaffairs .ss-topic{font-size:14px;color:#5b7669;font-weight:700;margin:0 0 10px}
-#currentaffairs .ss-question{display:flex;gap:12px;align-items:flex-start;padding:10px 4px 16px}
-#currentaffairs .ss-qtag{flex:0 0 48px;height:48px;border-radius:50%;background:#5d796b;color:white;display:grid;place-items:center;font-weight:700;font-size:14px}
-#currentaffairs .ss-question h2{font-size:clamp(17px,4.5vw,22px);line-height:1.55;margin:0;font-weight:700;color:#263b34}
-#currentaffairs .ss-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 18px}
-#currentaffairs .ss-option{display:flex;align-items:center;gap:10px;min-height:56px;border:1.5px solid #c6d7c9;border-radius:16px;padding:9px 11px;background:repeating-linear-gradient(0deg,#fff 0 17px,#edf3e9 17px 34px);font-size:clamp(14px,3.7vw,17px);line-height:1.4;color:#263b34}
-#currentaffairs .ss-option b{color:#4f6e5e;white-space:nowrap}
-#currentaffairs .ss-explanation{border:2px solid #c0d0c3;border-radius:18px;overflow:hidden;background:#fbfcf8}
-#currentaffairs .ss-explanation-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;background:#e8f0e6;color:#385747;border-bottom:1px solid #c5d3c6}
-#currentaffairs .ss-explanation-head b{font-size:18px}
-#currentaffairs .ss-explanation-head span{font-size:13px;font-weight:650;text-align:right}
-#currentaffairs .ss-table-wrap{overflow-x:auto;padding:12px}
-#currentaffairs .ss-table{width:100%;border-collapse:collapse;min-width:300px;color:#2d4038;font-size:14px;line-height:1.45}
-#currentaffairs .ss-table th,#currentaffairs .ss-table td{border:1px solid #c5d2c5;padding:9px 8px;text-align:left;vertical-align:top}
-#currentaffairs .ss-table thead th{background:#e7efe4;text-align:center;font-weight:750}
-#currentaffairs .ss-table tbody td:first-child{background:#eef3eb;font-weight:650;width:50%}
-#currentaffairs .ss-table tbody td:last-child{background:#fffefa}
-#currentaffairs .ss-no-table{padding:14px;color:#65786d}
-@media(max-width:520px){#currentaffairs .ss-card{padding:13px 11px;border-radius:18px}#currentaffairs .ss-options{gap:7px}#currentaffairs .ss-option{padding:8px 7px;min-height:52px;gap:6px;font-size:13px}#currentaffairs .ss-explanation-head{padding:10px;align-items:flex-start}#currentaffairs .ss-explanation-head b{font-size:16px}#currentaffairs .ss-explanation-head span{font-size:11px}#currentaffairs .ss-table{font-size:12px}#currentaffairs .ss-table th,#currentaffairs .ss-table td{padding:7px 6px}}
+/* SureShot: native MPPSC IQ dark-app surface */
+#currentaffairs #currentAffairsList{background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
+#currentaffairs .ss-card{background:linear-gradient(145deg,#182333,#121a27)!important;color:#eef2f7!important;border:1px solid #344256!important;border-radius:20px!important;padding:17px 15px!important;margin:14px 0 18px!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
+#currentaffairs .ss-program{display:inline-flex!important;align-items:center;justify-content:center;background:rgba(242,195,83,.10)!important;color:#f2c65b!important;border:1px solid rgba(242,195,83,.30)!important;text-align:center;border-radius:999px!important;padding:6px 11px!important;font-weight:650!important;letter-spacing:.35px!important;font-size:11px!important;margin:0 0 13px!important}
+#currentaffairs .ss-question{display:flex!important;gap:10px!important;align-items:flex-start!important;padding:7px 1px 15px!important}
+#currentaffairs .ss-qtag{flex:0 0 34px!important;height:34px!important;border-radius:11px!important;background:rgba(242,195,83,.13)!important;border:1px solid rgba(242,195,83,.32)!important;color:#f2c65b!important;display:grid!important;place-items:center!important;font-weight:650!important;font-size:12px!important}
+#currentaffairs .ss-question h2{font-size:clamp(16px,4.1vw,19px)!important;line-height:1.55!important;margin:1px 0 0!important;font-weight:600!important;color:#f1f4f8!important}
+#currentaffairs .ss-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:2px 0 15px!important}
+#currentaffairs .ss-option{display:flex!important;align-items:center!important;gap:8px!important;min-height:49px!important;border:1px solid #3a4a60!important;border-radius:12px!important;padding:8px 10px!important;background:#202d3e!important;font-size:clamp(13px,3.5vw,15px)!important;line-height:1.4!important;color:#e4eaf2!important}
+#currentaffairs .ss-option b{color:#f2c65b!important;white-space:nowrap!important;font-weight:650!important}
+#currentaffairs .ss-explanation{border:1px solid #3a4a60!important;border-radius:14px!important;overflow:hidden!important;background:#172231!important}
+#currentaffairs .ss-explanation-head{display:flex!important;justify-content:space-between!important;gap:10px!important;align-items:center!important;padding:11px 12px!important;background:#202e40!important;color:#f2c65b!important;border-bottom:1px solid #3a4a60!important}
+#currentaffairs .ss-explanation-head b{font-size:15px!important;font-weight:650!important}
+#currentaffairs .ss-explanation-head span{font-size:12px!important;font-weight:550!important;text-align:right!important;color:#dce5ef!important}
+#currentaffairs .ss-table-wrap{overflow-x:auto!important;padding:10px!important}
+#currentaffairs .ss-table{width:100%!important;border-collapse:collapse!important;min-width:290px!important;color:#e2e9f1!important;font-size:13px!important;line-height:1.5!important}
+#currentaffairs .ss-table th,#currentaffairs .ss-table td{border:1px solid #3a4a60!important;padding:8px 7px!important;text-align:left!important;vertical-align:top!important}
+#currentaffairs .ss-table thead th{background:#26364a!important;color:#f2c65b!important;text-align:center!important;font-weight:650!important}
+#currentaffairs .ss-table tbody td:first-child{background:#1d2b3c!important;font-weight:550!important;width:50%!important;color:#e9eef5!important}
+#currentaffairs .ss-table tbody td:last-child{background:#172433!important;color:#dce5ef!important}
+#currentaffairs .ss-no-table{padding:12px!important;color:#aeb9c8!important}
+@media(max-width:520px){#currentaffairs .ss-card{padding:14px 12px!important;border-radius:17px!important}#currentaffairs .ss-options{gap:7px!important}#currentaffairs .ss-option{padding:8px 7px!important;min-height:47px!important;gap:6px!important;font-size:12.5px!important}#currentaffairs .ss-explanation-head{padding:9px 10px!important;align-items:flex-start!important}#currentaffairs .ss-explanation-head b{font-size:14px!important}#currentaffairs .ss-explanation-head span{font-size:11px!important}#currentaffairs .ss-table{font-size:12px!important}#currentaffairs .ss-table th,#currentaffairs .ss-table td{padding:7px 6px!important}}
 </style>
 </head><body><div class="app">
 <header class="top"><div class="logo" aria-label="IQ">IQ</div><div class="brand">MPPSC IQ<small>PRE 2027 · महाअभ्यास 2.0</small></div><button class="topbtn" id="themeBtn" title="Theme">☾</button><button class="topbtn" id="langBtn" title="Language">अ / A</button><a class="topbtn" id="studentLogout" href="/api/auth/logout" style="text-decoration:none;font-size:13px">Logout</a></header>
