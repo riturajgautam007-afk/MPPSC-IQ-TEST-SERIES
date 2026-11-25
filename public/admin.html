@@ -155,7 +155,37 @@ function unlockAdmin(){ loadAnnouncements(); loadSureShotAdmin(); $("login").cla
 async function logout(){try{await fetch("/api/auth/logout",{method:"GET",credentials:"same-origin",cache:"no-store"});}catch(e){}token="";$("p").value="";$("panel").classList.add("hidden");$("login").classList.remove("hidden");$("refreshBtn").hidden=true;window.location.replace("/");}
 
 
-function parseSureShotPaste(){try{const raw=$("ssPasteAll").value.trim();if(!raw)throw Error("पहले पूरा प्रश्न Paste करें");const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const tableLines=lines.filter(x=>/^\|.*\|$/.test(x));const cleanTable=tableLines.filter(x=>!(/^\|[\s:|-]+\|$/.test(x)));if(cleanTable.length<3)throw Error("व्याख्या की Markdown टेबल नहीं मिली। | से बनी टेबल Paste करें।");const cells=line=>line.replace(/^\|/,"").replace(/\|$/,"").split("|").map(x=>x.trim());const titleCells=cells(cleanTable[0]);const explanationTitle=titleCells.length===1?titleCells[0]:(titleCells[0]||"महत्वपूर्ण तथ्य");const bodyRows=cleanTable.slice(2).map(cells).filter(x=>x.length>=2&&x[0]&&x[1]);if(!bodyRows.length)throw Error("टेबल में तथ्य वाली पंक्तियाँ नहीं मिलीं");const flat=lines.filter(x=>!(/^\|.*\|$/.test(x)||/^\|[\s:|-]+\|$/.test(x))).join(" ");const optionMatch=[...flat.matchAll(/\(([A-D])\)\s*([\s\S]*?)(?=\s*\([A-D]\)\s*|$)/g)];if(optionMatch.length!==4)throw Error("चारों विकल्प (A), (B), (C), (D) स्पष्ट रूप से नहीं मिले");const answerMatch=flat.match(/(?:उत्तर|सही\s*उत्तर)\s*[-–:：]?\s*\(?([A-D])\)?/i);if(!answerMatch)throw Error("उत्तर – (A) जैसे सही उत्तर की लाइन नहीं मिली");const firstOption=flat.search(/\(A\)\s*/);if(firstOption<0)throw Error("प्रश्न का टेक्स्ट नहीं मिला");let questionPart=flat.slice(0,firstOption).replace(/^प्रश्न\s*\d*\s*[.:：-]?\s*/i,"").trim();questionPart=questionPart.replace(/(?:उत्तर|सही\s*उत्तर)[\s\S]*$/i,"").trim();if(!questionPart)throw Error("प्रश्न का टेक्स्ट खाली है");const options=optionMatch.map(m=>m[2].trim());if(options.some(x=>!x))throw Error("किसी विकल्प का टेक्स्ट खाली है");$("ssQuestion").value=questionPart;["ssA","ssB","ssC","ssD"].forEach((id,i)=>$(id).value=options[i]);$("ssAnswer").value="ABCD".indexOf(answerMatch[1].toUpperCase());$("ssExplanationTitle").value=explanationTitle;$("ssRows").value=bodyRows.map(r=>r[0]+" | "+r.slice(1).join(" | ")).join("\n");if(!$("ssTitle").value)$("ssTitle").value=explanationTitle;$("ssParseStatus").textContent="✓ प्रश्न, चार विकल्प, सही उत्तर और "+bodyRows.length+" टेबल पंक्तियाँ पहचान ली गईं। नीचे जाँचकर SureShot प्रश्न सेव करें।";$("ssStatus").textContent="Paste से फ़ील्ड भर गए हैं।";$("ssQuestion").scrollIntoView({behavior:"smooth",block:"center"});}catch(e){$("ssParseStatus").textContent="जाँचें: "+e.message;toast(e.message)}}
+function parseSureShotPaste(){try{
+const raw=$("ssPasteAll").value.trim();if(!raw)throw Error("पहले पूरा प्रश्न Paste करें");
+const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+const tableLines=lines.filter(x=>/^\|.*\|$/.test(x));
+const cleanTable=tableLines.filter(x=>!(/^\|[\s:|-]+\|$/.test(x)));
+if(cleanTable.length<3)throw Error("व्याख्या की Markdown टेबल नहीं मिली। | से बनी टेबल Paste करें।");
+const cells=line=>line.replace(/^\|/,"").replace(/\|$/,"").split("|").map(x=>x.trim());
+const titleCells=cells(cleanTable[0]);
+const explanationTitle=titleCells.length===1?titleCells[0]:(titleCells[0]||"महत्वपूर्ण तथ्य");
+const bodyRows=cleanTable.slice(2).map(cells).filter(x=>x.length>=2&&x[0]&&x[1]);
+if(!bodyRows.length)throw Error("टेबल में तथ्य वाली पंक्तियाँ नहीं मिलीं");
+const flat=lines.filter(x=>!(/^\|.*\|$/.test(x)||/^\|[\s:|-]+\|$/.test(x))).join(" ");
+const answerMatch=flat.match(/(?:उत्तर|सही\s*उत्तर)\s*[-–:：]?\s*\(?([A-D])\)?/i);
+if(!answerMatch)throw Error("उत्तर – (A) जैसे सही उत्तर की लाइन नहीं मिली");
+const questionAndOptions=flat.slice(0,answerMatch.index).trim();
+const markerRegex=/\(([A-D])\)\s*/g,markers=[...questionAndOptions.matchAll(markerRegex)];
+if(markers.length!==4||markers.map(x=>x[1]).join("")!=="ABCD")throw Error("चारों विकल्प (A), (B), (C), (D) इसी क्रम में स्पष्ट रूप से होने चाहिए।");
+const firstOption=markers[0].index;
+let questionPart=questionAndOptions.slice(0,firstOption).replace(/^प्रश्न\s*\d*\s*[.:：-]?\s*/i,"").trim();
+if(!questionPart)throw Error("प्रश्न का टेक्स्ट नहीं मिला");
+const options=markers.map((m,i)=>questionAndOptions.slice(m.index+m[0].length,i<3?markers[i+1].index:questionAndOptions.length).trim());
+if(options.some(x=>!x))throw Error("किसी विकल्प का टेक्स्ट खाली है");
+$("ssQuestion").value=questionPart;["ssA","ssB","ssC","ssD"].forEach((id,i)=>$(id).value=options[i]);
+$("ssAnswer").value="ABCD".indexOf(answerMatch[1].toUpperCase());
+$("ssExplanationTitle").value=explanationTitle;
+$("ssRows").value=bodyRows.map(r=>r[0]+" | "+r.slice(1).join(" | ")).join("\n");
+if(!$("ssTitle").value)$("ssTitle").value=explanationTitle;
+$("ssParseStatus").textContent="✓ प्रश्न, चार विकल्प, सही उत्तर और "+bodyRows.length+" टेबल पंक्तियाँ पहचान ली गईं। नीचे जाँचकर SureShot प्रश्न सेव करें।";
+$("ssStatus").textContent="Paste से फ़ील्ड भर गए हैं।";
+$("ssQuestion").scrollIntoView({behavior:"smooth",block:"center"});
+}catch(e){$("ssParseStatus").textContent="जाँचें: "+e.message;toast(e.message)}}
 
 async function loadSureShotAdmin(){try{const rows=await api("/admin/sureshot");$("ssAdminList").innerHTML=rows.length?rows.map(x=>'<div class="listitem" style="display:block;margin:8px 0"><div class="row between"><b>'+esc(x.title||"SureShot प्रश्न #"+x.id)+'</b><span class="badge '+(x.published?"":"draft")+'">'+(x.published?"Published":"Draft")+'</span></div><div>'+esc(x.question)+'</div><small>'+((x.options_json||[]).length)+' विकल्प · '+((x.explanation_rows_json||[]).length)+' व्याख्या पंक्तियाँ</small><div class="row" style="margin-top:8px"><button class="btn soft" onclick="toggleSureShot('+Number(x.id)+','+(!x.published)+')">'+(x.published?"Unpublish":"Publish")+'</button><button class="btn danger" onclick="deleteSureShot('+Number(x.id)+')">हटाएँ</button></div></div>').join(""):'अभी कोई SureShot प्रश्न नहीं जोड़ा गया।';}catch(e){$("ssAdminList").textContent=e.message}}
 async function addSureShot(){try{const question=$("ssQuestion").value.trim(),options=["ssA","ssB","ssC","ssD"].map(id=>$(id).value.trim()),raw=$("ssRows").value.trim(),explanation_rows=raw?raw.split(/\r?\n/).filter(x=>x.trim()).map(line=>{const p=line.split("|");return{left:(p.shift()||"").trim(),right:p.join("|").trim()}}):[];if(!question||options.some(x=>!x))throw Error("प्रश्न और चारों विकल्प भरें");if(explanation_rows.some(x=>!x.left||!x.right))throw Error("टेबल की हर पंक्ति में | से दो कॉलम अलग करें");$("ssStatus").textContent="सेव हो रहा है…";await api("/admin/sureshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:$("ssTitle").value.trim(),question,options,answer_index:+$("ssAnswer").value,explanation_title:$("ssExplanationTitle").value.trim(),explanation_rows,published:$("ssPublished").checked,sort_order:+$("ssOrder").value||0})});["ssTitle","ssQuestion","ssA","ssB","ssC","ssD","ssRows"].forEach(id=>$(id).value="");$("ssStatus").textContent="प्रश्न सफलतापूर्वक सेव हुआ।";toast("SureShot प्रश्न जोड़ दिया गया");await loadSureShotAdmin();}catch(e){$("ssStatus").textContent=e.message;toast(e.message)}}
