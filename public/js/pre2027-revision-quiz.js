@@ -10,7 +10,7 @@ function loadQuestionBankAdditions(){
  if(!questionBankAdditionsPromise)questionBankAdditionsPromise=(async()=>{
   const payload=await revisionApi('/question-bank-overrides');
   const additions=payload&&payload.additions&&typeof payload.additions==='object'?payload.additions:{};
-  for(const [qid,item] of Object.entries(payload.edits||{})){const [unitText,indexText]=String(qid).split(':');const unit=Number(unitText),index=Number(indexText);if(Number.isInteger(unit)&&Number.isInteger(index)&&UNIT_DATA_MAP[unit]?.[index]&&item&&typeof item==='object'){Object.assign(UNIT_DATA_MAP[unit][index],item);}}for(const [unitKey,items] of Object.entries(additions)){
+  for(const [qid,item] of Object.entries(payload.edits||{})){const [unitText,indexText]=String(qid).split(':');const unit=Number(unitText),index=Number(indexText);if(Number.isInteger(unit)&&Number.isInteger(index)&&UNIT_DATA_MAP[unit]?.[index]&&item&&typeof item==='object'){if(item.__deleted){UNIT_DATA_MAP[unit][index].__deleted=true;}else{Object.assign(UNIT_DATA_MAP[unit][index],item);UNIT_DATA_MAP[unit][index].__deleted=false;}}}for(const [unitKey,items] of Object.entries(additions)){
    const unit=Number(unitKey);if(!Number.isInteger(unit)||unit<1||unit>10||!Array.isArray(items))continue;
    const base=UNIT_DATA_MAP[unit]||(UNIT_DATA_MAP[unit]=[]);
    const seen=new Set(base.map(q=>String(q.q||'').normalize('NFKC').toLocaleLowerCase('hi').replace(/[\\s\\p{P}]+/gu,' ').trim()));
@@ -297,6 +297,8 @@ function render(){
  const title=lang==='hi'?'प्रश्न':'Question';
  document.getElementById('questions').innerHTML=indices.map(idx=>{
   const q=DATA[idx],chosen=answers[idx],opts=q.options||[];
+  if(q.__deleted){return revisionAdmin?'<section class="card" style="border:1px dashed #d59a50"><b>यह प्रश्न विद्यार्थियों से छिपाया गया है · UNIT '+Number(q.__unit||activeUnit)+'</b><div class="revision-question-actions"><button type="button" class="revision-q-action" onclick="restoreRevisionQuestion('+Number(q.__unit||activeUnit)+','+Number(String(q.__qid||'').split(':').pop())+')">↶ Restore</button></div></section>':'';}
+
   const separateLang=(isMixedMode?q.__unit===6:activeUnit===6)||idx>=1400;
   const cachedEnglish=englishTranslationCache[translationKey(q,idx)];
   const questionSource=lang==='hi'?(q.q||q.en):(q.en||q.q||'');
@@ -318,7 +320,7 @@ function render(){
   const cardTitle=isMixedMode?`UNIT ${String(q.__unit).padStart(2,'0')} · ${title} ${idx+1}`:`${title} ${idx+1}`;
   const sourceUnit=Number(q.__unit||activeUnit||0),sourceIndex=Number(String(q.__qid||`${sourceUnit}:${idx}`).split(':').pop());
   const saved=revisionBookmarkExists(sourceUnit,sourceIndex);
-  const actions=`<div class="revision-question-actions"><button type="button" class="revision-q-action ${saved?'saved':''}" onclick="toggleRevisionBookmark(${sourceUnit},${sourceIndex},this)">${saved?'🔖✓ बुकमार्क किया':'🔖 बुकमार्क'}</button><button type="button" class="revision-q-action" onclick="reportRevisionQuestion(${sourceUnit},${sourceIndex})">⚑ प्रश्न रिपोर्ट करें</button></div>`;
+  const actions=\`<div class="revision-question-actions"><button type="button" class="revision-q-action \${saved?'saved':''}" onclick="toggleRevisionBookmark(\${sourceUnit},\${sourceIndex},this)">\${saved?'🔖✓ बुकमार्क किया':'🔖 बुकमार्क'}</button><button type="button" class="revision-q-action" onclick="reportRevisionQuestion(\${sourceUnit},\${sourceIndex})">⚑ प्रश्न रिपोर्ट करें</button>\${revisionAdmin?'<button type="button" class="revision-q-action" onclick="editRevisionQuestion('+sourceUnit+','+sourceIndex+')">✎ एडिट / सेव</button><button type="button" class="revision-q-action" onclick="deleteRevisionQuestion('+sourceUnit+','+sourceIndex+')">🗑 डिलीट</button>':''}</div>\`;
   const explanationText=lang==='hi'?(q.explanation||''):(q.explanation_en||q.explanation||'');const explanationHTML=explanationText?`<div class="explanation-box"><b>${lang==='hi'?'व्याख्या':'Explanation'}:</b> ${esc(explanationText)}</div>`:'';return `<section class="card" id="qcard-${idx}"><div class="qtext">${cardTitle}. ${esc(visibleQuestion)}</div>${structured.table||legacyMatch}${options}${explanationHTML}${actions}</section>`;
  }).join('');
  const wrongBtn=document.querySelector('.bottom button[onclick="showWrong()"]');if(wrongBtn){wrongBtn.textContent=reviewMode?`Next Wrong ${reviewPos+1}/${reviewIds.length}`:`Wrong (${wrong})`;wrongBtn.style.display=unitWrongMode?'none':'';}if(unitWrongMode){['backBtn','nextBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.display='none';});const mb=document.querySelector('.mixbar');if(mb)mb.style.display='none';}
@@ -329,6 +331,7 @@ function changePage(d){clearTimeout(autoTimer);if(reviewMode){reviewPos=Math.max
 function applyTheme(theme){document.body.classList.toggle('dark',theme==='dark');const b=document.getElementById('themeBtn');if(b){b.textContent=theme==='dark'?'☀️ Light':'🌙 Dark';b.setAttribute('aria-pressed',theme==='dark'?'true':'false');}try{localStorage.setItem('mppscIqTheme',theme)}catch(e){}}
 function toggleTheme(){applyTheme(document.body.classList.contains('dark')?'light':'dark')}
 (function(){let t='light';try{t=localStorage.getItem('mppscIqTheme')||'light'}catch(e){}applyTheme(t)})();
+let revisionAdmin=false;
 const REVISION_BOOKMARK_KEY='mppscIqRevisionBookmarks_v1';
 function revisionBookmarks(){try{const v=JSON.parse(localStorage.getItem(REVISION_BOOKMARK_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return [];}}
 function revisionBookmarkExists(unit,index){return revisionBookmarks().some(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));}
@@ -337,5 +340,27 @@ async function revisionApi(path,options={}){const response=await fetch(REVISION_
 async function syncRevisionBookmarks(){try{let remote=await revisionApi('/revision-bookmarks');let local=revisionBookmarks();for(const item of local){const exists=remote.some(x=>Number(x.unit)===Number(item.unit)&&Number(x.question_index)===Number(item.index));if(!exists){const q=(UNIT_DATA_MAP[Number(item.unit)]||[])[Number(item.index)]||{q:item.question,en:item.english,options:item.options,answer:item.answer};await revisionApi('/revision-bookmarks',{method:'POST',body:JSON.stringify({unit:Number(item.unit),index:Number(item.index),question:{q:q.q||item.question||'',en:q.en||item.english||'',options:q.options||item.options||[],answer:Number(q.answer??item.answer)}})});}}remote=await revisionApi('/revision-bookmarks');const merged=remote.map(x=>({unit:Number(x.unit),index:Number(x.question_index),question_key:x.question_key,question:x.question_json?.q||'',english:x.question_json?.en||'',options:x.question_json?.options||[],answer:Number(x.question_json?.answer),savedAt:x.created_at||new Date().toISOString()}));localStorage.setItem(REVISION_BOOKMARK_KEY,JSON.stringify(merged));}catch(e){console.info('Cloud bookmarks unavailable; local bookmarks remain active.',e.message);}}
 async function toggleRevisionBookmark(unit,index,button){const rows=revisionBookmarks(),pos=rows.findIndex(x=>Number(x.unit)===Number(unit)&&Number(x.index)===Number(index));const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;button.disabled=true;try{if(pos>=0){const saved=rows[pos];if(saved.question_key)await revisionApi('/revision-bookmarks/'+encodeURIComponent(saved.question_key),{method:'DELETE'});rows.splice(pos,1);}else{let result=null;try{result=await revisionApi('/revision-bookmarks',{method:'POST',body:JSON.stringify({unit,index,question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:q.answer}})});}catch(e){if(/login|membership|paid|सदस्यता|लॉगिन/i.test(e.message))throw e;}rows.unshift({unit,index,question_key:result?.question_key||'',question:q.q||'',english:q.en||'',options:q.options||[],answer:q.answer,savedAt:new Date().toISOString()});}localStorage.setItem(REVISION_BOOKMARK_KEY,JSON.stringify(rows));const active=pos<0;button.classList.toggle('saved',active);button.textContent=active?'🔖✓ बुकमार्क किया':'🔖 बुकमार्क';}catch(e){alert(e.message||'बुकमार्क सेव नहीं हो सका।');}finally{button.disabled=false;}}
 async function reportRevisionQuestion(unit,index){const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q)return;const reason=prompt('इस प्रश्न में क्या समस्या है?\\nगलत उत्तर / प्रश्न / विकल्प / भाषा');if(!reason||!reason.trim())return;try{await revisionApi('/revision-question-reports',{method:'POST',body:JSON.stringify({unit,index,question:{q:q.q||'',en:q.en||'',options:q.options||[],answer:q.answer},reason:reason.trim()})});alert('प्रश्न रिपोर्ट सफलतापूर्वक दर्ज हो गई है।');}catch(error){alert(error.message||'रिपोर्ट भेजने में समस्या हुई।');}}
+
+async function editRevisionQuestion(unit,index){
+ const q=(UNIT_DATA_MAP[unit]||[])[index];if(!q||!revisionAdmin)return;
+ const question=prompt('प्रश्न संपादित करें:',q.q||'');if(question===null)return;
+ const optionsText=prompt('चार विकल्प अलग-अलग लाइन में लिखें:',(q.options||[]).join('\n'));if(optionsText===null)return;
+ const options=optionsText.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(options.length!==4)return alert('ठीक चार विकल्प अलग-अलग लाइन में लिखें।');
+ const answerText=prompt('सही उत्तर का अक्षर लिखें (A/B/C/D):','ABCD'[Number(q.answer)]||'A');if(answerText===null)return;
+ const answer='ABCD'.indexOf(answerText.trim().toUpperCase());if(answer<0)return alert('सही उत्तर A, B, C या D होना चाहिए।');
+ const explanation=prompt('व्याख्या (वैकल्पिक):',q.explanation||'');if(explanation===null)return;
+ try{await revisionApi('/admin/question-bank/'+unit+'/'+index,{method:'PUT',body:JSON.stringify({q:question,options,answer,explanation,en:q.en||''})});alert('प्रश्न अपडेट हो गया। पेज रिफ्रेश किया जा रहा है।');location.reload();}catch(e){alert(e.message);}
+}
+async function deleteRevisionQuestion(unit,index){
+ if(!revisionAdmin||!confirm('क्या इस प्रश्न को विद्यार्थियों के लिए हटाना/छिपाना है?'))return;
+ try{await revisionApi('/admin/question-bank/'+unit+'/'+index+'/delete',{method:'POST',body:'{}'});alert('प्रश्न विद्यार्थियों से छिपा दिया गया।');location.reload();}catch(e){alert(e.message);}
+}
+async function restoreRevisionQuestion(unit,index){
+ if(!revisionAdmin||!confirm('क्या इस प्रश्न को फिर से प्रकाशित करना है?'))return;
+ try{await revisionApi('/admin/question-bank/'+unit+'/'+index,{method:'DELETE'});location.reload();}catch(e){alert(e.message);}
+}
+async function detectRevisionAdmin(){try{const me=await revisionApi('/me');revisionAdmin=me.role==='admin';if(revisionAdmin)render();}catch(e){revisionAdmin=false;}}
+
 render();
 setTimeout(()=>restoreRevisionCloudState(),700);
+detectRevisionAdmin();
