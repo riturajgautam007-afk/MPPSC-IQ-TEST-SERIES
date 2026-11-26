@@ -30,6 +30,7 @@ const questionBankRecovery=createQuestionBankRecovery({supabase,bucket,rootDir:p
 let questionBankRecoveryPromise=Promise.resolve({ok:true,restore_performed:false,restored:[],already_present:[]});
 app.get("/.well-known/web-app-origin-association",(_q,s)=>s.type("application/json").send(JSON.stringify({"https://mppsc-iq-install.onrender.com":{scope:["/"]}})));
 app.disable("x-powered-by");app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"2mb"}));const allowedOrigins=new Set(["https://mppsc-iq-quiz-miniapp.onrender.com","https://mppsc-iq-student-miniapp.onrender.com","https://mppsc-iq-install.onrender.com","https://riturajgautam007-afk.github.io"]);app.use((req,res,next)=>{const origin=req.headers.origin;if(origin&&allowedOrigins.has(origin)){res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Vary","Origin");res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");res.setHeader("Access-Control-Allow-Methods","GET, POST, PUT, OPTIONS");res.setHeader("Access-Control-Allow-Credentials","true");}if(req.method==="OPTIONS")return res.sendStatus(204);next();});
+const ar=fn=>(q,s,n)=>Promise.resolve(fn(q,s,n)).catch(n);
 // Keep the web app online even if the database is temporarily unreachable.
 app.use("/api",(q,s,n)=>{if(q.path==="/health"||q.path==="/ready")return n();if(!dbReady)return s.status(503).json({error:"Database temporarily unavailable. Please try again shortly."});n();});
 app.use("/api",ar(async(q,s,n)=>{
@@ -47,7 +48,6 @@ app.use("/api",ar(async(q,s,n)=>{
 }));
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:(Number(process.env.MAX_UPLOAD_MB)||20)*1024*1024}});
 const studentOnly=(q,s,n)=>(q.auth.role==="student"||q.auth.role==="admin")?n():s.status(403).json({error:"Student only"});
-const ar=fn=>(q,s,n)=>Promise.resolve(fn(q,s,n)).catch(n);
 app.post("/api/admin/question-bank/restore-assets",requireAuth,requireAdmin,ar(async(_q,s)=>{const result=await questionBankRecovery.restoreMissing();s.json(result);}));
 const requirePaid=membership.requirePaid(db);
 membership.register(app,{db,requireAuth,requireAdmin,ar});
