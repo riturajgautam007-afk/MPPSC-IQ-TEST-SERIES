@@ -436,6 +436,10 @@ function mountNativeRevisionQuiz(){
   let quizSource=sourceScript.textContent||'';
   if(sourceScript.getAttribute('src')){const scriptResponse=await fetch(new URL(sourceScript.getAttribute('src'),location.origin).href,{credentials:'same-origin',cache:'no-store'});if(!scriptResponse.ok)throw new Error('Quiz engine load failed: '+scriptResponse.status);quizSource=await scriptResponse.text();}
   if(!quizSource.trim())throw new Error('Quiz engine is empty');
+  // The source page also contains inline admin handlers (Edit/Save/Delete).
+  // They must run inside the native quiz root; previously only the first engine script was loaded.
+  const inlineQuizEnhancements=Array.from(parsed.querySelectorAll('body script:not([src])'))
+    .map(script=>script.textContent||'').filter(code=>code.trim());
   host.replaceChildren();const root=document.createElement('div');root.id='revisionQuizRoot';root.className='mppsc-native-quiz';
   root.innerHTML=`
    <div class="native-quiz-heading"><div><span class="native-quiz-kicker">MPPSC IQ · PRE 2027</span><h2 class="title">Quiz / Test</h2></div><span class="native-quiz-tag">महाअभ्यास 2.0</span></div>
@@ -1179,6 +1183,7 @@ function mountNativeRevisionQuiz(){
 const document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});
 const documentRoot=window.document.getElementById("revisionQuizRoot");
 ${quizSource}
+${inlineQuizEnhancements.join('\n')}
 })();`;
   root.appendChild(runner);
  }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice" role="alert"><strong>क्विज़ लोड नहीं हो सका।</strong><p>'+esc(error.message||'कृपया इंटरनेट कनेक्शन जाँचें।')+'</p><button type="button" class="quiz-load-retry" onclick="mountNativeRevisionQuiz()">↻ दोबारा प्रयास करें</button></div>';console.error('Native quiz build failed',error);}})();
