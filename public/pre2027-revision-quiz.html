@@ -489,32 +489,51 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
  function ids(btn,kind){const m=(btn.getAttribute('onclick')||'').match(new RegExp(kind+'\\((\\d+),(\\d+)\\)'));return m?{unit:Number(m[1]),index:Number(m[2])}:null;}
  function startEdit(btn){
   const id=ids(btn,'editRevisionQuestion'),card=cardFor(btn);if(!id||!card)return;
-  if(activeCard&&activeCard!==card)activeCard.querySelector('.ri-editor')?.remove();
+  if(activeCard&&activeCard!==card)activeCard.querySelectorAll('[data-ri-editable]').forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');});
   activeCard=card;
-  card.querySelector('.ri-editor')?.remove();
-  const isEnglish=!!document.querySelector('#enBtn.active');
-  if(isEnglish){alert('प्रश्न संपादन के लिए पहले हिंदी भाषा चुनें।');return;}
-  const q=getQuestionText(card),opts=getOptions(card),exp=getExplanation(card);
-  const editor=document.createElement('div');editor.className='ri-editor';
-  editor.innerHTML='<label>प्रश्न<textarea data-ri="question">'+esc(q)+'</textarea></label>'+
-   [0,1,2,3].map((n)=>'<label>विकल्प '+('ABCD'[n])+'<input data-ri="option" data-index="'+n+'" value="'+esc(opts[n]||'')+'"></label>').join('')+
-   '<label>सही उत्तर<select data-ri="answer" required><option value="">सही उत्तर चुनें</option><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></label>'+ 
-   '<label>व्याख्या<textarea data-ri="explanation">'+esc(exp)+'</textarea></label>'+
-   '<div class="ri-actions"><button type="button" class="ri-save" data-ri-save>सेव करें</button><button type="button" class="ri-cancel" data-ri-cancel>रद्द करें</button></div>';
-  const original=[...card.children].filter(x=>!x.classList.contains('revision-question-actions'));
-  original.forEach(x=>{x.dataset.riHidden='1';x.style.display='none';});
-  card.appendChild(editor);
-  editor.querySelector('[data-ri-cancel]').addEventListener('click',()=>{original.forEach(x=>{x.style.display='';delete x.dataset.riHidden;});editor.remove();activeCard=null;});
-  editor.querySelector('[data-ri-save]').addEventListener('click',async()=>{
-   const question=editor.querySelector('[data-ri="question"]').value.trim();
-   const options=[...editor.querySelectorAll('[data-ri="option"]')].map(x=>x.value.trim());
-   if(!question||options.some(x=>!x)){alert('प्रश्न और चारों विकल्प भरें।');return;}
-   const payload={q:question,options,explanation:editor.querySelector('[data-ri="explanation"]').value.trim()};
-   const a=editor.querySelector('[data-ri="answer"]').value;if(a===''){alert('सही उत्तर चुनें।');return;}payload.answer=Number(a);
-   const save=editor.querySelector('[data-ri-save]');save.disabled=true;save.textContent='सेव हो रहा है…';
-   try{await api('/admin/question-bank/'+id.unit+'/'+id.index,payload,'PUT');save.textContent='सेव हो गया';location.reload();}
-   catch(e){save.disabled=false;save.textContent='सेव करें';alert(e.message);}
+  const q=card.querySelector('.qtext'),opts=[...card.querySelectorAll('.option')].slice(0,4),exp=card.querySelector('.explanation-box');
+  if(!q||opts.length!==4){alert('इस प्रश्न के भाग नहीं मिले।');return;}
+  if(btn.dataset.riEditing==='1'){return;}
+  const selected=opts.findIndex(o=>o.classList.contains('correct'));
+  let answer=selected>=0?selected:-1;
+  const editables=[];
+  const makeEditable=(el)=>{el.contentEditable='true';el.dataset.riEditable='1';el.spellcheck=true;el.style.outline='2px dashed #d6ad45';el.style.outlineOffset='2px';editables.push(el);};
+  makeEditable(q);
+  const optionSpans=opts.map((o,i)=>{
+    let span=o.querySelector('.ri-option-text');
+    if(!span){
+      const letter=o.querySelector('.letter');
+      span=document.createElement('span');span.className='ri-option-text';
+      const nodes=[...o.childNodes].filter(n=>n!==letter);
+      nodes.forEach(n=>span.appendChild(n));
+      o.appendChild(span);
+    }
+    makeEditable(span);
+    o.dataset.riOption=String(i);
+    o.style.cursor='text';
+    return span;
   });
+  if(exp)makeEditable(exp);
+  const actions=btn.closest('.revision-question-actions')||btn.parentElement;
+  const bar=document.createElement('div');bar.className='ri-actions';bar.innerHTML='<span style="display:block;width:100%;font-size:12px;color:#e5c66c">प्रश्न/विकल्प/व्याख्या पर सीधे टच करके लिखें। सही उत्तर के विकल्प को टैप करके चुनें।</span><button type="button" class="ri-save" data-ri-save>सेव करें</button><button type="button" class="ri-cancel" data-ri-cancel>रद्द करें</button>';
+  actions.appendChild(bar);btn.dataset.riEditing='1';
+  opts.forEach((o,i)=>o.addEventListener('click',function(ev){
+    if(btn.dataset.riEditing!=='1')return;
+    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+    answer=i;opts.forEach((x,j)=>x.style.boxShadow=j===i?'0 0 0 3px #e4bd56':'');
+  },true));
+  const finish=()=>{editables.forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');n.style.outline='';n.style.outlineOffset='';});opts.forEach(o=>{o.style.boxShadow='';delete o.dataset.riOption;});bar.remove();delete btn.dataset.riEditing;activeCard=null;};
+  bar.querySelector('[data-ri-cancel]').onclick=()=>{location.reload();};
+  bar.querySelector('[data-ri-save]').onclick=async()=>{
+    const question=getQuestionText(card);
+    const options=opts.map(o=>{const span=o.querySelector('.ri-option-text');return span?(span.innerText||span.textContent).trim():'';});
+    const explanation=exp?(exp.innerText||exp.textContent).replace(/^(व्याख्या|Explanation):\s*/,'').trim():'';
+    if(!question||options.some(x=>!x)){alert('प्रश्न और चारों विकल्प भरें।');return;}
+    if(answer<0){alert('सही उत्तर चुनने के लिए संबंधित विकल्प पर टैप करें।');return;}
+    const save=bar.querySelector('[data-ri-save]');save.disabled=true;save.textContent='सेव हो रहा है…';
+    try{await api('/admin/question-bank/'+id.unit+'/'+id.index,{q:question,options,answer,explanation},'PUT');save.textContent='सेव हो गया';finish();location.reload();}
+    catch(err){save.disabled=false;save.textContent='सेव करें';alert(err.message);}
+  };
  }
  function startDelete(btn){
   const id=ids(btn,'deleteRevisionQuestion'),card=cardFor(btn);if(!id||!card)return;
@@ -526,18 +545,13 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
   card.appendChild(box);
  }
  document.addEventListener('click',e=>{
-  const action=e.target.closest('#revisionQuizRoot .revision-q-action, #revisionQuizRoot button, #revisionQuizRoot [role="button"]');
-  if(!action)return;
+  const action=e.target.closest('#revisionQuizRoot .revision-q-action');if(!action)return;
   const label=(action.innerText||action.textContent||'').trim();
   const raw=[action.getAttribute('onclick')||'',String(action.onclick||''),action.outerHTML||''].join(' ');
-  const edit=/editRevisionQuestion\\s*\\(/.test(raw)||/एडिट\\s*\\/\\s*सेव|एडिट|Edit/i.test(label);
-  const del=/deleteRevisionQuestion\\s*\\(/.test(raw)||/डिलीट|हटाएँ|Delete/i.test(label);
+  const edit=/editRevisionQuestion\s*\(/.test(raw)||/एडिट\s*\/\s*सेव|एडिट|Edit/i.test(label);
+  const del=/deleteRevisionQuestion\s*\(/.test(raw)||/डिलीट|हटाएँ|Delete/i.test(label);
   if(!edit&&!del)return;
   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-  const card=action.closest('.card, .question-card, [data-question-index]')||action.parentElement?.parentElement;
-  const m=raw.match(/(?:editRevisionQuestion|deleteRevisionQuestion)\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)/);
-  if(!m){console.error('Revision admin action IDs not found',action);return;}
-  action.setAttribute('onclick', (edit?'editRevisionQuestion':'deleteRevisionQuestion')+'('+m[1]+','+m[2]+')');
   if(edit)startEdit(action);else startDelete(action);
  },true);
 })();
