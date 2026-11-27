@@ -488,12 +488,12 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
  function getExplanation(card){const e=card.querySelector('.explanation-box');return e?e.innerText.replace(/^(व्याख्या|Explanation):\s*/,'').trim():'';}
  function ids(btn,kind){const m=(btn.getAttribute('onclick')||'').match(new RegExp(kind+'\\((\\d+),(\\d+)\\)'));return m?{unit:Number(m[1]),index:Number(m[2])}:null;}
  function startEdit(btn){
-  const id=ids(btn,'editRevisionQuestion'),card=cardFor(btn);if(!id||!card)return;
+  const card=btn.matches('.card')?btn:cardFor(btn);const editBtn=btn.matches('.card')?btn.querySelector('.revision-q-action[onclick*="editRevisionQuestion"]'):btn;const id=editBtn?ids(editBtn,'editRevisionQuestion'):null;if(!id||!card)return;
   if(activeCard&&activeCard!==card)activeCard.querySelectorAll('[data-ri-editable]').forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');});
   activeCard=card;
   const q=card.querySelector('.qtext'),opts=[...card.querySelectorAll('.option')].slice(0,4),exp=card.querySelector('.explanation-box,.feedback');
   if(!q||opts.length!==4){alert('इस प्रश्न के भाग नहीं मिले।');return;}
-  if(btn.dataset.riEditing==='1'){return;}
+  if(card.dataset.riEditing==='1'){return;}
   const selected=opts.findIndex(o=>o.classList.contains('correct'));
   let answer=selected>=0?selected:-1;
   const editables=[];
@@ -514,15 +514,15 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
     return span;
   });
   if(exp)makeEditable(exp);
-  const actions=btn.closest('.revision-question-actions')||btn.parentElement;
+  const actions=card.querySelector('.revision-question-actions')||card;
   const bar=document.createElement('div');bar.className='ri-actions';bar.innerHTML='<span style="display:block;width:100%;font-size:12px;color:#e5c66c">प्रश्न/विकल्प/व्याख्या पर सीधे टच करके लिखें। सही उत्तर के विकल्प को टैप करके चुनें।</span><button type="button" class="ri-save" data-ri-save>सेव करें</button><button type="button" class="ri-cancel" data-ri-cancel>रद्द करें</button>';
-  actions.appendChild(bar);btn.dataset.riEditing='1';
+  actions.appendChild(bar);card.dataset.riEditing='1';
   opts.forEach((o,i)=>o.addEventListener('click',function(ev){
-    if(btn.dataset.riEditing!=='1')return;
+    if(card.dataset.riEditing!=='1')return;
     ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
     answer=i;opts.forEach((x,j)=>x.style.boxShadow=j===i?'0 0 0 3px #e4bd56':'');
   },true));
-  const finish=()=>{editables.forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');n.style.outline='';n.style.outlineOffset='';});opts.forEach(o=>{o.style.boxShadow='';delete o.dataset.riOption;});bar.remove();delete btn.dataset.riEditing;activeCard=null;};
+  const finish=()=>{editables.forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');n.style.outline='';n.style.outlineOffset='';});opts.forEach(o=>{o.style.boxShadow='';delete o.dataset.riOption;});bar.remove();delete card.dataset.riEditing;activeCard=null;};
   bar.querySelector('[data-ri-cancel]').onclick=()=>{location.reload();};
   bar.querySelector('[data-ri-save]').onclick=async()=>{
     const question=getQuestionText(card);
@@ -545,14 +545,23 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
   card.appendChild(box);
  }
  document.addEventListener('click',e=>{
-  const action=e.target.closest('#revisionQuizRoot .revision-q-action');if(!action)return;
-  const label=(action.innerText||action.textContent||'').trim();
-  const raw=[action.getAttribute('onclick')||'',String(action.onclick||''),action.outerHTML||''].join(' ');
-  const edit=/editRevisionQuestion\s*\(/.test(raw)||/एडिट\s*\/\s*सेव|एडिट|Edit/i.test(label);
-  const del=/deleteRevisionQuestion\s*\(/.test(raw)||/डिलीट|हटाएँ|Delete/i.test(label);
-  if(!edit&&!del)return;
-  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-  if(edit)startEdit(action);else startDelete(action);
+  const root=e.target.closest('#revisionQuizRoot');if(!root)return;
+  const action=e.target.closest('.revision-q-action');
+  if(action){
+   const label=(action.innerText||action.textContent||'').trim();
+   const raw=(action.getAttribute('onclick')||'')+' '+(action.outerHTML||'');
+   const edit=/editRevisionQuestion\s*\(/.test(raw)||/एडिट\s*\/\s*सेव|एडिट|Edit/i.test(label);
+   const del=/deleteRevisionQuestion\s*\(/.test(raw)||/डिलीट|हटाएँ|Delete/i.test(label);
+   if(edit||del){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(edit)startEdit(action);else startDelete(action);return;}
+  }
+  const question=e.target.closest('.qtext');
+  if(question){
+   const card=question.closest('.card');if(!card||card.dataset.riEditing==='1')return;
+   const editBtn=card.querySelector('.revision-q-action[onclick*="editRevisionQuestion"]');
+   if(!editBtn)return;
+   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+   startEdit(card);
+  }
  },true);
 })();
 </script>
