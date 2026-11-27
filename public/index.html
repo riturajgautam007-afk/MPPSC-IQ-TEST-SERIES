@@ -431,7 +431,7 @@ function mountNativeRevisionQuiz(){
  const host=$('revisionQuizNative');if(!host||nativeRevisionQuizReady)return;nativeRevisionQuizReady=true;
  host.innerHTML='<div class="notice" role="status" aria-live="polite">क्विज़ लोड हो रहा है… कृपया प्रतीक्षा करें।</div>';
  (async()=>{try{
-  const response=await fetch('/pre2027-revision-quiz.html?v=20261123-native-v1',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw new Error('Quiz source load failed: '+response.status);
+  const response=await fetch('/pre2027-revision-quiz.html?v=20261127-perf1',{credentials:'same-origin'});if(!response.ok)throw new Error('Quiz source load failed: '+response.status);
   const parsed=new DOMParser().parseFromString(await response.text(),'text/html'),sourceScript=parsed.querySelector('body script[src],body script');if(!sourceScript)throw new Error('Quiz script not found');
   let quizSource=sourceScript.textContent||'';
   if(sourceScript.getAttribute('src')){const scriptResponse=await fetch(new URL(sourceScript.getAttribute('src'),location.origin).href,{credentials:'same-origin',cache:'no-store'});if(!scriptResponse.ok)throw new Error('Quiz engine load failed: '+scriptResponse.status);quizSource=await scriptResponse.text();}
@@ -1512,13 +1512,14 @@ function walk(root){
  try{
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
  let n;while((n=walker.nextNode())){
+  if(n.parentElement&&n.parentElement.closest('#revisionQuizRoot'))continue;
   if(!n.nodeValue.trim())continue;
   if(!originalText.has(n))originalText.set(n,n.nodeValue);
   const orig=originalText.get(n);
   const v=convertText(orig);
   if(v!==orig)n.nodeValue=v;
  }
- const els=root.querySelectorAll?root.querySelectorAll('input,textarea,button,a,[title],[aria-label]'):[];
+ const els=root.querySelectorAll?Array.from(root.querySelectorAll('input,textarea,button,a,[title],[aria-label]')).filter(el=>!el.closest('#revisionQuizRoot')):[];
  els.forEach(el=>['placeholder','title','aria-label'].forEach(a=>{
   if(!el.hasAttribute(a))return;
   let m=originalAttrs.get(el);if(!m){m={};originalAttrs.set(el,m)}
@@ -1546,7 +1547,7 @@ try{language=localStorage.getItem('mppsc_iq_ui_language')==='en'?'en':'hi'}catch
 setLanguage(language);
 const observer=new MutationObserver(records=>{
  if(busy)return;
- for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(!originalText.has(n))originalText.set(n,n.nodeValue);{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}else if(n.nodeType===Node.ELEMENT_NODE)walk(n)});else if(r.type==='characterData'){const n=r.target;{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}}
+ for(const r of records){if(r.target&&r.target.nodeType===Node.ELEMENT_NODE&&r.target.closest&&r.target.closest('#revisionQuizRoot'))continue;if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){if(n.parentElement&&n.parentElement.closest('#revisionQuizRoot'))return;if(!originalText.has(n))originalText.set(n,n.nodeValue);{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}else if(n.nodeType===Node.ELEMENT_NODE&&!n.matches('#revisionQuizRoot')&&!n.closest('#revisionQuizRoot'))walk(n)});else if(r.type==='characterData'){const n=r.target;if(n.parentElement&&n.parentElement.closest('#revisionQuizRoot'))continue;{const v=convertText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}}}
 });
 observer.observe(document.body,{subtree:true,childList:true});
 document.addEventListener('click',e=>{
@@ -1577,11 +1578,7 @@ document.addEventListener('click',e=>{
   window.addEventListener('pageshow',paintCountdown);
   window.addEventListener('load',paintCountdown);
   setInterval(paintCountdown,60000);
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      regs.forEach(function(reg){reg.update().catch(function(){});});
-    }).catch(function(){});
-  }
+  // App-shell registration handles service-worker updates; avoid duplicate forced checks.
 })();
 </script>
 <script id="dashboard-click-handler-fix">
