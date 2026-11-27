@@ -1197,6 +1197,26 @@ Object.assign(window,{setUnit,setPYQs,showAnalysis,setLang,changePage,showWrong,
     #revisionQuizRoot [class*="explanation"]{display:none!important}
   `;
   document.head.appendChild(hideQuizExplanations);
+  // Preserve the original two-step flow: choose a unit first, then reveal its questions and quiz controls.
+  const unitFirstStyle=document.createElement('style');
+  unitFirstStyle.id='mppsc-unit-first-flow-style';
+  unitFirstStyle.textContent=`
+    #revisionQuizRoot.quiz-unit-not-selected .langbar,
+    #revisionQuizRoot.quiz-unit-not-selected .meta,
+    #revisionQuizRoot.quiz-unit-not-selected .progress-track,
+    #revisionQuizRoot.quiz-unit-not-selected #reviewNote,
+    #revisionQuizRoot.quiz-unit-not-selected #questions,
+    #revisionQuizRoot.quiz-unit-not-selected .bottom{display:none!important}
+  `;
+  document.head.appendChild(unitFirstStyle);
+  const quizRoot=document.getElementById('revisionQuizRoot');
+  if(quizRoot){
+    quizRoot.classList.add('quiz-unit-not-selected');
+    quizRoot.addEventListener('click',function(event){
+      const unitChoice=event.target.closest('#unitbar button');
+      if(unitChoice)quizRoot.classList.remove('quiz-unit-not-selected');
+    });
+  }
   root.appendChild(runner);
  }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice" role="alert"><strong>क्विज़ लोड नहीं हो सका।</strong><p>'+esc(error.message||'कृपया इंटरनेट कनेक्शन जाँचें।')+'</p><button type="button" class="quiz-load-retry" onclick="mountNativeRevisionQuiz()">↻ दोबारा प्रयास करें</button></div>';console.error('Native quiz build failed',error);}})();
 }
