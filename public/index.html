@@ -799,11 +799,7 @@ function mountNativeRevisionQuiz(){
 
   /* Single-line quiz toolbar: back-to-units, language, refresh */
   #revisionQuizRoot .native-quiz-language{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:7px!important;width:100%!important;margin:0 0 8px!important;padding:7px!important}
-  runner.textContent=`(function(){
-const document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});
-const documentRoot=window.document.getElementById("revisionQuizRoot");
-${quizSource}
-})();`;
+`;
   #revisionQuizRoot .option:disabled{opacity:1!important}
   #revisionQuizRoot .option.correct,#revisionQuizRoot .option.right{background:#145b45!important;border-color:#39a77d!important;color:#fff!important}
   #revisionQuizRoot .option.wrong,#revisionQuizRoot .option.incorrect{background:#6b2933!important;border-color:#d16b76!important;color:#fff!important}
