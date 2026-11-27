@@ -1175,50 +1175,12 @@ function mountNativeRevisionQuiz(){
   // Preserve the admin question-bank API's PUT method.
   quizSource=quizSource.replace("{method:'POST',body:JSON.stringify({q:question,options,answer,explanation,en:q.en||''})}","{method:'PUT',body:JSON.stringify({q:question,options,answer,explanation,en:q.en||''})}");
   const runner=document.createElement('script');
-  runner.textContent='(function(){\nconst document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});\nconst documentRoot=window.document.getElementById("revisionQuizRoot");\n'+quizSource+'\n\n(function(){\n const root=window.document.getElementById(\'revisionQuizRoot\');\n if(!root)return;\n const esc=s=>String(s??\'\').replace(/[&<>"\']/g,c=>({\'&\':\'&amp;\',\'<\':\'&lt;\',\'>\':\'&gt;\',\'"\':\'&quot;\',"\'":\'&#39;\'}[c]));\n const api=async(path,body,method)=>{const r=await fetch(\'/api\'+path,{method:method||\'PUT\',credentials:\'same-origin\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||\'सेव नहीं हुआ\');return d;};\n const style=document.createElement(\'style\');style.textContent=\'.ri-inline-editor{display:grid;gap:9px;margin:12px 0;padding:13px;border:1px solid #d4b35d;border-radius:12px;background:#102b46;color:#fff}.ri-inline-editor label{display:grid;gap:5px;font-weight:700}.ri-inline-editor input,.ri-inline-editor textarea,.ri-inline-editor select{box-sizing:border-box;width:100%;padding:10px;border-radius:8px;border:1px solid #7890a8;background:#fff;color:#15243a;font:inherit;font-size:16px}.ri-inline-editor textarea{min-height:72px}.ri-inline-editor button,.ri-inline-delete button{padding:10px 14px;border:0;border-radius:8px;font-weight:700}.ri-inline-save{background:#087c59;color:#fff}.ri-inline-cancel{background:#526477;color:#fff}.ri-inline-delete{margin-top:10px;padding:12px;border:1px solid #d76a78;border-radius:10px;background:#4a1f29;color:#fff}.ri-inline-delete .yes{background:#c02d43;color:#fff}.ri-inline-delete .no{background:#526477;color:#fff}\';\n document.head.appendChild(style);\n function ids(el){const s=el.getAttribute(\'onclick\')||el.outerHTML;const m=s.match(/(?:editRevisionQuestion|deleteRevisionQuestion)\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)/);return m?{unit:+m[1],index:+m[2]}:null;}\n function cardOf(el){return el.closest(\'.card\')||el.parentElement?.parentElement;}\n function question(card){return card.querySelector(\'.qtext\')?.textContent?.replace(/^\\s*प्रश्न\\s*\\d+\\.?\\s*/,\'\').trim()||\'\';}\n function options(card){return [...card.querySelectorAll(\'.option\')].slice(0,4).map(x=>{const z=x.cloneNode(true);z.querySelector(\'.letter\')?.remove();return z.textContent.replace(/^[A-D]\\.\\s*/,\'\').trim();});}\n function explanation(card){const el=card.querySelector(\'.feedback,.explanation,.explanation-box\');return el?.textContent?.replace(/^\\s*(व्याख्या|Explanation)\\s*[:：]?\\s*/,\'\').trim()||\'\';}\n function edit(btn,id){\n  const card=cardOf(btn);if(!card||card.dataset.riInlineEditing===\'1\')return;\n  const q=card.querySelector(\'.qtext\'),opts=[...card.querySelectorAll(\'.option\')].slice(0,4),exp=card.querySelector(\'.feedback,.explanation,.explanation-box\');\n  if(!q||opts.length!==4){alert(\'प्रश्न या विकल्प नहीं मिले।\');return;}\n  const originals=[q.innerHTML,...opts.map(o=>o.innerHTML),exp?.innerHTML||\'\'];\n  let answer=opts.findIndex(o=>o.classList.contains(\'correct\'));\n  const editable=[];\n  const makeEditable=el=>{el.contentEditable=\'true\';el.setAttribute(\'data-ri-live-edit\',\'1\');el.spellcheck=true;el.style.setProperty(\'outline\',\'2px dashed #d6ad5d\',\'important\');el.style.setProperty(\'outline-offset\',\'2px\');el.style.setProperty(\'cursor\',\'text\',\'important\');editable.push(el);};\n  makeEditable(q);\n  const spans=opts.map(o=>{const letter=o.querySelector(\'.letter\');const s=document.createElement(\'span\');s.className=\'ri-live-option-text\';[...o.childNodes].filter(n=>n!==letter).forEach(n=>s.appendChild(n));o.appendChild(s);makeEditable(s);return s;});\n  if(exp)makeEditable(exp);\n  card.dataset.riInlineEditing=\'1\';\n  const bar=document.createElement(\'div\');bar.className=\'ri-live-actions\';bar.style.cssText=\'display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;padding:8px 0\';\n  bar.innerHTML=\'<button type="button" class="ri-inline-save" style="background:#087c59;color:white;padding:10px 16px;border:0;border-radius:9px">Save</button><button type="button" class="ri-inline-cancel" style="background:#526477;color:white;padding:10px 16px;border:0;border-radius:9px">रद्द करें</button><small style="width:100%;color:#e5c66c">इसी प्रश्न और विकल्पों के टेक्स्ट पर सीधे लिखें। सही उत्तर चुनने के लिए विकल्प पर टैप करें।</small>\';\n  card.appendChild(bar);\n  opts.forEach((o,i)=>o.addEventListener(\'click\',ev=>{if(card.dataset.riInlineEditing!==\'1\')return;if(ev.target.closest(\'[contenteditable="true"]\'))return;ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();answer=i;opts.forEach((x,j)=>x.style.boxShadow=j===i?\'0 0 0 3px #e4bd56\':\'\');spans[i].focus();},true));\n  const finish=()=>{editable.forEach(el=>{el.contentEditable=\'false\';el.removeAttribute(\'data-ri-live-edit\');el.style.removeProperty(\'outline\');el.style.removeProperty(\'outline-offset\');});opts.forEach(o=>o.style.removeProperty(\'box-shadow\'));bar.remove();delete card.dataset.riInlineEditing;};\n  bar.querySelector(\'.ri-inline-cancel\').onclick=()=>{q.innerHTML=originals[0];opts.forEach((o,i)=>o.innerHTML=originals[i+1]);if(exp)exp.innerHTML=originals[5];finish();};\n  bar.querySelector(\'.ri-inline-save\').onclick=async ev=>{\n   const save=ev.currentTarget;\n   const cleanQ=(q.innerText||q.textContent).replace(/^\\s*प्रश्न\\s*\\d+\\.?\\s*/,\'\').trim();\n   const os=spans.map(s=>(s.innerText||s.textContent).trim());\n   const explanation=exp?(exp.innerText||exp.textContent).replace(/^\\s*(व्याख्या|Explanation)\\s*[:：]?\\s*/,\'\').trim():\'\';\n   if(!cleanQ||os.some(x=>!x)||answer<0){alert(\'प्रश्न, चार विकल्प और सही उत्तर जाँचें।\');return;}\n   save.disabled=true;save.textContent=\'सेव हो रहा है…\';\n   try{await api(\'/admin/question-bank/\'+id.unit+\'/\'+id.index,{q:cleanQ,options:os,answer,explanation},\'PUT\');q.textContent=cleanQ;opts.forEach((o,i)=>{const letter=o.querySelector(\'.letter\');o.replaceChildren();if(letter)o.appendChild(letter);const span=document.createElement(\'span\');span.textContent=os[i];o.appendChild(span);o.classList.toggle(\'correct\',i===answer);o.classList.remove(\'wrong\');});finish();save.textContent=\'सेव हो गया\';const note=document.createElement(\'small\');note.textContent=\'✓ बदलाव सेव हो गए\';note.style.cssText=\'display:block;margin:8px 0;color:#39c98a;font-weight:700\';card.appendChild(note);window.__mppscQuestionOverrides=window.__mppscQuestionOverrides||{};window.__mppscQuestionOverrides[id.unit+\':\'+id.index]={q:cleanQ,options:os,answer};}\n   catch(err){save.disabled=false;save.textContent=\'Save\';alert(err.message);}
-  };
-  root.querySelector('#nativeQuizBack').addEventListener('click',()=>{setStage('units');window.scrollTo({top:0,behavior:'smooth'});});
-  root.addEventListener('click',ev=>{
-   const button=ev.target.closest('#unitbar button[id^="unit"][id$="Btn"]');
-   if(!button)return;
-   ev.preventDefault();
-   ev.stopPropagation();
-   const unitNumber=Number(button.id.substring(4,button.id.length-3));
-   const action=(window.__mppscQuizActions&&window.__mppscQuizActions.setUnit)||window.setUnit;
-   if(!Number.isInteger(unitNumber)||unitNumber<1||unitNumber>10||typeof action!=='function'){
-    console.error('Unit selection failed',button.id,unitNumber,typeof action);
-    return;
-   }
-   action(unitNumber);
-   setStage('questions');
-   window.scrollTo(0,0);
-  },true);
-  // Analysis is also a content view: reveal the quiz content area before rendering it.
-  root.addEventListener('click',ev=>{
-   const button=ev.target.closest('#analysisBtn');
-   if(!button)return;
-   ev.preventDefault();
-   ev.stopPropagation();
-   const action=window.__mppscQuizActions&&window.__mppscQuizActions.showAnalysis;
-   if(typeof action!=='function'){
-    const diag=root.querySelector('#quizClickDiagnostic');
-    if(diag)diag.textContent='ANALYSIS ERROR: showAnalysis उपलब्ध नहीं है';
-    console.error('Analysis action is unavailable');
-    return;
-   }
-   try{
-    action();
-    setStage('questions');
-    window.scrollTo(0,0);
-   }catch(error){
-    const diag=root.querySelector('#quizClickDiagnostic');
-    if(diag)diag.textContent='ANALYSIS ERROR: '+(error&&error.message||String(error));
-    console.error('Analysis render failed',error);
-   }
-  },true);
-  window.__mppscSetNativeQuizStage=()=>setStage('questions');
-  setStage('units');
- }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice" role="alert"><strong>क्विज़ लोड नहीं हो सका।</strong><p>'+esc(error.message||'कृपया इंटरनेट कनेक्शन जाँचें।')+'</p><button type="button" class="quiz-load-retry" onclick="mountNativeRevisionQuiz()">↻ दोबारा प्रयास करें</button></div>';console.error('Native quiz build failed',error);}})();
+  runner.textContent=`(function(){
+const document=new Proxy(window.document,{get(target,prop){if(prop==="body")return documentRoot;if(prop==="getElementById")return id=>documentRoot.querySelector("#"+CSS.escape(id));if(prop==="querySelector")return sel=>documentRoot.querySelector(sel);if(prop==="querySelectorAll")return sel=>documentRoot.querySelectorAll(sel);const value=Reflect.get(target,prop,target);return typeof value==="function"?value.bind(target):value;}});
+const documentRoot=window.document.getElementById("revisionQuizRoot");
+${quizSource}
+})();`;
+  root.appendChild(runner);
 }
 function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));if(id==='dashboard')loadTests();if(id==='generalstudies')loadGeneralStudies();if(id==='currentaffairs')loadCurrentAffairs();if(id==='tests'){openQuizUnitStep();}if(id==='history')loadHistory();if(id==='leaderboard')loadLeaderboard();if(id==='support')loadMySupport();if(id==='wrongbook')loadWrongQuestions();if(id==='bookmarks')loadBookmarks();if(id==='library')loadResources();if(id==='batches')renderBatch();if(id==='membership')renderMembership();window.scrollTo(0,0)}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.nav));
