@@ -491,7 +491,7 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
   const id=ids(btn,'editRevisionQuestion'),card=cardFor(btn);if(!id||!card)return;
   if(activeCard&&activeCard!==card)activeCard.querySelectorAll('[data-ri-editable]').forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');});
   activeCard=card;
-  const q=card.querySelector('.qtext'),opts=[...card.querySelectorAll('.option')].slice(0,4),exp=card.querySelector('.explanation-box');
+  const q=card.querySelector('.qtext'),opts=[...card.querySelectorAll('.option')].slice(0,4),exp=card.querySelector('.explanation-box,.feedback');
   if(!q||opts.length!==4){alert('इस प्रश्न के भाग नहीं मिले।');return;}
   if(btn.dataset.riEditing==='1'){return;}
   const selected=opts.findIndex(o=>o.classList.contains('correct'));
