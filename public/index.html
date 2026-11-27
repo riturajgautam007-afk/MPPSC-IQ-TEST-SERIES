@@ -1184,6 +1184,8 @@ const document=new Proxy(window.document,{get(target,prop){if(prop==="body")retu
 const documentRoot=window.document.getElementById("revisionQuizRoot");
 ${quizSource}
 ${inlineQuizEnhancements.join('\n')}
+// Expose quiz controls referenced by inline onclick attributes after sandboxing the quiz in this wrapper.
+Object.assign(window,{setUnit,setPYQs,showAnalysis,setLang,changePage,showWrong,refreshAll,shuffleCurrentUnit,mixAllUnits});
 })();`;
   // Hide explanation blocks in the native quiz (the source page's style tags are not imported).
   const hideQuizExplanations=document.createElement('style');
