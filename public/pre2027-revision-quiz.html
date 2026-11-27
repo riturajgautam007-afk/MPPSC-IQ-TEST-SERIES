@@ -530,7 +530,7 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
    if(!question||options.some(x=>!x)){alert('प्रश्न और चारों विकल्प भरें।');return;}
    if(answer<0){alert('सही उत्तर वाला विकल्प चुनें।');return;}
    const save=bar.querySelector('[data-ri-save]');save.disabled=true;save.textContent='सेव हो रहा है…';
-   try{const saved=await api('/admin/question-bank/'+id.unit+'/'+id.index,{q:question,options,answer,explanation},'POST');if(!saved||saved.ok!==true)throw new Error('सर्वर ने बदलाव सेव होने की पुष्टि नहीं की');save.textContent='सेव हो गया';save.disabled=true;finish();const status=document.createElement('small');status.textContent='✓ बदलाव सेव हो गए';status.style.cssText='display:block;margin:8px 0;color:#39c98a;font-weight:700';card.querySelector('.revision-question-actions')?.appendChild(status);}
+   try{const saved=await api('/admin/question-bank/'+id.unit+'/'+id.index,{q:question,options,answer,explanation},'PUT');if(!saved||saved.ok!==true)throw new Error('सर्वर ने बदलाव सेव होने की पुष्टि नहीं की');save.textContent='सेव हो गया';save.disabled=true;finish();const status=document.createElement('small');status.textContent='✓ बदलाव सेव हो गए';status.style.cssText='display:block;margin:8px 0;color:#39c98a;font-weight:700';card.querySelector('.revision-question-actions')?.appendChild(status);}
    catch(err){save.disabled=false;save.textContent='सेव करें';alert(err.message);}
   };
  }
@@ -841,5 +841,6 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
 /* Hide explanations on every revision quiz question */
 #revisionQuizRoot .explanation-box,
 #revisionQuizRoot .explanation,
+#revisionQuizRoot .feedback,
 #revisionQuizRoot [class*="explanation-box"]{display:none!important}
 </style>
