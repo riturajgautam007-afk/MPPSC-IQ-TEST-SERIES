@@ -526,10 +526,19 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
   card.appendChild(box);
  }
  document.addEventListener('click',e=>{
-  const edit=e.target.closest('button[onclick*="editRevisionQuestion("]');
-  if(edit){e.preventDefault();e.stopImmediatePropagation();startEdit(edit);return;}
-  const del=e.target.closest('button[onclick*="deleteRevisionQuestion("]');
-  if(del){e.preventDefault();e.stopImmediatePropagation();startDelete(del);}
+  const action=e.target.closest('#revisionQuizRoot .revision-q-action, #revisionQuizRoot button, #revisionQuizRoot [role="button"]');
+  if(!action)return;
+  const label=(action.innerText||action.textContent||'').trim();
+  const raw=[action.getAttribute('onclick')||'',String(action.onclick||''),action.outerHTML||''].join(' ');
+  const edit=/editRevisionQuestion\\s*\\(/.test(raw)||/एडिट\\s*\\/\\s*सेव|एडिट|Edit/i.test(label);
+  const del=/deleteRevisionQuestion\\s*\\(/.test(raw)||/डिलीट|हटाएँ|Delete/i.test(label);
+  if(!edit&&!del)return;
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+  const card=action.closest('.card, .question-card, [data-question-index]')||action.parentElement?.parentElement;
+  const m=raw.match(/(?:editRevisionQuestion|deleteRevisionQuestion)\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)/);
+  if(!m){console.error('Revision admin action IDs not found',action);return;}
+  action.setAttribute('onclick', (edit?'editRevisionQuestion':'deleteRevisionQuestion')+'('+m[1]+','+m[2]+')');
+  if(edit)startEdit(action);else startDelete(action);
  },true);
 })();
 </script>
