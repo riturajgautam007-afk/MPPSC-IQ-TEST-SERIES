@@ -488,51 +488,50 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
  function getExplanation(card){const e=card.querySelector('.explanation-box');return e?e.innerText.replace(/^(व्याख्या|Explanation):\s*/,'').trim():'';}
  function ids(btn,kind){const m=(btn.getAttribute('onclick')||'').match(new RegExp(kind+'\\((\\d+),(\\d+)\\)'));return m?{unit:Number(m[1]),index:Number(m[2])}:null;}
  function startEdit(btn){
-  const card=btn.matches('.card')?btn:cardFor(btn);const editBtn=btn.matches('.card')?btn.querySelector('.revision-q-action[onclick*="editRevisionQuestion"]'):btn;const id=editBtn?ids(editBtn,'editRevisionQuestion'):null;if(!id||!card)return;
-  if(activeCard&&activeCard!==card)activeCard.querySelectorAll('[data-ri-editable]').forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');});
+  const card=btn.matches('.card')?btn:cardFor(btn);
+  const editBtn=card?.querySelector('.revision-q-action[onclick*="editRevisionQuestion"]');
+  const id=editBtn?ids(editBtn,'editRevisionQuestion'):null;
+  if(!card||!id||card.dataset.riEditing==='1')return;
+  if(activeCard&&activeCard!==card)location.reload();
   activeCard=card;
-  const q=card.querySelector('.qtext'),opts=[...card.querySelectorAll('.option')].slice(0,4),exp=card.querySelector('.explanation-box,.feedback');
-  if(!q||opts.length!==4){alert('इस प्रश्न के भाग नहीं मिले।');return;}
-  if(card.dataset.riEditing==='1'){return;}
-  const selected=opts.findIndex(o=>o.classList.contains('correct'));
-  let answer=selected>=0?selected:-1;
-  const editables=[];
-  const makeEditable=(el)=>{el.contentEditable='true';el.dataset.riEditable='1';el.spellcheck=true;el.style.outline='2px dashed #d6ad45';el.style.outlineOffset='2px';editables.push(el);};
+  const q=card.querySelector('.qtext');
+  const opts=[...card.querySelectorAll('.option')].slice(0,4);
+  const exp=card.querySelector('.explanation-box,.feedback');
+  if(!q||opts.length!==4){alert('इस प्रश्न के भाग नहीं मिले।');activeCard=null;return;}
+  let answer=opts.findIndex(o=>o.classList.contains('correct'));
+  const originals=[q.innerHTML,...opts.map(o=>o.innerHTML),exp?.innerHTML||''];
+  const makeEditable=el=>{el.contentEditable='true';el.setAttribute('data-ri-editable','1');el.spellcheck=true;el.style.setProperty('outline','2px dashed #d6ad45','important');el.style.setProperty('outline-offset','2px');el.style.setProperty('cursor','text','important');};
   makeEditable(q);
-  const optionSpans=opts.map((o,i)=>{
-    let span=o.querySelector('.ri-option-text');
-    if(!span){
-      const letter=o.querySelector('.letter');
-      span=document.createElement('span');span.className='ri-option-text';
-      const nodes=[...o.childNodes].filter(n=>n!==letter);
-      nodes.forEach(n=>span.appendChild(n));
-      o.appendChild(span);
-    }
-    makeEditable(span);
-    o.dataset.riOption=String(i);
-    o.style.cursor='text';
-    return span;
+  const spans=opts.map(o=>{
+   const letter=o.querySelector('.letter');
+   const span=document.createElement('span');span.className='ri-option-text';
+   [...o.childNodes].filter(n=>n!==letter).forEach(n=>span.appendChild(n));
+   o.appendChild(span);makeEditable(span);return span;
   });
   if(exp)makeEditable(exp);
   const actions=card.querySelector('.revision-question-actions')||card;
-  const bar=document.createElement('div');bar.className='ri-actions';bar.innerHTML='<span style="display:block;width:100%;font-size:12px;color:#e5c66c">प्रश्न/विकल्प/व्याख्या पर सीधे टच करके लिखें। सही उत्तर के विकल्प को टैप करके चुनें।</span><button type="button" class="ri-save" data-ri-save>सेव करें</button><button type="button" class="ri-cancel" data-ri-cancel>रद्द करें</button>';
+  const bar=document.createElement('div');bar.className='ri-actions';
+  bar.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:12px 0';
+  bar.innerHTML='<button type="button" class="ri-save" data-ri-save>सेव करें</button><button type="button" class="ri-cancel" data-ri-cancel>रद्द करें</button><small style="width:100%;color:#e5c66c">टेक्स्ट पर सीधे लिखें। सही उत्तर के लिए विकल्प पर दोबारा टैप करें।</small>';
   actions.appendChild(bar);card.dataset.riEditing='1';
-  opts.forEach((o,i)=>o.addEventListener('click',function(ev){
-    if(card.dataset.riEditing!=='1')return;
-    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
-    answer=i;opts.forEach((x,j)=>x.style.boxShadow=j===i?'0 0 0 3px #e4bd56':'');
+  opts.forEach((o,i)=>o.addEventListener('click',ev=>{
+   if(card.dataset.riEditing!=='1')return;
+   if(document.activeElement===spans[i]||ev.target.closest('[contenteditable="true"]'))return;
+   ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+   answer=i;opts.forEach((x,j)=>x.style.boxShadow=j===i?'0 0 0 3px #e4bd56':'');
+   spans[i].focus();
   },true));
-  const finish=()=>{editables.forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');n.style.outline='';n.style.outlineOffset='';});opts.forEach(o=>{o.style.boxShadow='';delete o.dataset.riOption;});bar.remove();delete card.dataset.riEditing;activeCard=null;};
-  bar.querySelector('[data-ri-cancel]').onclick=()=>{location.reload();};
+  const finish=()=>{card.querySelectorAll('[data-ri-editable]').forEach(n=>{n.contentEditable='false';n.removeAttribute('data-ri-editable');n.style.removeProperty('outline');n.style.removeProperty('outline-offset');});opts.forEach(o=>o.style.boxShadow='');bar.remove();delete card.dataset.riEditing;activeCard=null;};
+  bar.querySelector('[data-ri-cancel]').onclick=()=>{q.innerHTML=originals[0];opts.forEach((o,i)=>o.innerHTML=originals[i+1]);if(exp)exp.innerHTML=originals[5];finish();};
   bar.querySelector('[data-ri-save]').onclick=async()=>{
-    const question=getQuestionText(card);
-    const options=opts.map(o=>{const span=o.querySelector('.ri-option-text');return span?(span.innerText||span.textContent).trim():'';});
-    const explanation=exp?(exp.innerText||exp.textContent).replace(/^(व्याख्या|Explanation):\s*/,'').trim():'';
-    if(!question||options.some(x=>!x)){alert('प्रश्न और चारों विकल्प भरें।');return;}
-    if(answer<0){alert('सही उत्तर चुनने के लिए संबंधित विकल्प पर टैप करें।');return;}
-    const save=bar.querySelector('[data-ri-save]');save.disabled=true;save.textContent='सेव हो रहा है…';
-    try{await api('/admin/question-bank/'+id.unit+'/'+id.index,{q:question,options,answer,explanation},'PUT');save.textContent='सेव हो गया';finish();location.reload();}
-    catch(err){save.disabled=false;save.textContent='सेव करें';alert(err.message);}
+   const question=(q.innerText||q.textContent).replace(/^.*?\d+\.\s*/,'').trim();
+   const options=spans.map(s=>(s.innerText||s.textContent).trim());
+   const explanation=exp?(exp.innerText||exp.textContent).replace(/^(व्याख्या|Explanation):\s*/,'').trim():'';
+   if(!question||options.some(x=>!x)){alert('प्रश्न और चारों विकल्प भरें।');return;}
+   if(answer<0){alert('सही उत्तर वाला विकल्प चुनें।');return;}
+   const save=bar.querySelector('[data-ri-save]');save.disabled=true;save.textContent='सेव हो रहा है…';
+   try{await api('/admin/question-bank/'+id.unit+'/'+id.index,{q:question,options,answer,explanation},'POST');save.textContent='सेव हो गया';location.reload();}
+   catch(err){save.disabled=false;save.textContent='सेव करें';alert(err.message);}
   };
  }
  function startDelete(btn){
@@ -554,14 +553,13 @@ body.dark .statement-table th:first-child,body.dark .statement-table td:first-ch
    const del=/deleteRevisionQuestion\s*\(/.test(raw)||/डिलीट|हटाएँ|Delete/i.test(label);
    if(edit||del){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(edit)startEdit(action);else startDelete(action);return;}
   }
-  const question=e.target.closest('.qtext');
-  if(question){
-   const card=question.closest('.card');if(!card||card.dataset.riEditing==='1')return;
-   const editBtn=card.querySelector('.revision-q-action[onclick*="editRevisionQuestion"]');
-   if(!editBtn)return;
-   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-   startEdit(card);
-  }
+  const target=e.target.closest('.qtext,.option,.feedback,.explanation-box');
+  if(!target)return;
+  const card=target.closest('.card');if(!card||card.dataset.riEditing==='1')return;
+  const editBtn=card.querySelector('.revision-q-action[onclick*="editRevisionQuestion"]');
+  if(!editBtn)return;
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+  startEdit(card);
  },true);
 })();
 </script>
