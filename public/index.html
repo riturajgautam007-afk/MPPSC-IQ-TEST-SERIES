@@ -1185,6 +1185,16 @@ const documentRoot=window.document.getElementById("revisionQuizRoot");
 ${quizSource}
 ${inlineQuizEnhancements.join('\n')}
 })();`;
+  // Hide explanation blocks in the native quiz (the source page's style tags are not imported).
+  const hideQuizExplanations=document.createElement('style');
+  hideQuizExplanations.id='mppsc-native-hide-quiz-explanations';
+  hideQuizExplanations.textContent=`
+    #revisionQuizRoot .explanation-box,
+    #revisionQuizRoot .explanation,
+    #revisionQuizRoot .feedback,
+    #revisionQuizRoot [class*="explanation"]{display:none!important}
+  `;
+  document.head.appendChild(hideQuizExplanations);
   root.appendChild(runner);
  }catch(error){nativeRevisionQuizReady=false;host.innerHTML='<div class="notice" role="alert"><strong>क्विज़ लोड नहीं हो सका।</strong><p>'+esc(error.message||'कृपया इंटरनेट कनेक्शन जाँचें।')+'</p><button type="button" class="quiz-load-retry" onclick="mountNativeRevisionQuiz()">↻ दोबारा प्रयास करें</button></div>';console.error('Native quiz build failed',error);}})();
 }
