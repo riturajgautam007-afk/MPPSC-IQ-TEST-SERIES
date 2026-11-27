@@ -326,7 +326,7 @@ app.get("/admin.html",(q,s,n)=>{
   s.sendFile(path.join(__dirname,"..","public","admin.html"));
  });
 });
-app.get("/pre2027-revision-quiz.html",(q,s,n)=>{s.set("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");s.set("Pragma","no-cache");s.set("Expires","0");questionBankRecoveryPromise.then(()=>s.sendFile(path.join(__dirname,"..","public","pre2027-revision-quiz.html"))).catch(n);});
+app.get("/pre2027-revision-quiz.html",(q,s,n)=>{s.set("Cache-Control","public, max-age=300, stale-while-revalidate=600");questionBankRecoveryPromise.then(()=>s.sendFile(path.join(__dirname,"..","public","pre2027-revision-quiz.html"))).catch(n);});
 app.use(["/pre2027-revision-quiz.html","/js/pre2027-revision-quiz.js"],(_q,_s,next)=>{questionBankRecoveryPromise.then(()=>next()).catch(next);});
 app.use(express.static(path.join(__dirname,"..","public")));app.get("*",(_q,s)=>s.sendFile(path.join(__dirname,"..","public","index.html")));
 app.use((e,_q,s,_n)=>{console.error(e);s.status(400).json({error:e.message||"Request failed"});});
