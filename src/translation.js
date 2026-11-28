@@ -1,7 +1,8 @@
-// Server-side Hindi to English translation. The API key is read only from Render Environment.
+// Bidirectional server-side translation for MPPSC quiz questions.
 async function translateQuestion(input){
   if(!process.env.OPENAI_API_KEY)return null;
   const payload={question:String(input.question||""),options:Array.isArray(input.options)?input.options.map(String):[],explanation:String(input.explanation||"")};
+  const direction=input.direction==="en-hi"?"English to Hindi":"Hindi to English";
   if(!payload.question||payload.options.length!==4)return null;
   try{
     const response=await fetch("https://api.openai.com/v1/responses",{
@@ -10,8 +11,8 @@ async function translateQuestion(input){
       signal:AbortSignal.timeout(45000),
       body:JSON.stringify({
         model:process.env.OPENAI_TRANSLATION_MODEL||"gpt-4.1-mini",
-        instructions:"Translate the Hindi exam question, all four answer options, and explanation into accurate, natural English. Preserve every fact, number, date, name, technical term, punctuation meaning, and option order. Do not answer or solve the question. Return only valid JSON (JavaScript Object Notation): a JSON object with string fields question, explanation and an options array of exactly four strings. Do not include markdown or text outside the JSON object.",
-        input:"Translate the following Hindi exam content and return the result as valid JSON only, with keys question, options, explanation. JSON input: "+JSON.stringify(payload),
+        instructions:"Translate the MPPSC exam question, all four answer options, and explanation from "+direction+". Preserve every fact, number, date, name, technical term, and option order exactly. Do not answer or solve the question. Return only valid JSON: an object with string fields question and explanation and an options array of exactly four strings. Do not include markdown.",
+        input:"Translate this exam content from "+direction+" and return valid JSON only. JSON input: "+JSON.stringify(payload),
         text:{format:{type:"json_object"}}
       })
     });
