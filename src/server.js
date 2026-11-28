@@ -72,12 +72,16 @@ app.post("/api/quiz/translate",ar(async(q,s)=>{
  s.json({ok:true,...result,cached:false});
 }));
 app.post("/api/translate-question",ar(async(q,s)=>{
- const question=String(q.body?.question||"").trim(),options=Array.isArray(q.body?.options)?q.body.options.map(v=>String(v||"").trim()):[],explanation=String(q.body?.explanation||"");
+ const question=String(q.body?.question||"").trim(),options=Array.isArray(q.body?.options)?q.body.options.map(v=>String(v||"").trim()):[],explanation=String(q.body?.explanation||"").trim();
  if(!question||options.length!==4||options.some(v=>!v))return s.status(400).json({error:"प्रश्न और चार विकल्प आवश्यक हैं"});
  if(question.length>5000||options.some(v=>v.length>1500)||explanation.length>10000)return s.status(413).json({error:"प्रश्न का आकार बहुत बड़ा है"});
- const result=await translateQuestion({question,options,explanation});
+ const from="hi",to="en",source={question,options,explanation},cacheKey=crypto.createHash("sha256").update(JSON.stringify({from,to,...source})).digest("hex");
+ const cached=await db.query("SELECT translation_json FROM revision_quiz_translations WHERE cache_key=$1",[cacheKey]);
+ if(cached.rowCount)return s.json({ok:true,...cached.rows[0].translation_json,cached:true,translation_status:"done"});
+ const result=await translateQuestion({...source,direction:"hi-en"});
  if(!result)return s.status(503).json({error:"अनुवाद अभी उपलब्ध नहीं है",translation_status:"pending"});
- s.json({ok:true,...result,translation_status:"done"});
+ await db.query("INSERT INTO revision_quiz_translations(cache_key,source_language,target_language,translation_json,updated_at) VALUES($1,$2,$3,$4,NOW()) ON CONFLICT(cache_key) DO UPDATE SET translation_json=EXCLUDED.translation_json,updated_at=NOW()",[cacheKey,from,to,JSON.stringify(result)]);
+ s.json({ok:true,...result,cached:false,translation_status:"done"});
 }));
 app.get("/api/ready",(_q,s)=>s.status(dbReady?200:503).json({ready:dbReady,database:dbReady?"connected":"disconnected"}));
 app.get("/api/auth/telegram/start",(q,s)=>{if(!process.env.TELEGRAM_OIDC_CLIENT_ID||!process.env.TELEGRAM_OIDC_CLIENT_SECRET)return s.status(503).send("Telegram Login अभी configure नहीं है। Render Environment में TELEGRAM_OIDC_CLIENT_SECRET जोड़ें।");const mode=q.query.mode==="admin"?"admin":"student",nonce=crypto.randomBytes(24).toString("base64url"),verifier=crypto.randomBytes(48).toString("base64url"),challenge=b64u(crypto.createHash("sha256").update(verifier).digest()),state=sealState({nonce,verifier,mode});const u=new URL(OIDC_ISSUER+"/auth");u.searchParams.set("client_id",process.env.TELEGRAM_OIDC_CLIENT_ID);u.searchParams.set("redirect_uri",OIDC_REDIRECT);u.searchParams.set("response_type","code");u.searchParams.set("scope","openid profile");u.searchParams.set("state",state);u.searchParams.set("nonce",nonce);u.searchParams.set("code_challenge",challenge);u.searchParams.set("code_challenge_method","S256");s.redirect(302,u.toString());});
