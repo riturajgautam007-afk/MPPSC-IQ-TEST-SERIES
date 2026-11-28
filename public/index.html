@@ -1190,7 +1190,7 @@ const hiLanguageButton=documentRoot.querySelector('#hiBtn');
 const enLanguageButton=documentRoot.querySelector('#enBtn');
 if(hiLanguageButton)hiLanguageButton.addEventListener('click',function(){setLang('hi');});
 if(enLanguageButton)enLanguageButton.addEventListener('click',function(){setLang('en');});
-// Translate each visible quiz page; completed translations are cached by the server.
+// Fast bilingual quiz translation: bounded parallel workers + server cache.
 let autoQuizLanguage='hi',autoQuizBusy=false,autoQuizObserver=null,autoQuizPending=false;
 const autoQuizStatus=()=>{
  let el=documentRoot.querySelector('#autoQuizTranslationStatus');
@@ -1209,42 +1209,51 @@ const saveAutoQuizHindi=card=>{
  card.dataset.autoQuizHi=d.question;card.dataset.autoQuizHiPrefix=d.prefix;card.dataset.autoQuizHiOptions=JSON.stringify(d.options);
 };
 const putAutoQuizText=(card,question,options,prefix)=>{
- const d=readAutoQuizCard(card);if(!d)return;d.q.textContent=(prefix||'')+question;
- d.opts.forEach((o,i)=>{const letter=o.querySelector('.letter'),label=letter?(letter.textContent||'').trim():'';o.replaceChildren();if(letter)o.appendChild(letter);o.appendChild(document.createTextNode((label?' ':'')+options[i]));});
+ const d=readAutoQuizCard(card);if(!d)return;
+ const nextQuestion=(prefix||'')+question;if(d.q.textContent!==nextQuestion)d.q.textContent=nextQuestion;
+ d.opts.forEach((o,i)=>{const letter=o.querySelector('.letter'),label=letter?(letter.textContent||'').trim():'';const next=(label?' ':'')+options[i];const current=[...o.childNodes].filter(n=>n!==letter).map(n=>n.textContent).join('');if(current!==next){o.replaceChildren();if(letter)o.appendChild(letter);o.appendChild(document.createTextNode(next));}});
 };
 const translateCurrentQuizPage=async target=>{
  if(autoQuizBusy){autoQuizPending=true;return;}autoQuizBusy=true;const status=autoQuizStatus();
  try{
-  if(typeof setLang==='function')setLang('hi');await new Promise(resolve=>setTimeout(resolve,120));
+  if(typeof setLang==='function')setLang('hi');await new Promise(resolve=>setTimeout(resolve,60));
   const cards=[...documentRoot.querySelectorAll('#questions .card')];let done=0,failed=0;
   if(target==='hi'){
    for(const card of cards){saveAutoQuizHindi(card);if(card.dataset.autoQuizHi){let opts=[];try{opts=JSON.parse(card.dataset.autoQuizHiOptions||'[]')}catch{}if(opts.length===4)putAutoQuizText(card,card.dataset.autoQuizHi,opts,card.dataset.autoQuizHiPrefix||'');}}
    autoQuizLanguage='hi';documentRoot.querySelector('#enBtn')?.classList.remove('active');documentRoot.querySelector('#hiBtn')?.classList.add('active');status.textContent='हिंदी प्रश्न दिखाए जा रहे हैं';return;
   }
-  for(const card of cards){
-   saveAutoQuizHindi(card);
-   if(card.dataset.autoQuizEn&&card.dataset.autoQuizEnOptions){try{putAutoQuizText(card,card.dataset.autoQuizEn,JSON.parse(card.dataset.autoQuizEnOptions),card.dataset.autoQuizHiPrefix||'');done++;continue;}catch{}}
-   let options=[];try{options=JSON.parse(card.dataset.autoQuizHiOptions||'[]')}catch{}
-   if(!card.dataset.autoQuizHi||options.length!==4){failed++;continue;}
-   try{
-    status.textContent='अनुवाद हो रहा है… '+(done+failed+1)+'/'+cards.length;
-    const response=await fetch('/api/quiz/translate',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:card.dataset.autoQuizHi,options,from:'hi',to:'en'})});
-    const result=await response.json();if(!response.ok||!result.ok||!result.question||!Array.isArray(result.options)||result.options.length!==4)throw new Error(result.error||'Translation unavailable');
-    card.dataset.autoQuizEn=result.question;card.dataset.autoQuizEnOptions=JSON.stringify(result.options);putAutoQuizText(card,result.question,result.options,card.dataset.autoQuizHiPrefix||'');done++;
-   }catch(error){failed++;console.warn('Quiz auto-translation:',error.message);}
-  }
+  cards.forEach(saveAutoQuizHindi);
+  const jobs=cards.filter(card=>!card.dataset.autoQuizEn).map(card=>({card,options:(()=>{try{return JSON.parse(card.dataset.autoQuizHiOptions||'[]')}catch{return []}})()})).filter(x=>x.card.dataset.autoQuizHi&&x.options.length===4);
+  failed=cards.length-jobs.length;
+  let cursor=0;
+  const worker=async()=>{
+   while(cursor<jobs.length){
+    const job=jobs[cursor++],card=job.card;
+    try{
+     status.textContent='Translating… '+(done+failed+1)+'/'+cards.length;
+     const response=await fetch('/api/quiz/translate',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:card.dataset.autoQuizHi,options:job.options,from:'hi',to:'en'})});
+     const result=await response.json();if(!response.ok||!result.ok||!result.question||!Array.isArray(result.options)||result.options.length!==4)throw new Error(result.error||'Translation unavailable');
+     card.dataset.autoQuizEn=result.question;card.dataset.autoQuizEnOptions=JSON.stringify(result.options);
+    }catch(error){failed++;console.warn('Quiz translation:',error.message);}
+    done++;status.textContent='Translating… '+done+'/'+cards.length;
+   }
+  };
+  await Promise.all(Array.from({length:Math.min(4,jobs.length)},worker));
+  for(const card of cards){if(card.dataset.autoQuizEn&&card.dataset.autoQuizEnOptions){try{putAutoQuizText(card,card.dataset.autoQuizEn,JSON.parse(card.dataset.autoQuizEnOptions),card.dataset.autoQuizHiPrefix||'')}catch{}}}
   autoQuizLanguage='en';documentRoot.querySelector('#hiBtn')?.classList.remove('active');documentRoot.querySelector('#enBtn')?.classList.add('active');
-  status.textContent=failed?'English: '+done+' translated, '+failed+' pending':'✓ This page is translated into English';
- }finally{autoQuizBusy=false;if(autoQuizPending){autoQuizPending=false;setTimeout(()=>translateCurrentQuizPage(autoQuizLanguage),150);}}
+  status.textContent=failed?'English: '+Math.max(0,cards.length-failed)+' ready, '+failed+' pending':'✓ English ready';
+ }finally{autoQuizBusy=false;if(autoQuizPending){autoQuizPending=false;setTimeout(()=>translateCurrentQuizPage(autoQuizLanguage),100);}}
 };
 const hiButton=documentRoot.querySelector('#hiBtn'),enButton=documentRoot.querySelector('#enBtn');
-hiButton?.addEventListener('click',()=>setTimeout(()=>translateCurrentQuizPage('hi'),30));
-enButton?.addEventListener('click',()=>setTimeout(()=>translateCurrentQuizPage('en'),30));
+hiButton?.addEventListener('click',()=>setTimeout(()=>translateCurrentQuizPage('hi'),20));
+enButton?.addEventListener('click',()=>setTimeout(()=>translateCurrentQuizPage('en'),20));
 const questionRoot=documentRoot.querySelector('#questions');
 if(questionRoot&&typeof MutationObserver!=='undefined'){
- autoQuizObserver=new MutationObserver(()=>{
+ autoQuizObserver=new MutationObserver(records=>{
+  const addedCard=records.some(record=>[...record.addedNodes].some(node=>node.nodeType===1&&(node.matches?.('.card')||node.querySelector?.('.card'))));
+  if(!addedCard)return;
   if(autoQuizLanguage==='hi')questionRoot.querySelectorAll('.card').forEach(saveAutoQuizHindi);
-  else if(autoQuizLanguage==='en')setTimeout(()=>translateCurrentQuizPage('en'),180);
+  else if(autoQuizLanguage==='en')setTimeout(()=>translateCurrentQuizPage('en'),100);
  });
  autoQuizObserver.observe(questionRoot,{childList:true,subtree:true});questionRoot.querySelectorAll('.card').forEach(saveAutoQuizHindi);
 }
