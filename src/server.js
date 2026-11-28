@@ -58,6 +58,19 @@ function sealState(data){const key=crypto.createHash("sha256").update(secret+"|t
 function openState(value){const raw=Buffer.from(String(value||""),"base64url");if(raw.length<29)throw Error("Invalid login state");const key=crypto.createHash("sha256").update(secret+"|telegram-oidc-state").digest(),iv=raw.subarray(0,12),tag=raw.subarray(12,28),body=raw.subarray(28),d=crypto.createDecipheriv("aes-256-gcm",key,iv);d.setAuthTag(tag);const data=JSON.parse(Buffer.concat([d.update(body),d.final()]).toString());if(!data.iat||Date.now()-data.iat>600000||Date.now()<data.iat-60000)throw Error("Login session expired; please try again");return data;}
 async function getTelegramSigningKey(kid){if(!telegramJwksCache||Date.now()-telegramJwksAt>3600000){const r=await fetch(OIDC_ISSUER+"/.well-known/jwks.json",{signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error("Could not load Telegram signing keys");telegramJwksCache=await r.json();telegramJwksAt=Date.now();}const jwk=(telegramJwksCache.keys||[]).find(k=>k.kid===kid&&k.use!=="enc");if(!jwk)throw Error("Telegram signing key not found");return crypto.createPublicKey({key:jwk,format:"jwk"});}
 app.get("/api/health",(_q,s)=>s.json({ok:true,app:"MPPSC IQ",version:"2.2",database:dbReady?"connected":"disconnected",databaseMessage:dbReady?undefined:dbLastError}));
+app.post("/api/quiz/translate",ar(async(q,s)=>{
+ const question=String(q.body?.question||"").trim(),options=Array.isArray(q.body?.options)?q.body.options.map(v=>String(v||"").trim()):[],explanation=String(q.body?.explanation||""),from=q.body?.from==="en"?"en":"hi",to=q.body?.to==="hi"?"hi":"en";
+ if(from===to)return s.status(400).json({error:"अनुवाद की भाषा अलग चुनें"});
+ if(!question||options.length!==4||options.some(v=>!v))return s.status(400).json({error:"प्रश्न और चार विकल्प आवश्यक हैं"});
+ if(question.length>5000||options.some(v=>v.length>1500))return s.status(413).json({error:"प्रश्न का आकार बहुत बड़ा है"});
+ const source={question,options,explanation},cacheKey=crypto.createHash("sha256").update(JSON.stringify({from,to,...source})).digest("hex");
+ const cached=await db.query("SELECT translation_json FROM revision_quiz_translations WHERE cache_key=$1",[cacheKey]);
+ if(cached.rowCount)return s.json({ok:true,...cached.rows[0].translation_json,cached:true});
+ const result=await translateQuestion({...source,direction:from+"-"+to});
+ if(!result)return s.status(503).json({error:"अनुवाद अभी उपलब्ध नहीं है",translation_status:"pending"});
+ await db.query("INSERT INTO revision_quiz_translations(cache_key,source_language,target_language,translation_json,updated_at) VALUES($1,$2,$3,$4,NOW()) ON CONFLICT(cache_key) DO UPDATE SET translation_json=EXCLUDED.translation_json,updated_at=NOW()",[cacheKey,from,to,JSON.stringify(result)]);
+ s.json({ok:true,...result,cached:false});
+}));
 app.post("/api/translate-question",ar(async(q,s)=>{
  const question=String(q.body?.question||"").trim(),options=Array.isArray(q.body?.options)?q.body.options.map(v=>String(v||"").trim()):[],explanation=String(q.body?.explanation||"");
  if(!question||options.length!==4||options.some(v=>!v))return s.status(400).json({error:"प्रश्न और चार विकल्प आवश्यक हैं"});
