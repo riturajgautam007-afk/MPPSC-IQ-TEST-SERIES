@@ -1184,6 +1184,12 @@ const document=new Proxy(window.document,{get(target,prop){if(prop==="body")retu
 const documentRoot=window.document.getElementById("revisionQuizRoot");
 ${quizSource}
 ${inlineQuizEnhancements.join('\n')}
+// Expose the quiz's local language function to the toolbar and parent portal.
+window.__mppscQuizActions={setLang:function(next){if(typeof setLang==='function')setLang(next);}};
+const hiLanguageButton=documentRoot.querySelector('#hiBtn');
+const enLanguageButton=documentRoot.querySelector('#enBtn');
+if(hiLanguageButton)hiLanguageButton.addEventListener('click',function(){setLang('hi');});
+if(enLanguageButton)enLanguageButton.addEventListener('click',function(){setLang('en');});
 // Auto-translate visible quiz questions; translations are cached by the server.
 let autoQuizLanguage='hi',autoQuizBusy=false,autoQuizObserver=null;
 const autoQuizStatus=()=>{
