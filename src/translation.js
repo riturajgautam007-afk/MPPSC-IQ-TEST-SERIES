@@ -1,10 +1,6 @@
 // Free Hindi <-> English translation via MyMemory. No OpenAI key or paid API required.
 // Anonymous free allowance: 5,000 characters/day; provider limits may change.
-async function translateSegment(text,source,target){
- const value=String(text||"");
- if(!value.trim())return "";
- const bytes=new TextEncoder().encode(value);
- if(bytes.length>450)throw new Error("Translation segment exceeds free provider limit");
+async function translateOneChunk(value,source,target){
  const url=new URL("https://api.mymemory.translated.net/get");
  url.searchParams.set("q",value);
  url.searchParams.set("langpair",source+"|"+target);
@@ -14,6 +10,21 @@ async function translateSegment(text,source,target){
  const translated=data?.responseData?.translatedText;
  if(Number(data?.responseStatus)!==200||typeof translated!=="string"||!translated.trim())throw new Error(data?.responseDetails||"Free translation unavailable");
  return translated.replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&lt;/g,"<").replace(/&gt;/g,">");
+}
+async function translateSegment(text,source,target){
+ const value=String(text||"").trim();
+ if(!value)return "";
+ // MyMemory accepts short segments; split long Hindi UTF-8 text at word boundaries.
+ const words=value.split(/\s+/),chunks=[];let current="";
+ for(const word of words){
+  if(new TextEncoder().encode(word).length>430)throw new Error("A single word exceeds the free provider limit");
+  const next=current?current+" "+word:word;
+  if(current&&new TextEncoder().encode(next).length>430){chunks.push(current);current=word;}else current=next;
+ }
+ if(current)chunks.push(current);
+ const translated=[];
+ for(const chunk of chunks)translated.push(await translateOneChunk(chunk,source,target));
+ return translated.join(" ");
 }
 async function translateQuestion(input){
  const payload={question:String(input.question||""),options:Array.isArray(input.options)?input.options.map(String):[],explanation:String(input.explanation||"")};
